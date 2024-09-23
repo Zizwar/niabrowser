@@ -1,13 +1,24 @@
-// components/DevTools.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimensions } from 'react-native';
 import { Icon, Button } from 'react-native-elements';
 import * as Clipboard from 'expo-clipboard';
 
 const { width } = Dimensions.get('window');
 
-const DevTools = ({ visible, onClose, networkLogs, consoleOutput, storage, injectJavaScript, isDarkMode, onNetworkLogPress, onNetworkLogLongPress, performanceMetrics, onOpenScriptManager, }) => {
-      
+const DevTools = ({ 
+  visible, 
+  onClose, 
+  networkLogs, 
+  consoleOutput, 
+  storage, 
+  injectJavaScript, 
+  isDarkMode, 
+  onNetworkLogPress, 
+  onNetworkLogLongPress, 
+  performanceMetrics, 
+  onOpenScriptManager,
+  updateStorageData,
+}) => {
   const [activeTab, setActiveTab] = useState('network');
   const [injectionCode, setInjectionCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,7 +29,9 @@ const DevTools = ({ visible, onClose, networkLogs, consoleOutput, storage, injec
   const backgroundColor = isDarkMode ? '#1E1E1E' : '#F1F3F4';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
 
-  const filteredNetworkLogs = networkLogs.filter(log => { if (!log || typeof log.url !== 'string') return false; return log.url.toLowerCase().includes(searchQuery.toLowerCase()); });
+  const filteredNetworkLogs = networkLogs.filter(log => 
+    log && typeof log.url === 'string' && log.url.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const copyToClipboard = async (text) => {
     await Clipboard.setStringAsync(text);
@@ -41,8 +54,104 @@ const DevTools = ({ visible, onClose, networkLogs, consoleOutput, storage, injec
       <Text style={[styles.tabText, { color: textColor }]}>{name}</Text>
     </TouchableOpacity>
   );
-  
 
+  const renderNetworkTab = () => (
+    <>
+      <TextInput
+        style={[styles.searchInput, { color: textColor, borderColor: textColor }]}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search URLs"
+        placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+      />
+      {filteredNetworkLogs.map((log, index) => (
+        <TouchableOpacity 
+          key={index} 
+          onPress={() => onNetworkLogPress(log)}
+          onLongPress={() => onNetworkLogLongPress(log)}
+          delayLongPress={500}
+        >
+          <Text style={{ color: textColor }}>
+            {`${log.method || 'N/A'} ${log.url || 'Unknown URL'} - Status: ${log.status || 'N/A'}, Duration: ${log.duration || 'N/A'}ms`}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </>
+  );
+
+  const renderConsoleTab = () => (
+    consoleOutput.map((log, index) => (
+      <Text key={index} style={[styles.consoleLog, getConsoleLogStyle(log.type)]}>
+        {log.message}
+      </Text>
+    ))
+  );
+
+// في مكون DevTools
+
+const renderStorageTab = () => (
+  <>
+    <Button
+      title="Refresh Storage Data"
+      onPress={updateStorageData}
+      
+    />
+    <View style={styles.storageSection}>
+      <Text style={[styles.storageTitle, { color: textColor }]}>Cookies:</Text>
+      <TouchableOpacity onPress={() => copyToClipboard(storage.cookies)}>
+        <Icon name="content-copy" type="material" color={textColor} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => clearStorage('cookies')}>
+        <Icon name="delete" type="material" color={textColor} />
+      </TouchableOpacity>
+    </View>
+    <Text style={{ color: textColor }}>{storage.cookies}</Text>
+    <View style={styles.storageSection}>
+      <Text style={[styles.storageTitle, { color: textColor }]}>LocalStorage:</Text>
+      <TouchableOpacity onPress={() => copyToClipboard(storage.localStorage)}>
+        <Icon name="content-copy" type="material" color={textColor} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => clearStorage('localStorage')}>
+        <Icon name="delete" type="material" color={textColor} />
+      </TouchableOpacity>
+    </View>
+    <Text style={{ color: textColor }}>{storage.localStorage}</Text>
+  </>
+);
+  const renderInjectTab = () => (
+    <>
+      <Button
+        title="Script Manager"
+        onPress={onOpenScriptManager}
+      />
+      <TextInput
+        style={[styles.input, { color: textColor, borderColor: textColor }]}
+        value={injectionCode}
+        onChangeText={setInjectionCode}
+        placeholder="Enter JavaScript to inject"
+        placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+        multiline
+      />
+      <TouchableOpacity
+        style={styles.injectButton}
+        onPress={() => injectJavaScript(injectionCode)}
+      >
+        <Text style={{ color: textColor }}>Inject</Text>
+      </TouchableOpacity>
+    </>
+  );
+
+  const renderPerformanceTab = () => (
+    performanceMetrics && (
+      <View>
+        {Object.entries(performanceMetrics).map(([key, value]) => (
+          <Text key={key} style={{ color: textColor }}>
+            {`${key}: ${typeof value === 'number' ? value.toFixed(2) : value}`}
+          </Text>
+        ))}
+      </View>
+    )
+  );
 
   return (
     <View style={[styles.container, { backgroundColor }, { display: visible ? 'flex' : 'none' }]}>
@@ -60,92 +169,11 @@ const DevTools = ({ visible, onClose, networkLogs, consoleOutput, storage, injec
       </View>
       
       <ScrollView style={styles.content} ref={scrollViewRef}>
-      {activeTab === 'Network' && (
-  <>
-    <TextInput
-      style={[styles.searchInput, { color: textColor, borderColor: textColor }]}
-      value={searchQuery}
-      onChangeText={setSearchQuery}
-      placeholder="Search URLs"
-      placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-    />
-    {filteredNetworkLogs.map((log, index) => (
-      <TouchableOpacity 
-        key={index} 
-        onPress={() => onNetworkLogPress(log)}
-        onLongPress={() => onNetworkLogLongPress(log)}
-        delayLongPress={500}
-      >
-        <Text style={{ color: textColor }}>
-          {`${log.method || 'N/A'} ${log.url || 'Unknown URL'} - Status: ${log.status || 'N/A'}, Duration: ${log.duration || 'N/A'}ms`}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </>
-)}
-        {activeTab === 'Console' && (
-          consoleOutput.map((log, index) => (
-            <Text key={index} style={[styles.consoleLog, getConsoleLogStyle(log.type)]}>
-              {log.message}
-            </Text>
-          ))
-        )}
-        {activeTab === 'Storage' && (
-          <>
-            <View style={styles.storageSection}>
-              <Text style={[styles.storageTitle, { color: textColor }]}>Cookies:</Text>
-              <TouchableOpacity onPress={() => copyToClipboard(storage.cookies)}>
-                <Icon name="content-copy" type="material" color={textColor} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => clearStorage('cookies')}>
-                <Icon name="delete" type="material" color={textColor} />
-              </TouchableOpacity>
-            </View>
-            <Text style={{ color: textColor }}>{storage.cookies}</Text>
-            <View style={styles.storageSection}>
-              <Text style={[styles.storageTitle, { color: textColor }]}>LocalStorage:</Text>
-              <TouchableOpacity onPress={() => copyToClipboard(storage.localStorage)}>
-                <Icon name="content-copy" type="material" color={textColor} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => clearStorage('localStorage')}>
-                <Icon name="delete" type="material" color={textColor} />
-              </TouchableOpacity>
-            </View>
-            <Text style={{ color: textColor }}>{storage.localStorage}</Text>
-          </>
-        )}
-        {activeTab === 'Inject' && (
-          <>
-          <Button
-        title="Script Manager"
-        onPress={onOpenScriptManager}
-        
-      />
-            <TextInput
-              style={[styles.input, { color: textColor, borderColor: textColor }]}
-              value={injectionCode}
-              onChangeText={setInjectionCode}
-              placeholder="Enter JavaScript to inject"
-              placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.injectButton}
-              onPress={() => injectJavaScript(injectionCode)}
-            >
-              <Text style={{ color: textColor }}>Inject</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        {activeTab === 'Performance' && performanceMetrics && (
-          <View>
-            {Object.entries(performanceMetrics).map(([key, value]) => (
-              <Text key={key} style={{ color: textColor }}>
-                {`${key}: ${typeof value === 'number' ? value.toFixed(2) : value}`}
-              </Text>
-            ))}
-          </View>
-        )}
+        {activeTab === 'Network' && renderNetworkTab()}
+        {activeTab === 'Console' && renderConsoleTab()}
+        {activeTab === 'Storage' && renderStorageTab()}
+        {activeTab === 'Inject' && renderInjectTab()}
+        {activeTab === 'Performance' && renderPerformanceTab()}
       </ScrollView>
     </View>
   );
@@ -168,10 +196,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#CCCCCC',
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   tabs: {
     flexDirection: 'row',

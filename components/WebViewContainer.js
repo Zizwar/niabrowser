@@ -1,22 +1,32 @@
-// في WebViewContainer.js
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const WebViewContainer = forwardRef(({ url, onMessage, isDarkMode, isDesktopMode, onNavigationStateChange, runAutoScripts, onLoad }, ref) => {
+const WebViewContainer = forwardRef(({ 
+  url, 
+  onMessage, 
+  isDarkMode, 
+  isDesktopMode, 
+  onNavigationStateChange, 
+  onLoadStart, 
+  onLoad,
+  addNewTab
+}, ref) => { 
 
   const userAgent = isDesktopMode
     ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     : undefined;
-const handleShouldStartLoadWithRequest = (event) => {
-    if (event.url !== url && event.navigationType === 'click') {
- 
-      addNewTab(event.url);
-      return false;
-    }
-    return true;
-  };
-  
+
+  const webViewRef = React.useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    goBack: () => webViewRef.current?.goBack(),
+    goForward: () => webViewRef.current?.goForward(),
+    reload: () => webViewRef.current?.reload(),
+    injectJavaScript: (script) => webViewRef.current?.injectJavaScript(script),
+    getStorageData: () => webViewRef.current?.injectJavaScript('window.getStorageDataOnDemand()')
+  }));
+
   const injectedJavaScript = `
     (function() {
       // اعتراض وتسجيل طلبات الشبكة
@@ -43,55 +53,73 @@ const handleShouldStartLoadWithRequest = (event) => {
       };
 
       // اعتراض وتسجيل مخرجات وحدة التحكم
-      var originalConsoleLog = console.log;
-      var originalConsoleError = console.error;
-      var originalConsoleWarn = console.warn;
-      var originalConsoleInfo = console.info;
-
-      console.log = function() {
-        var args = Array.from(arguments);
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'consoleLog',
-          message: { type: 'log', message: args.join(' ') }
-        }));
-        originalConsoleLog.apply(console, arguments);
+      var originalConsole = window.console;
+      window.console = {
+        log: function() {
+          var args = Array.from(arguments);
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'consoleLog',
+            message: { type: 'log', message: args.join(' ') }
+          }));
+          originalConsole.log.apply(originalConsole, arguments);
+        },
+        error: function() {
+          var args = Array.from(arguments);
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'consoleLog',
+            message: { type: 'error', message: args.join(' ') }
+          }));
+          originalConsole.error.apply(originalConsole, arguments);
+        },
+        warn: function() {
+          var args = Array.from(arguments);
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'consoleLog',
+            message: { type: 'warn', message: args.join(' ') }
+          }));
+          originalConsole.warn.apply(originalConsole, arguments);
+        },
+        info: function() {
+          var args = Array.from(arguments);
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'consoleLog',
+            message: { type: 'info', message: args.join(' ') }
+          }));
+          originalConsole.info.apply(originalConsole, arguments);
+        }
       };
 
-      console.error = function() {
-        var args = Array.from(arguments);
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'consoleLog',
-          message: { type: 'error', message: args.join(' ') }
-        }));
-        originalConsoleError.apply(console, arguments);
+      // تحسين مراقبة التخزين
+      let lastStorageSnapshot = {
+        cookies: document.cookie,
+        localStorage: JSON.stringify(localStorage)
       };
 
-      console.warn = function() {
-        var args = Array.from(arguments);
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'consoleLog',
-          message: { type: 'warn', message: args.join(' ') }
-        }));
-        originalConsoleWarn.apply(console, arguments);
-      };
-
-      console.info = function() {
-        var args = Array.from(arguments);
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'consoleLog',
-          message: { type: 'info', message: args.join(' ') }
-        }));
-        originalConsoleInfo.apply(console, arguments);
-      };
-
-      // مراقبة التخزين
-      setInterval(function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'storage',
+      function getStorageData() {
+        return {
           cookies: document.cookie,
           localStorage: JSON.stringify(localStorage)
-        }));
-      }, 1000);
+        };
+      }
+
+      function sendStorageDataIfChanged() {
+        const currentStorage = getStorageData();
+        if (currentStorage.cookies !== lastStorageSnapshot.cookies || 
+            currentStorage.localStorage !== lastStorageSnapshot.localStorage) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'storage',
+            ...currentStorage
+          }));
+          lastStorageSnapshot = currentStorage;
+        }
+      }
+
+      window.addEventListener('storage', sendStorageDataIfChanged);
+      window.addEventListener('load', sendStorageDataIfChanged);
+
+      window.getStorageDataOnDemand = function() {
+        sendStorageDataIfChanged();
+      };
 
       // مراقبة مقاييس الأداء
       const observer = new PerformanceObserver((list) => {
@@ -141,16 +169,8 @@ const handleShouldStartLoadWithRequest = (event) => {
 
       observer.observe({entryTypes: ['paint', 'largest-contentful-paint', 'first-input', 'layout-shift']});
 
-      
-      document.addEventListener('DOMContentLoaded', function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'pageLoaded',
-          url: window.location.href
-        }));
-      });
-
-     
       window.addEventListener('load', function() {
+        console.log('Window load event fired');
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'pageFullyLoaded',
           url: window.location.href
@@ -161,25 +181,33 @@ const handleShouldStartLoadWithRequest = (event) => {
     })();
   `;
 
-  const handleMessage = (event) => {
-    const data = JSON.parse(event.nativeEvent.data);
-    if (data.type === 'pageLoaded') {
-      runAutoScripts(data.url);
-    }
+  const handleMessage = (event) => { 
+    const data = JSON.parse(event.nativeEvent.data); 
+    console.log('Received message:', data.type);
     onMessage(event);
   };
 
-  return (
-    <WebView
-      ref={ref}
+  const handleShouldStartLoadWithRequest = (event) => {
+    if (event.url !== url && event.navigationType === 'click') {
+      addNewTab(event.url);
+      return false;
+    }
+    return true;
+  };
+
+  return ( 
+    <WebView 
+      ref={webViewRef}
       source={{ uri: url }}
       style={styles.webview}
       injectedJavaScript={injectedJavaScript}
       onMessage={handleMessage}
+      onLoadStart={onLoadStart}
       onLoad={onLoad}
       forceDarkOn={isDarkMode}
-      userAgent={isDesktopMode ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' : undefined}
+      userAgent={userAgent}
       onNavigationStateChange={onNavigationStateChange}
+      onShouldStartLoadWithRequest={handleShouldStartLoadWithRequest}
       javaScriptEnabled={true}
       domStorageEnabled={true}
       startInLoadingState={true}
@@ -189,6 +217,7 @@ const handleShouldStartLoadWithRequest = (event) => {
     />
   );
 });
+
 const styles = StyleSheet.create({
   webview: {
     flex: 1,

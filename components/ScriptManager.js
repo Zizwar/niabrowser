@@ -11,8 +11,8 @@ import {
   Alert 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Icon } from 'react-native-elements';
-import { createGreasemonkeyEnvironment, parseMetadata } from './GreasemonkeyWrapper';
+import { Icon, Button } from 'react-native-elements';
+import { createGreasemonkeyEnvironment, parseMetadata } from '../utils/GreasemonkeyCompatibility';
 
 const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode }) => {
   const [scripts, setScripts] = useState([]);
@@ -125,18 +125,13 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
   };
 
   const renderScriptItem = useCallback(({ item }) => (
-    <View style={styles.scriptItem}>
+    <View style={[styles.scriptItem, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
       <View style={styles.scriptHeader}>
-        <Text style={styles.scriptName}>{item.name}</Text>
-        <Switch
-          value={item.isEnabled}
-          onValueChange={() => toggleScript(item.name)}
-          trackColor={{ false: "#767577", true: "#81b0ff" }}
-          thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"}
-        />
+        <Text style={[styles.scriptName, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{item.name}</Text>
+        <Switch value={item.isEnabled} onValueChange={() => toggleScript(item.name)} trackColor={{ false: "#767577", true: "#81b0ff" }} thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"} />
       </View>
-      <Text style={styles.scriptUrls}>URLs: {item.urls || 'All'}</Text>
-      <Text style={styles.scriptRunAt}>Run at: {item.runAt}</Text>
+      <Text style={[styles.scriptUrls, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>URLs: {item.urls || 'All'}</Text>
+      <Text style={[styles.scriptRunAt, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>Run at: {item.runAt}</Text>
       <View style={styles.scriptActions}>
         <TouchableOpacity onPress={() => runScript(item)} style={styles.actionButton}>
           <Icon name="play" type="font-awesome" size={20} color="#4CAF50" />
@@ -149,7 +144,7 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
         </TouchableOpacity>
       </View>
     </View>
-  ), []);
+  ), [isDarkMode,toggleScript]);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -281,7 +276,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scriptItem: {
-    backgroundColor: '#FFFFFF',
     padding: 15,
     borderRadius: 5,
     marginBottom: 10,
@@ -296,16 +290,13 @@ const styles = StyleSheet.create({
   scriptName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   scriptUrls: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 3,
   },
   scriptRunAt: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 10,
   },
   scriptActions: {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, View, BackHandler, Platform } from 'react-native';
+import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WebViewContainer from './components/WebViewContainer';
 import ToolBar from './components/ToolBar';
@@ -15,9 +15,12 @@ import CrudModal from './components/CrudModal';
 import OnboardingScreen from './components/OnboardingScreen';
 import AboutModal from './components/AboutModal';
 import ScriptManager from './components/ScriptManager';
-import { createGreasemonkeyEnvironment, parseMetadata } from './utils/GreasemonkeyCompatibility';
 
-const createNewTab = (url = 'https://www.google.com', title = 'New Tab') => ({
+import { AppProvider, useAppContext } from './state/context';
+import { useWebViewRefs, useHistory, useTabs, useScripts, useSettings } from './hooks';
+import { shareUrl, clearData, shouldRunOnUrl, injectJavaScript, createGreasemonkeyEnvironment } from './utils';
+
+const createNewTab = (url = 'about:blank', title = 'New Tab') => ({
   id: Date.now(),
   url,
   title,
@@ -36,34 +39,34 @@ const createNewTab = (url = 'https://www.google.com', title = 'New Tab') => ({
   canGoForward: false,
 });
 
-const App = () => {
+const AppContent = () => {
+  const { 
+    isBottomSheetVisible, 
+    setBottomSheetVisible, 
+    isHistoryModalVisible, 
+    setHistoryModalVisible,
+    isAboutModalVisible,
+    setAboutModalVisible,
+    isScriptManagerVisible,
+    setScriptManagerVisible
+  } = useAppContext();
+
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
-  const [isDesktopMode, setIsDesktopMode] = useState(false);
-  const [isAboutModalVisible, setIsAboutModalVisible] = useState(false);
-  const [isScriptManagerVisible, setIsScriptManagerVisible] = useState(false);
-  const [scripts, setScripts] = useState([]);
-  const [tabs, setTabs] = useState([createNewTab('https://www.google.com', 'Google')]);
-  const [activeTabIndex, setActiveTabIndex] = useState(0);
-  const [isTabsLoading, setIsTabsLoading] = useState(true);
 
-  const webViewRefs = useRef([]);
+  const webViewRefs = useWebViewRefs();
+  const { history, addToHistory, clearHistory } = useHistory();
+  const { tabs, setTabs, activeTabIndex, setActiveTabIndex, isTabsLoading, addNewTab, closeTab, updateTabInfo } = useTabs(webViewRefs);
+  const { scripts, setScripts, saveScript } = useScripts();
+  const { isDarkMode, isDesktopMode, toggleDarkMode, toggleDesktopMode } = useSettings();
 
   useEffect(() => {
     checkOnboardingStatus();
-    loadHistory();
-    loadSettings();
-    loadScripts();
-    loadTabs();
   }, []);
 
   useEffect(() => {
     const backAction = () => {
-      const activeTab = getActiveTab();
+      const activeTab = tabs[activeTabIndex];
       if (activeTab && activeTab.canGoBack) {
         webViewRefs.current[activeTabIndex].goBack();
         return true;
@@ -74,7 +77,7 @@ const App = () => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
     return () => backHandler.remove();
-  }, [activeTabIndex]);
+  }, [activeTabIndex, tabs, webViewRefs]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -87,79 +90,9 @@ const App = () => {
     }
   };
 
-  const loadHistory = async () => {
-    try {
-      const savedHistory = await AsyncStorage.getItem('browserHistory');
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory));
-      }
-    } catch (error) {
-      console.error('Error loading history:', error);
-    }
-  };
-
-  const loadSettings = async () => {
-    try {
-      const darkMode = await AsyncStorage.getItem('darkMode');
-      setIsDarkMode(darkMode === 'true');
-      const desktopMode = await AsyncStorage.getItem('desktopMode');
-      setIsDesktopMode(desktopMode === 'true');
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
-
-  const loadScripts = async () => {
-    try {
-      const savedScripts = await AsyncStorage.getItem('userScripts');
-      if (savedScripts) {
-        setScripts(JSON.parse(savedScripts));
-      }
-    } catch (error) {
-      console.error('Error loading scripts:', error);
-    }
-  };
-
-  const loadTabs = async () => {
-    setIsTabsLoading(true);
-    try {
-      const savedTabs = await AsyncStorage.getItem('savedTabs');
-      if (savedTabs) {
-        const parsedTabs = JSON.parse(savedTabs);
-        setTabs(parsedTabs.map(tab => ({
-          ...createNewTab(tab.url, tab.title),
-          ...tab
-        })));
-      }
-    } catch (error) {
-      console.error('Error loading tabs:', error);
-    } finally {
-      setIsTabsLoading(false);
-    }
-  };
-
-  const addToHistory = async (newUrl) => {
-    const updatedHistory = [newUrl, ...history.filter(item => item !== newUrl)].slice(0, 100);
-    setHistory(updatedHistory);
-    try {
-      await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));
-    } catch (error) {
-      console.error('Error saving history:', error);
-    }
-  };
-
-  const clearHistory = async () => {
-    setHistory([]);
-    try {
-      await AsyncStorage.removeItem('browserHistory');
-    } catch (error) {
-      console.error('Error clearing history:', error);
-    }
-  };
-
   const handleMessage = useCallback((event) => {
     const data = JSON.parse(event.nativeEvent.data);
-    const activeTab = getActiveTab();
+    const activeTab = tabs[activeTabIndex];
     if (!activeTab) return;
 
     switch (data.type) {
@@ -182,34 +115,11 @@ const App = () => {
       case 'performanceMetrics':
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
-      case 'crudResponse':
-        // Handle CRUD response if needed
-        break;
-      case 'GM_setValue':
-        handleGreasemonkeySetValue(data.key, data.value);
-        break;
-      case 'GM_getValue':
-        handleGreasemonkeyGetValue(data.key, data.defaultValue);
-        break;
-      case 'GM_xmlhttpRequest':
-        handleGreasemonkeyXmlHttpRequest(data.details);
-        break;
+      // ... other cases as needed
     }
-  }, [activeTabIndex, tabs]);
+  }, [activeTabIndex, tabs, updateTabInfo]);
 
-  const getActiveTab = () => tabs[activeTabIndex] || null;
-
-  const updateTabInfo = (index, info) => {
-    setTabs(prevTabs => {
-      if (index < 0 || index >= prevTabs.length) return prevTabs;
-      const newTabs = [...prevTabs];
-      newTabs[index] = { ...newTabs[index], ...info };
-      saveTabs(newTabs);
-      return newTabs;
-    });
-  };
-
-  const handleNavigationStateChange = (navState, tabIndex) => {
+  const handleNavigationStateChange = useCallback((navState, tabIndex) => {
     updateTabInfo(tabIndex, {
       url: navState.url,
       title: navState.title || navState.url,
@@ -217,84 +127,7 @@ const App = () => {
       canGoForward: navState.canGoForward
     });
     addToHistory(navState.url);
-    setTimeout(() => runAutoScripts(navState.url), 500);
-  };
-
-  const toggleDarkMode = async () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    await AsyncStorage.setItem('darkMode', newMode.toString());
-  };
-
-  const toggleDesktopMode = async () => {
-    const newMode = !isDesktopMode;
-    setIsDesktopMode(newMode);
-    await AsyncStorage.setItem('desktopMode', newMode.toString());
-    reloadActiveTab();
-  };
-
-  const reloadActiveTab = () => {
-    const webViewRef = webViewRefs.current[activeTabIndex];
-    if (webViewRef && webViewRef.reload) {
-      webViewRef.reload();
-    }
-  };
-
-  const goBack = () => {
-    const webViewRef = webViewRefs.current[activeTabIndex];
-    if (webViewRef && tabs[activeTabIndex].canGoBack) {
-      webViewRef.goBack();
-    }
-  };
-
-  const goForward = () => {
-    const webViewRef = webViewRefs.current[activeTabIndex];
-    if (webViewRef && tabs[activeTabIndex].canGoForward) {
-      webViewRef.goForward();
-    }
-  };
-
-  const addNewTab = (url = 'https://www.google.com', title = 'New Tab') => {
-    setTabs(prevTabs => {
-      const newTabs = [...prevTabs, createNewTab(url, title)];
-      saveTabs(newTabs);
-      setTimeout(() => setActiveTabIndex(newTabs.length - 1), 0);
-      return newTabs;
-    });
-  };
-
-  const closeTab = (index) => {
-    setTabs(prevTabs => {
-      if (prevTabs.length <= 1) {
-        const newTabs = [createNewTab()];
-        saveTabs(newTabs);
-        return newTabs;
-      }
-      const newTabs = prevTabs.filter((_, i) => i !== index);
-      saveTabs(newTabs);
-      setTimeout(() => {
-        setActiveTabIndex(prevIndex => {
-          if (index < prevIndex) return prevIndex - 1;
-          if (index === prevIndex) return Math.min(prevIndex, newTabs.length - 1);
-          return prevIndex;
-        });
-      }, 0);
-      return newTabs;
-    });
-  };
-
-  const saveTabs = async (tabsToSave) => {
-    try {
-      const tabsData = tabsToSave.map(tab => ({
-        url: tab.url,
-        title: tab.title,
-        id: tab.id
-      }));
-      await AsyncStorage.setItem('savedTabs', JSON.stringify(tabsData));
-    } catch (error) {
-      console.error('Error saving tabs:', error);
-    }
-  };
+  }, [updateTabInfo, addToHistory]);
 
   const updateTabUrl = (index, newUrl) => {
     updateTabInfo(index, { url: newUrl });
@@ -316,29 +149,6 @@ const App = () => {
     }
   };
 
-  const shareUrl = async () => {
-    const activeTab = getActiveTab();
-    if (activeTab) {
-      try {
-        await Share.share({ message: activeTab.url });
-      } catch (error) {
-        console.error('Error sharing URL:', error);
-      }
-    }
-  };
-
-  const clearData = async () => {
-    try {
-      await AsyncStorage.clear();
-      setHistory([]);
-      setScripts([]);
-      Alert.alert("Data Cleared", "All app data has been cleared successfully.");
-    } catch (error) {
-      console.error('Error clearing data:', error);
-      Alert.alert("Error", "Failed to clear data. Please try again.");
-    }
-  };
-
   const handleNetworkLogPress = (log) => {
     updateTabInfo(activeTabIndex, { selectedNetworkLog: log, isNetworkLogModalVisible: true });
   };
@@ -352,51 +162,20 @@ const App = () => {
     });
   };
 
- 
-  const runAutoScripts = useCallback((currentUrl) => {
+  const runAutoScripts = useCallback((currentUrl, event) => {
     scripts.forEach(script => {
       if (script.isEnabled && shouldRunOnUrl(script.urls, currentUrl)) {
-        if (script.runAt === 'document-start' || script.runAt === 'document-idle') {
+        if ((script.runAt === 'document-start' && event === 'start') ||
+            (script.runAt === 'document-idle' && event === 'load')) {
           const wrappedScript = createGreasemonkeyEnvironment(script.code, script.metadata);
-          injectJavaScript(activeTabIndex, wrappedScript);
+          injectJavaScript(webViewRefs.current[activeTabIndex], wrappedScript);
         }
       }
     });
-  }, [scripts, activeTabIndex]);
-  
-  const runManualScript = (script) => {
-    if (script.isEnabled) {
-      const wrappedScript = createGreasemonkeyEnvironment(script.code, script.metadata);
-      injectJavaScript(activeTabIndex, wrappedScript);
-    }
-  };
-  
-  const handleWebViewLoad = (event) => {
-    const currentUrl = event.nativeEvent.url;
-    runAutoScripts(currentUrl);
-  };
-
-  const shouldRunOnUrl = (scriptUrls, currentUrl) => {
-    if (!scriptUrls) return true;
-    const urlPatterns = scriptUrls.split(',').map(u => u.trim());
-    return urlPatterns.some(pattern => {
-      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-      return regex.test(currentUrl);
-    });
-  };
-
-  const saveScript = async (script) => {
-    const updatedScripts = [...scripts, script];
-    setScripts(updatedScripts);
-    try {
-      await AsyncStorage.setItem('userScripts', JSON.stringify(updatedScripts));
-    } catch (error) {
-      console.error('Error saving script:', error);
-    }
-  };
+  }, [scripts, activeTabIndex, webViewRefs]);
 
   const toggleDevTools = () => {
-    updateTabInfo(activeTabIndex, { isDevToolsVisible: !getActiveTab().isDevToolsVisible });
+    updateTabInfo(activeTabIndex, { isDevToolsVisible: !tabs[activeTabIndex].isDevToolsVisible });
   };
 
   const openCrudModal = (initialData = null) => {
@@ -407,60 +186,18 @@ const App = () => {
     updateTabInfo(activeTabIndex, { isCrudModalVisible: false, crudInitialData: null });
   };
 
-  const handleGreasemonkeySetValue = async (key, value) => {
-    try {
-      await AsyncStorage.setItem(`GM_${key}`, JSON.stringify(value));
-    } catch (error) {
-      console.error('Error saving Greasemonkey value:', error);
+  const updateStorageData = useCallback(() => {
+    const activeWebViewRef = webViewRefs.current[activeTabIndex];
+    if (activeWebViewRef && activeWebViewRef.getStorageData) {
+      activeWebViewRef.getStorageData();
     }
-  };
-
-  const handleGreasemonkeyGetValue = async (key, defaultValue) => {
-    try {
-      const value = await AsyncStorage.getItem(`GM_${key}`);
-      const result = value !== null ? JSON.parse(value) : defaultValue;
-      injectJavaScript(activeTabIndex, `
-        if (window.GM_getValueCallback) {
-          window.GM_getValueCallback(${JSON.stringify(result)});
-        }
-      `);
-    } catch (error) {
-      console.error('Error getting Greasemonkey value:', error);
-      injectJavaScript(activeTabIndex, `
-        if (window.GM_getValueCallback) {
-          window.GM_getValueCallback(${JSON.stringify(defaultValue)});
-        }
-      `);
-    }
-  };
-
-  const handleGreasemonkeyXmlHttpRequest = (details) => {
-    // Implement XMLHttpRequest functionality here
-    console.log('GM_xmlhttpRequest called with:', details);
-    // You might want to use fetch API or a third-party library to make the actual request
-  };
-
-  const injectJavaScript = (tabIndex, code) => {
-    const webViewRef = webViewRefs.current[tabIndex];
-    if (webViewRef && webViewRef.injectJavaScript) {
-      webViewRef.injectJavaScript(`
-        (function() {
-          try {
-            ${code}
-          } catch (error) {
-            console.error('Error executing script:', error);
-          }
-        })();
-        true;
-      `);
-    }
-  };
+  }, [activeTabIndex, webViewRefs]);
 
   if (!hasCheckedOnboarding) {
-    return null; // أو يمكنك عرض شاشة تحميل هنا
+    return null;
   }
 
-  if (!hasSeenOnboarding) {
+   if (!hasSeenOnboarding) {
     return <OnboardingScreen onComplete={() => {
       setHasSeenOnboarding(true);
       AsyncStorage.setItem('hasSeenOnboarding', 'true');
@@ -480,17 +217,17 @@ const App = () => {
         isLoading={isTabsLoading}
       />
       <ToolBar 
-        url={getActiveTab()?.url || ''}
+        url={tabs[activeTabIndex]?.url || ''}
         setUrl={(newUrl) => updateTabUrl(activeTabIndex, newUrl)}
         isDarkMode={isDarkMode}
         textColor={isDarkMode ? '#FFFFFF' : '#000000'}
         addToHistory={addToHistory}
-        onMenuPress={() => setIsBottomSheetVisible(true)}
-        goBack={goBack}
-        goForward={goForward}
-        reload={reloadActiveTab}
-        canGoBack={getActiveTab()?.canGoBack || false}
-        canGoForward={getActiveTab()?.canGoForward || false}
+        onMenuPress={() => setBottomSheetVisible(true)}
+        goBack={() => webViewRefs.current[activeTabIndex]?.goBack()}
+        goForward={() => webViewRefs.current[activeTabIndex]?.goForward()}
+        reload={() => webViewRefs.current[activeTabIndex]?.reload()}
+        canGoBack={tabs[activeTabIndex]?.canGoBack || false}
+        canGoForward={tabs[activeTabIndex]?.canGoForward || false}
       />
       <View style={{ flex: 1 }}>
         {tabs.map((tab, index) => (
@@ -503,115 +240,113 @@ const App = () => {
             display: index === activeTabIndex ? 'flex' : 'none' 
           }}>
             <WebViewContainer
-      ref={el => (webViewRefs.current[index] = el)}
-      url={tab.url}
-      onMessage={handleMessage}
-      isDarkMode={isDarkMode}
-      isDesktopMode={isDesktopMode}
-      onNavigationStateChange={(navState) => handleNavigationStateChange(navState, index)}
-      runAutoScripts={runAutoScripts}
-      onLoad={handleWebViewLoad}
-    />
+              ref={el => (webViewRefs.current[index] = el)}
+              url={tab.url}
+              onMessage={handleMessage}
+              isDarkMode={isDarkMode}
+              isDesktopMode={isDesktopMode}
+              onNavigationStateChange={(navState) => handleNavigationStateChange(navState, index)}
+              onLoadStart={(event) => runAutoScripts(event.nativeEvent.url, 'start')}
+              onLoad={(event) => runAutoScripts(event.nativeEvent.url, 'load')}
+              addNewTab={addNewTab}
+            />
           </View>
         ))}
       </View>
       <BottomNavigation
         isDarkMode={isDarkMode}
         onHomePress={() => updateTabUrl(activeTabIndex, 'https://www.google.com')}
-        onBackPress={goBack}
-        onForwardPress={goForward}
-        onRefreshPress={reloadActiveTab}
-        onSettingsPress={() => setIsBottomSheetVisible(true)}
+        onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
+        onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
+        onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
+        onSettingsPress={() => setBottomSheetVisible(true)}
         onDevToolsPress={toggleDevTools}
         onCRUDPress={() => openCrudModal()}
-        onScriptManagerPress={() => setIsScriptManagerVisible(true)}
+        onScriptManagerPress={() => setScriptManagerVisible(true)}
+        canGoBack={tabs[activeTabIndex]?.canGoBack || false}
+        canGoForward={tabs[activeTabIndex]?.canGoForward || false}
         onGetSourcePress={getSourceHtml}
-        canGoBack={getActiveTab()?.canGoBack || false}
-        canGoForward={getActiveTab()?.canGoForward || false}
       />
       <BottomSheet
         visible={isBottomSheetVisible}
-        onClose={() => setIsBottomSheetVisible(false)}
+        onClose={() => setBottomSheetVisible(false)}
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
         toggleDesktopMode={toggleDesktopMode}
         isDesktopMode={isDesktopMode}
-        shareUrl={shareUrl}
+        shareUrl={() => shareUrl(tabs[activeTabIndex]?.url)}
         clearData={clearData}
-        openHistory={() => setIsHistoryModalVisible(true)}
-        openAboutModal={() => setIsAboutModalVisible(true)}
-        currentUrl={getActiveTab()?.url || ''}
+        openHistory={() => setHistoryModalVisible(true)}
+        openAboutModal={() => setAboutModalVisible(true)}
+        currentUrl={tabs[activeTabIndex]?.url || ''}
       />
-      {getActiveTab() && (
+      {tabs[activeTabIndex] && (
         <>
           <DevTools
-            visible={getActiveTab().isDevToolsVisible}
+            visible={tabs[activeTabIndex].isDevToolsVisible}
             onClose={() => updateTabInfo(activeTabIndex, { isDevToolsVisible: false })}
-            networkLogs={getActiveTab().networkLogs}
-            consoleOutput={getActiveTab().consoleOutput}
-            storage={getActiveTab().storage}
-            performanceMetrics={getActiveTab().performanceMetrics}
+            networkLogs={tabs[activeTabIndex].networkLogs}
+            consoleOutput={tabs[activeTabIndex].consoleOutput}
+            storage={tabs[activeTabIndex].storage}
+            performanceMetrics={tabs[activeTabIndex].performanceMetrics}
             isDarkMode={isDarkMode}
             onNetworkLogPress={handleNetworkLogPress}
             onNetworkLogLongPress={handleNetworkLogLongPress}
-            injectJavaScript={(code) => injectJavaScript(activeTabIndex, code)}
-            onOpenScriptManager={() => setIsScriptManagerVisible(true)}
+            injectJavaScript={(code) => injectJavaScript(webViewRefs.current[activeTabIndex], code)}
+            onOpenScriptManager={() => setScriptManagerVisible(true)}
+            updateStorageData={updateStorageData}
           />
           <NetworkLogModal
-            visible={getActiveTab().isNetworkLogModalVisible}
+            visible={tabs[activeTabIndex].isNetworkLogModalVisible}
             onClose={() => updateTabInfo(activeTabIndex, { isNetworkLogModalVisible: false })}
-            log={getActiveTab().selectedNetworkLog}
+            log={tabs[activeTabIndex].selectedNetworkLog}
             isDarkMode={isDarkMode}
             openInCrud={openCrudModal}
           />
           <SourceCodeModal
-            visible={getActiveTab().isSourceCodeModalVisible}
+            visible={tabs[activeTabIndex].isSourceCodeModalVisible}
             onClose={() => updateTabInfo(activeTabIndex, { isSourceCodeModalVisible: false })}
-            sourceCode={getActiveTab().sourceCode}
+            sourceCode={tabs[activeTabIndex].sourceCode}
             isDarkMode={isDarkMode}
           />
           <CrudModal
-            visible={getActiveTab().isCrudModalVisible}
+            visible={tabs[activeTabIndex].isCrudModalVisible}
             onClose={closeCrudModal}
             isDarkMode={isDarkMode}
             webViewRef={webViewRefs.current[activeTabIndex]}
-            initialData={getActiveTab().crudInitialData}
+            initialData={tabs[activeTabIndex].crudInitialData}
           />
         </>
       )}
       <HistoryModal
         visible={isHistoryModalVisible}
-        onClose={() => setIsHistoryModalVisible(false)}
+        onClose={() => setHistoryModalVisible(false)}
         history={history}
         onSelectUrl={(selectedUrl) => {
           updateTabUrl(activeTabIndex, selectedUrl);
-          setIsHistoryModalVisible(false);
+          setHistoryModalVisible(false);
         }}
         clearHistory={clearHistory}
         isDarkMode={isDarkMode}
       />
       <AboutModal
         visible={isAboutModalVisible}
-        onClose={() => setIsAboutModalVisible(false)}
+        onClose={() => setAboutModalVisible(false)}
         isDarkMode={isDarkMode}
       />
-      <ScriptManager
-        visible={isScriptManagerVisible}
-        onClose={() => setIsScriptManagerVisible(false)}
-        injectScript={(code) => injectJavaScript(activeTabIndex, code)}
-        currentUrl={getActiveTab()?.url || ''}
-        isDarkMode={isDarkMode}
-        scripts={scripts}
-        setScripts={setScripts}
-      />
+      <ScriptManager visible={isScriptManagerVisible} onClose={() => setScriptManagerVisible(false)} scripts={scripts} setScripts={setScripts} injectScript={(code) => injectJavaScript(webViewRefs.current[activeTabIndex], code)} currentUrl={tabs[activeTabIndex]?.url || ''} isDarkMode={isDarkMode} />
+      
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default App;
+const styles = StyleSheet.create({ container: { flex: 1, }, 
+ });
+  const App = () =>
+ { 
+ return (
+  <AppProvider>
+   <AppContent />
+    </AppProvider> );
+     };
+      export default App;
