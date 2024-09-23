@@ -352,15 +352,29 @@ const App = () => {
     });
   };
 
+ 
   const runAutoScripts = useCallback((currentUrl) => {
     scripts.forEach(script => {
       if (script.isEnabled && shouldRunOnUrl(script.urls, currentUrl)) {
-        const metadata = parseMetadata(script.code);
-        const wrappedScript = createGreasemonkeyEnvironment(script.code, metadata);
-        injectJavaScript(activeTabIndex, wrappedScript);
+        if (script.runAt === 'document-start' || script.runAt === 'document-idle') {
+          const wrappedScript = createGreasemonkeyEnvironment(script.code, script.metadata);
+          injectJavaScript(activeTabIndex, wrappedScript);
+        }
       }
     });
   }, [scripts, activeTabIndex]);
+  
+  const runManualScript = (script) => {
+    if (script.isEnabled) {
+      const wrappedScript = createGreasemonkeyEnvironment(script.code, script.metadata);
+      injectJavaScript(activeTabIndex, wrappedScript);
+    }
+  };
+  
+  const handleWebViewLoad = (event) => {
+    const currentUrl = event.nativeEvent.url;
+    runAutoScripts(currentUrl);
+  };
 
   const shouldRunOnUrl = (scriptUrls, currentUrl) => {
     if (!scriptUrls) return true;
@@ -489,15 +503,15 @@ const App = () => {
             display: index === activeTabIndex ? 'flex' : 'none' 
           }}>
             <WebViewContainer
-              ref={el => (webViewRefs.current[index] = el)}
-              url={tab.url}
-              onMessage={handleMessage}
-              isDarkMode={isDarkMode}
-              isDesktopMode={isDesktopMode}
-              onNavigationStateChange={(navState) => handleNavigationStateChange(navState, index)}
-              runAutoScripts={runAutoScripts}
-              addNewTab={addNewTab}
-            />
+      ref={el => (webViewRefs.current[index] = el)}
+      url={tab.url}
+      onMessage={handleMessage}
+      isDarkMode={isDarkMode}
+      isDesktopMode={isDesktopMode}
+      onNavigationStateChange={(navState) => handleNavigationStateChange(navState, index)}
+      runAutoScripts={runAutoScripts}
+      onLoad={handleWebViewLoad}
+    />
           </View>
         ))}
       </View>

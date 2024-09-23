@@ -3,7 +3,7 @@ import React, { forwardRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const WebViewContainer = forwardRef(({ url, onMessage, isDarkMode, isDesktopMode, onNavigationStateChange, runAutoScripts }, ref) => { 
+const WebViewContainer = forwardRef(({ url, onMessage, isDarkMode, isDesktopMode, onNavigationStateChange, runAutoScripts, onLoad }, ref) => {
 
   const userAgent = isDesktopMode
     ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -141,10 +141,18 @@ const handleShouldStartLoadWithRequest = (event) => {
 
       observer.observe({entryTypes: ['paint', 'largest-contentful-paint', 'first-input', 'layout-shift']});
 
-      // إضافة منطق لتنفيذ السكريبتات عند تحميل الصفحة
+      
       document.addEventListener('DOMContentLoaded', function() {
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'pageLoaded',
+          url: window.location.href
+        }));
+      });
+
+     
+      window.addEventListener('load', function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'pageFullyLoaded',
           url: window.location.href
         }));
       });
@@ -161,12 +169,26 @@ const handleShouldStartLoadWithRequest = (event) => {
     onMessage(event);
   };
 
-  return ( <WebView ref={ref} source={{ uri: url }} style={styles.webview} injectedJavaScript={injectedJavaScript} onMessage={onMessage} forceDarkOn={isDarkMode} userAgent={userAgent} onNavigationStateChange={onNavigationStateChange} javaScriptEnabled={true} domStorageEnabled={true} startInLoadingState={true} scalesPageToFit={true} mixedContentMode="compatibility" allowsBackForwardNavigationGestures={true} 
-      onShouldStartLoadWithRequest={handleShouldStartLoadWithRequest}
-    
-  
-  /> ); });
-
+  return (
+    <WebView
+      ref={ref}
+      source={{ uri: url }}
+      style={styles.webview}
+      injectedJavaScript={injectedJavaScript}
+      onMessage={handleMessage}
+      onLoad={onLoad}
+      forceDarkOn={isDarkMode}
+      userAgent={isDesktopMode ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' : undefined}
+      onNavigationStateChange={onNavigationStateChange}
+      javaScriptEnabled={true}
+      domStorageEnabled={true}
+      startInLoadingState={true}
+      scalesPageToFit={true}
+      mixedContentMode="compatibility"
+      allowsBackForwardNavigationGestures={true}
+    />
+  );
+});
 const styles = StyleSheet.create({
   webview: {
     flex: 1,
