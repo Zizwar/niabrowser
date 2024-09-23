@@ -18,10 +18,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.zizwar.snack9e78ba0e80da4081ad8fbf45d814073d"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "34f041e6-855a-481c-a530-b068d0e3a889"
+      }
+    },
+    "owner": "zizwar"
   }
 }
