@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Modal, Switch, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  FlatList, 
+  StyleSheet, 
+  Modal, 
+  Switch, 
+  Alert 
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from 'react-native-elements';
 import { createGreasemonkeyEnvironment, parseMetadata } from './GreasemonkeyWrapper';
@@ -11,7 +21,7 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
     code: '',
     urls: '',
     isEnabled: true,
-    At: 'document-idle',
+    runAt: 'document-idle',
   });
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -27,7 +37,7 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
 
   const loadScripts = async () => {
     try {
-      const savedScripts = await AsyncStorage.getItem('customScripts');
+      const savedScripts = await AsyncStorage.getItem('userScripts');
       if (savedScripts) {
         setScripts(JSON.parse(savedScripts));
       }
@@ -38,7 +48,7 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
 
   const saveScripts = async (updatedScripts) => {
     try {
-      await AsyncStorage.setItem('customScripts', JSON.stringify(updatedScripts));
+      await AsyncStorage.setItem('userScripts', JSON.stringify(updatedScripts));
       setScripts(updatedScripts);
     } catch (error) {
       console.error('Error saving scripts:', error);
@@ -85,12 +95,11 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
   };
 
   const runScript = (script) => {
-  if (script.isEnabled && shouldRunOnCurrentUrl(script.urls, currentUrl)) {
-    const metadata = parseMetadata(script.code);
-    const wrappedScript = createGreasemonkeyEnvironment(script.code, metadata);
-    injectScript(wrappedScript);
-  }
-};
+    if (script.isEnabled && shouldRunOnCurrentUrl(script.urls, currentUrl)) {
+      const wrappedScript = createGreasemonkeyEnvironment(script.code, script.metadata);
+      injectScript(wrappedScript);
+    }
+  };
 
   const runAutoScripts = (url) => {
     scripts.forEach(script => {
@@ -115,8 +124,7 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
     });
   };
 
-
-  const renderScriptItem = ({ item }) => (
+  const renderScriptItem = useCallback(({ item }) => (
     <View style={styles.scriptItem}>
       <View style={styles.scriptHeader}>
         <Text style={styles.scriptName}>{item.name}</Text>
@@ -141,49 +149,58 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
         </TouchableOpacity>
       </View>
     </View>
-  );
+  ), []);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Script Manager</Text>
+          <Text style={[styles.title, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Script Manager</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="times" type="font-awesome" size={24} color="#000" />
+            <Icon name="times" type="font-awesome" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
           </TouchableOpacity>
         </View>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
           placeholder="Script Name"
+          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
           value={currentScript.name}
           onChangeText={(text) => setCurrentScript({ ...currentScript, name: text })}
         />
         <TextInput
-          style={[styles.input, styles.codeInput]}
+          style={[styles.input, styles.codeInput, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
           placeholder="Script Code"
+          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
           value={currentScript.code}
           onChangeText={(text) => setCurrentScript({ ...currentScript, code: text })}
           multiline
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
           placeholder="URLs (comma-separated, use * as wildcard or /regex/)"
+          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
           value={currentScript.urls}
           onChangeText={(text) => setCurrentScript({ ...currentScript, urls: text })}
         />
         <View style={styles.optionsContainer}>
-          <Text style={styles.optionLabel}>Run at:</Text>
+          <Text style={[styles.optionLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Run at:</Text>
           <TouchableOpacity
-            style={[styles.optionButton, currentScript.runAt === 'pageLoad' && styles.optionButtonActive]}
-            onPress={() => setCurrentScript({ ...currentScript, runAt: 'pageLoad' })}
+            style={[styles.optionButton, currentScript.runAt === 'document-start' && styles.optionButtonActive]}
+            onPress={() => setCurrentScript({ ...currentScript, runAt: 'document-start' })}
           >
-            <Text style={styles.optionButtonText}>Page Load</Text>
+            <Text style={styles.optionButtonText}>Document Start</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.optionButton, currentScript.runAt === 'manual' && styles.optionButtonActive]}
-            onPress={() => setCurrentScript({ ...currentScript, runAt: 'manual' })}
+            style={[styles.optionButton, currentScript.runAt === 'document-end' && styles.optionButtonActive]}
+            onPress={() => setCurrentScript({ ...currentScript, runAt: 'document-end' })}
           >
-            <Text style={styles.optionButtonText}>Manual</Text>
+            <Text style={styles.optionButtonText}>Document End</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionButton, currentScript.runAt === 'document-idle' && styles.optionButtonActive]}
+            onPress={() => setCurrentScript({ ...currentScript, runAt: 'document-idle' })}
+          >
+            <Text style={styles.optionButtonText}>Document Idle</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity onPress={addOrUpdateScript} style={styles.addButton}>
@@ -204,7 +221,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#F0F0F0',
   },
   header: {
     flexDirection: 'row',
@@ -215,13 +231,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
   closeButton: {
     padding: 5,
   },
   input: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 5,
     padding: 10,
     marginBottom: 10,
@@ -239,7 +253,6 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     marginRight: 10,
-    color: '#333',
   },
   optionButton: {
     backgroundColor: '#DDDDDD',

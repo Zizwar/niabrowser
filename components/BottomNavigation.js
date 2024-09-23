@@ -14,7 +14,8 @@ const BottomNavigation = ({
   onCRUDPress,
   onScriptManagerPress,
   canGoBack,
-  canGoForward
+  canGoForward,
+  onGetSourcePress
 }) => {
   const iconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
@@ -40,6 +41,10 @@ const BottomNavigation = ({
           <Icon name="build" type="material" color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity onPress={onScriptManagerPress} style={styles.button}>
+          <Icon name="extension" type="material" color={iconColor} />
+          
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onGetSourcePress} style={styles.button}>
           <Icon name="code" type="material" color={iconColor} />
         </TouchableOpacity>
       </ScrollView>

@@ -8,7 +8,15 @@ const WebViewContainer = forwardRef(({ url, onMessage, isDarkMode, isDesktopMode
   const userAgent = isDesktopMode
     ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     : undefined;
-
+const handleShouldStartLoadWithRequest = (event) => {
+    if (event.url !== url && event.navigationType === 'click') {
+ 
+      addNewTab(event.url);
+      return false;
+    }
+    return true;
+  };
+  
   const injectedJavaScript = `
     (function() {
       // اعتراض وتسجيل طلبات الشبكة
@@ -153,7 +161,11 @@ const WebViewContainer = forwardRef(({ url, onMessage, isDarkMode, isDesktopMode
     onMessage(event);
   };
 
-  return ( <WebView ref={ref} source={{ uri: url }} style={styles.webview} injectedJavaScript={injectedJavaScript} onMessage={onMessage} forceDarkOn={isDarkMode} userAgent={userAgent} onNavigationStateChange={onNavigationStateChange} javaScriptEnabled={true} domStorageEnabled={true} startInLoadingState={true} scalesPageToFit={true} mixedContentMode="compatibility" allowsBackForwardNavigationGestures={true} /> ); });
+  return ( <WebView ref={ref} source={{ uri: url }} style={styles.webview} injectedJavaScript={injectedJavaScript} onMessage={onMessage} forceDarkOn={isDarkMode} userAgent={userAgent} onNavigationStateChange={onNavigationStateChange} javaScriptEnabled={true} domStorageEnabled={true} startInLoadingState={true} scalesPageToFit={true} mixedContentMode="compatibility" allowsBackForwardNavigationGestures={true} 
+      onShouldStartLoadWithRequest={handleShouldStartLoadWithRequest}
+    
+  
+  /> ); });
 
 const styles = StyleSheet.create({
   webview: {
