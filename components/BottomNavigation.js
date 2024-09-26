@@ -15,7 +15,8 @@ const BottomNavigation = ({
   onScriptManagerPress,
   canGoBack,
   canGoForward,
-  onGetSourcePress
+  onGetSourcePress,
+  onToggleErudaPress
 }) => {
   const iconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
@@ -33,6 +34,10 @@ const BottomNavigation = ({
         </TouchableOpacity>
         <TouchableOpacity onPress={onRefreshPress} style={styles.button}>
           <Icon name="refresh" type="material" color={iconColor} />
+          
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onToggleErudaPress} style={styles.button}>
+          <Icon name="bug-report" type="material" color={iconColor} />
         </TouchableOpacity>
         <TouchableOpacity onPress={onDevToolsPress} style={styles.button}>
           <Icon name="developer-mode" type="material" color={iconColor} />

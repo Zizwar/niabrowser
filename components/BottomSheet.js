@@ -23,7 +23,8 @@ const BottomSheet = ({
 
   const settingsData = [
     { icon: 'brightness-6', title: 'Dark Mode', onPress: toggleDarkMode, value: isDarkMode },
-    { icon: 'desktop-windows', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
+    { icon: 'desktop-windows', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode  },
+    
     { icon: 'history', title: 'History', onPress: openHistory },
     { icon: 'share', title: 'Share', onPress: () => shareUrl(currentUrl) },
     { icon: 'delete', title: 'Clear Data', onPress: clearData },

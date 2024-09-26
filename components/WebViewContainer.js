@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle ,useState} from 'react';
 import { StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -13,9 +13,11 @@ const WebViewContainer = forwardRef(({
   addNewTab
 }, ref) => { 
 
+
   const userAgent = isDesktopMode
     ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     : undefined;
+const [isErudaVisible, setIsErudaVisible] = useState(false);
 
   const webViewRef = React.useRef(null);
 
@@ -24,7 +26,24 @@ const WebViewContainer = forwardRef(({
     goForward: () => webViewRef.current?.goForward(),
     reload: () => webViewRef.current?.reload(),
     injectJavaScript: (script) => webViewRef.current?.injectJavaScript(script),
-    getStorageData: () => webViewRef.current?.injectJavaScript('window.getStorageDataOnDemand()')
+    getStorageData: () => webViewRef.current?.injectJavaScript('window.getStorageDataOnDemand()'),
+    toggleEruda: () => {
+    setIsErudaVisible((prev) => !prev); // هذا هو التصحيح
+    webViewRef.current?.injectJavaScript(`
+      if (window.eruda) {
+        eruda.${isErudaVisible ? 'hide' : 'show'}();
+      } else {
+        var script = document.createElement('script');
+        script.src = "//cdn.jsdelivr.net/npm/eruda";
+        document.body.appendChild(script);
+        script.onload = function () {
+          eruda.init();
+          eruda.${isErudaVisible ? 'hide' : 'show'}();
+        }
+      }
+      true;
+    `);
+  }
   }));
 
   const injectedJavaScript = `
@@ -196,7 +215,7 @@ const WebViewContainer = forwardRef(({
   };
 
   return ( 
-    <WebView 
+   <WebView 
       ref={webViewRef}
       source={{ uri: url }}
       style={styles.webview}

@@ -60,13 +60,6 @@ const AppContent = () => {
   const { scripts, setScripts, saveScript } = useScripts();
   const { isDarkMode, isDesktopMode, toggleDarkMode, toggleDesktopMode } = useSettings();
 
-  const toggleEruda = useCallback(() => { 
-  const activeWebViewRef = webViewRefs.current[activeTabIndex];
-   if (activeWebViewRef && activeWebViewRef.toggleEruda) {
-          activeWebViewRef.toggleEruda();
-           }
-    }, [activeTabIndex, webViewRefs]);
-
   useEffect(() => {
     checkOnboardingStatus();
   }, []);
@@ -122,6 +115,7 @@ const AppContent = () => {
       case 'performanceMetrics':
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
+      // ... other cases as needed
     }
   }, [activeTabIndex, tabs, updateTabInfo]);
 
@@ -135,15 +129,15 @@ const AppContent = () => {
     addToHistory(navState.url);
   }, [updateTabInfo, addToHistory]);
 
-  const updateTabUrl = useCallback((index, newUrl) => {
+  const updateTabUrl = (index, newUrl) => {
     updateTabInfo(index, { url: newUrl });
     const webViewRef = webViewRefs.current[index];
     if (webViewRef && webViewRef.loadUrl) {
       webViewRef.loadUrl(newUrl);
     }
-  }, [updateTabInfo, webViewRefs]);
+  };
 
-  const getSourceHtml = useCallback(() => {
+  const getSourceHtml = () => {
     const webViewRef = webViewRefs.current[activeTabIndex];
     if (webViewRef && webViewRef.injectJavaScript) {
       webViewRef.injectJavaScript(`
@@ -153,20 +147,20 @@ const AppContent = () => {
         }));
       `);
     }
-  }, [activeTabIndex, webViewRefs]);
+  };
 
-  const handleNetworkLogPress = useCallback((log) => {
+  const handleNetworkLogPress = (log) => {
     updateTabInfo(activeTabIndex, { selectedNetworkLog: log, isNetworkLogModalVisible: true });
-  }, [activeTabIndex, updateTabInfo]);
+  };
 
-  const handleNetworkLogLongPress = useCallback((log) => {
+  const handleNetworkLogLongPress = (log) => {
     openCrudModal({
       url: log.url,
       method: log.method,
       requestHeaders: log.requestHeaders,
       requestBody: log.requestBody
     });
-  }, [openCrudModal]);
+  };
 
   const runAutoScripts = useCallback((currentUrl, event) => {
     scripts.forEach(script => {
@@ -180,17 +174,17 @@ const AppContent = () => {
     });
   }, [scripts, activeTabIndex, webViewRefs]);
 
-  const toggleDevTools = useCallback(() => {
+  const toggleDevTools = () => {
     updateTabInfo(activeTabIndex, { isDevToolsVisible: !tabs[activeTabIndex].isDevToolsVisible });
-  }, [activeTabIndex, tabs, updateTabInfo]);
+  };
 
-  const openCrudModal = useCallback((initialData = null) => {
+  const openCrudModal = (initialData = null) => {
     updateTabInfo(activeTabIndex, { isCrudModalVisible: true, crudInitialData: initialData });
-  }, [activeTabIndex, updateTabInfo]);
+  };
 
-  const closeCrudModal = useCallback(() => {
+  const closeCrudModal = () => {
     updateTabInfo(activeTabIndex, { isCrudModalVisible: false, crudInitialData: null });
-  }, [activeTabIndex, updateTabInfo]);
+  };
 
   const updateStorageData = useCallback(() => {
     const activeWebViewRef = webViewRefs.current[activeTabIndex];
@@ -203,7 +197,7 @@ const AppContent = () => {
     return null;
   }
 
-  if (!hasSeenOnboarding) {
+   if (!hasSeenOnboarding) {
     return <OnboardingScreen onComplete={() => {
       setHasSeenOnboarding(true);
       AsyncStorage.setItem('hasSeenOnboarding', 'true');
@@ -272,7 +266,6 @@ const AppContent = () => {
         canGoBack={tabs[activeTabIndex]?.canGoBack || false}
         canGoForward={tabs[activeTabIndex]?.canGoForward || false}
         onGetSourcePress={getSourceHtml}
-        onToggleErudaPress={toggleEruda}
       />
       <BottomSheet
         visible={isBottomSheetVisible}
@@ -341,31 +334,19 @@ const AppContent = () => {
         onClose={() => setAboutModalVisible(false)}
         isDarkMode={isDarkMode}
       />
-      <ScriptManager 
-        visible={isScriptManagerVisible} 
-        onClose={() => setScriptManagerVisible(false)} 
-        scripts={scripts} 
-        setScripts={setScripts} 
-        injectScript={(code) => injectJavaScript(webViewRefs.current[activeTabIndex], code)} 
-        currentUrl={tabs[activeTabIndex]?.url || ''}
-        isDarkMode={isDarkMode}
-      />
+      <ScriptManager visible={isScriptManagerVisible} onClose={() => setScriptManagerVisible(false)} scripts={scripts} setScripts={setScripts} injectScript={(code) => injectJavaScript(webViewRefs.current[activeTabIndex], code)} currentUrl={tabs[activeTabIndex]?.url || ''} isDarkMode={isDarkMode} />
+      
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-const App = () => {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
-};
-
-export default App;
+const styles = StyleSheet.create({ container: { flex: 1, }, 
+ });
+  const App = () =>
+ { 
+ return (
+  <AppProvider>
+   <AppContent />
+    </AppProvider> );
+     };
+      export default App;
