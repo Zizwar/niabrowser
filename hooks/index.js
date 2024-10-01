@@ -179,8 +179,17 @@ export const useScripts = () => {
       console.error('Error saving script:', error);
     }
   };
-
-  return { scripts, setScripts, saveScript };
+const toggleAllScripts = async (enable) => {
+    const updatedScripts = scripts.map(script => ({ ...script, isEnabled: enable }));
+    setScripts(updatedScripts);
+    try {
+      await AsyncStorage.setItem('userScripts', JSON.stringify(updatedScripts));
+    } catch (error) {
+      console.error('Error saving scripts:', error);
+    }
+  };
+  
+  return { scripts, setScripts, saveScript ,toggleAllScripts};
 };
 
 export const useSettings = () => {
@@ -215,4 +224,43 @@ export const useSettings = () => {
   };
 
   return { isDarkMode, isDesktopMode, toggleDarkMode, toggleDesktopMode };
+};
+export const useFavorites = () => {
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const savedFavorites = await AsyncStorage.getItem('favorites');
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites));
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const saveFavorites = async (updatedFavorites) => {
+    try {
+      await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+      setFavorites(updatedFavorites);
+    } catch (error) {
+      console.error('Error saving favorites:', error);
+    }
+  };
+
+  const addToFavorites = (url) => {
+    const updatedFavorites = [...favorites, url];
+    saveFavorites(updatedFavorites);
+  };
+
+  const removeFromFavorites = (url) => {
+    const updatedFavorites = favorites.filter(fav => fav !== url);
+    saveFavorites(updatedFavorites);
+  };
+
+  return { favorites, addToFavorites, removeFromFavorites };
 };

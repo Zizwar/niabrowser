@@ -257,13 +257,17 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
   )}
 
   <View style={styles.switchContainer}>
-    <Text style={{ color: textColor }}>Use WebView:</Text>
+ 
+  {/*
+     <Text style={{ color: textColor }}>Use WebView:</Text>
+   
     <Switch
       value={useWebView}
       onValueChange={setUseWebView}
       trackColor={{ false: "#767577", true: "#81b0ff" }}
       thumbColor={useWebView ? "#f5dd4b" : "#f4f3f4"}
     />
+    */}
   </View>
 
   <Button

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
 import { Icon } from 'react-native-elements';
 
 const ToolBar = ({ 
@@ -13,7 +13,9 @@ const ToolBar = ({
   goForward,
   reload,
   canGoBack,
-  canGoForward
+  canGoForward,
+  onFavoritesPress,
+  favicon
 }) => {
   const [inputUrl, setInputUrl] = useState(url);
   const [isEditing, setIsEditing] = useState(false);
@@ -73,6 +75,9 @@ const ToolBar = ({
         <Icon name="refresh" type="material" color={textColor} />
       </TouchableOpacity>
       <View style={styles.urlContainer}>
+        {favicon && (
+          <Image source={{ uri: favicon }} style={styles.favicon} />
+        )}
         <Animated.View style={[
           styles.urlInfo,
           { opacity: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }
@@ -98,6 +103,9 @@ const ToolBar = ({
           placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
         />
       </View>
+      <TouchableOpacity onPress={onFavoritesPress}>
+        <Icon name="star" type="material" color={textColor} />
+      </TouchableOpacity>
       <TouchableOpacity onPress={onMenuPress}>
         <Icon name="menu" type="material" color={textColor} />
       </TouchableOpacity>
@@ -121,6 +129,11 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     overflow: 'hidden',
+  },
+  favicon: {
+    width: 16,
+    height: 16,
+    marginRight: 5,
   },
   urlInfo: {
     flexDirection: 'row',

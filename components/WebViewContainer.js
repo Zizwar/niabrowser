@@ -48,29 +48,53 @@ const [isErudaVisible, setIsErudaVisible] = useState(false);
 
   const injectedJavaScript = `
     (function() {
+          /*
+          var originalCookie = document.cookie;
+  Object.defineProperty(document, 'cookie', {
+    get: function() {
+      return originalCookie;
+    },
+    set: function(value) {
+      originalCookie = value;
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'cookieUpdate',
+        cookie: value
+      }));
+    }
+  });
+  */
       // اعتراض وتسجيل طلبات الشبكة
       var originalFetch = window.fetch;
-      window.fetch = function(url, options) {
-        var start = new Date().getTime();
-        return originalFetch.apply(this, arguments).then(function(response) {
-          var end = new Date().getTime();
-          var responseClone = response.clone();
-          responseClone.text().then(function(body) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'networkLog',
-              url: url,
-              method: options ? options.method : 'GET',
-              status: response.status,
-              duration: end - start,
-              requestHeaders: options ? options.headers : {},
-              responseHeaders: Object.fromEntries(response.headers.entries()),
-              responseBody: body
-            }));
-          });
-          return response;
-        });
-      };
+      // في WebViewContainer.js، داخل الـ injectedJavaScript
+window.fetch = function(url, options) {
+  var start = new Date().getTime();
+  return originalFetch.apply(this, arguments).then(function(response) {
+    var end = new Date().getTime();
+    var responseClone = response.clone();
+    responseClone.text().then(function(body) {
+      var requestHeaders = options ? options.headers : {};
+      var responseHeaders = Object.fromEntries(response.headers.entries());
+      
+      // التقاط الـ cookies من الـ headers
+      var requestCookies = requestHeaders['cookie'] || requestHeaders['Cookie'] ||requestHeaders['get-cookie'] ||'';
+      var responseCookies = responseHeaders['set-cookie'] || '';
 
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'networkLog',
+        url: url,
+        method: options ? options.method : 'GET',
+        status: response.status,
+        duration: end - start,
+        requestHeaders: requestHeaders,
+        responseHeaders: responseHeaders,
+        responseBody: body,
+        requestCookies: requestCookies,
+        responseCookies: responseCookies
+      }));
+    });
+    return response;
+  });
+};
       // اعتراض وتسجيل مخرجات وحدة التحكم
       var originalConsole = window.console;
       window.console = {

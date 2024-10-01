@@ -89,44 +89,54 @@ const DevTools = ({
     </TouchableOpacity>
   );
 
-  const renderNetworkTab = () => (
-    <>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={[styles.searchInput, { color: textColor, borderColor: textColor }]}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search URLs"
-          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-        />
-        <TouchableOpacity onPress={clearNetworkLogs} style={styles.clearButton}>
-          <Icon name="delete" type="material" color={textColor} />
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={filteredNetworkLogs}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity 
-            style={[styles.networkLogItem, { backgroundColor: index % 2 === 0 ? cardColor : backgroundColor }]}
-            onPress={() => onNetworkLogPress(item)}
-            onLongPress={() => onNetworkLogLongPress(item)}
-            delayLongPress={500}
-          >
-            <View style={styles.networkLogHeader}>
-              <Text style={[styles.networkLogMethod, { color: getMethodColor(item.method) }]}>{item.method}</Text>
-              <Text style={[styles.networkLogUrl, { color: textColor }]} numberOfLines={1}>{item.url}</Text>
-            </View>
-            <View style={styles.networkLogDetails}>
-              <Text style={[styles.networkLogStatus, { color: getStatusColor(item.status) }]}>Status: {item.status}</Text>
-              <Text style={[styles.networkLogDuration, { color: textColor }]}>Duration: {item.duration}ms</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+const renderNetworkTab = () => (
+  <>
+    <View style={styles.searchContainer}>
+      <TextInput
+        style={[styles.searchInput, { color: textColor, borderColor: textColor }]}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search URLs"
+        placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
       />
-    </>
-  );
-
+      <TouchableOpacity onPress={clearNetworkLogs} style={styles.clearButton}>
+        <Icon name="delete" type="material" color={textColor} />
+      </TouchableOpacity>
+    </View>
+    <FlatList
+      data={filteredNetworkLogs}
+      keyExtractor={(item, index) => index.toString()}
+      renderItem={({ item, index }) => (
+        <TouchableOpacity 
+          style={[styles.networkLogItem, { backgroundColor: index % 2 === 0 ? cardColor : backgroundColor }]}
+          onPress={() => onNetworkLogPress(item)}
+          onLongPress={() => onNetworkLogLongPress(item)}
+          delayLongPress={500}
+        >
+          <View style={styles.networkLogHeader}>
+            <Text style={[styles.networkLogMethod, { color: getMethodColor(item.method) }]}>{item.method}</Text>
+            <Text style={[styles.networkLogUrl, { color: textColor }]} numberOfLines={1}>{item.url}</Text>
+          </View>
+          <View style={styles.networkLogDetails}>
+            <Text style={[styles.networkLogStatus, { color: getStatusColor(item.status) }]}>Status: {item.status}</Text>
+            <Text style={[styles.networkLogDuration, { color: textColor }]}>Duration: {item.duration}ms</Text>
+          </View>
+          {/* Add cookie information */}
+          {(item.requestCookies || item.responseCookies) && (
+            <View style={styles.cookieInfo}>
+              {item.requestCookies && (
+                <Text style={[styles.cookieText, { color: textColor }]}>Request Cookies: {item.requestCookies}</Text>
+              )}
+              {item.responseCookies && (
+                <Text style={[styles.cookieText, { color: textColor }]}>Response Cookies: {item.responseCookies}</Text>
+              )}
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
+    />
+  </>
+);
   const renderConsoleTab = () => (
     <FlatList
       data={consoleOutput}
@@ -477,6 +487,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  cookieInfo: {
+  marginTop: 5,
+},
+cookieText: {
+  fontSize: 12,
+  fontStyle: 'italic',
+},
 });
 
 const getMethodColor = (method) => {

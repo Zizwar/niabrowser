@@ -1,6 +1,5 @@
-// components/BottomSheet.js
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch } from 'react-native';
 import { Icon } from 'react-native-elements';
 
 const BottomSheet = ({ 
@@ -14,7 +13,9 @@ const BottomSheet = ({
   clearData,
   openHistory,
   openAboutModal,
-  currentUrl
+  currentUrl,
+  isSafeMode,
+  toggleSafeMode
 }) => {
   if (!visible) return null;
 
@@ -23,8 +24,8 @@ const BottomSheet = ({
 
   const settingsData = [
     { icon: 'brightness-6', title: 'Dark Mode', onPress: toggleDarkMode, value: isDarkMode },
-    { icon: 'desktop-windows', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode  },
-    
+    { icon: 'desktop-windows', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
+    { icon: 'security', title: 'Safe Mode', onPress: toggleSafeMode, value: isSafeMode },
     { icon: 'history', title: 'History', onPress: openHistory },
     { icon: 'share', title: 'Share', onPress: () => shareUrl(currentUrl) },
     { icon: 'delete', title: 'Clear Data', onPress: clearData },
@@ -36,7 +37,12 @@ const BottomSheet = ({
       <Icon name={item.icon} type="material" color="#007AFF" size={24} />
       <Text style={[styles.settingText, { color: textColor }]}>{item.title}</Text>
       {item.value !== undefined && (
-        <Text style={[styles.settingValue, { color: textColor }]}>{item.value ? 'On' : 'Off'}</Text>
+        <Switch
+          value={item.value}
+          onValueChange={item.onPress}
+          trackColor={{ false: "#767577", true: "#81b0ff" }}
+          thumbColor={item.value ? "#f5dd4b" : "#f4f3f4"}
+        />
       )}
     </TouchableOpacity>
   ), [textColor]);
@@ -54,6 +60,7 @@ const BottomSheet = ({
     </View>
   );
 };
+
 
 
 const styles = StyleSheet.create({

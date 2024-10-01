@@ -16,28 +16,12 @@ import OnboardingScreen from './components/OnboardingScreen';
 import AboutModal from './components/AboutModal';
 import ScriptManager from './components/ScriptManager';
 
-import { AppProvider, useAppContext } from './state/context';
-import { useWebViewRefs, useHistory, useTabs, useScripts, useSettings } from './hooks';
-import { shareUrl, clearData, shouldRunOnUrl, injectJavaScript, createGreasemonkeyEnvironment } from './utils';
+import HistoryFavoritesModal from './components/HistoryFavoritesModal';
 
-const createNewTab = (url = 'about:blank', title = 'New Tab') => ({
-  id: Date.now(),
-  url,
-  title,
-  networkLogs: [],
-  consoleOutput: [],
-  storage: { cookies: '', localStorage: '' },
-  performanceMetrics: null,
-  isDevToolsVisible: false,
-  isCrudModalVisible: false,
-  crudInitialData: null,
-  isSourceCodeModalVisible: false,
-  sourceCode: '',
-  selectedNetworkLog: null,
-  isNetworkLogModalVisible: false,
-  canGoBack: false,
-  canGoForward: false,
-});
+import { useWebViewRefs, useHistory, useTabs, useScripts, useSettings, useFavorites } from './hooks';
+import { AppProvider, useAppContext } from './state/context';
+
+import { shareUrl, clearData, shouldRunOnUrl, injectJavaScript, createGreasemonkeyEnvironment } from './utils';
 
 const AppContent = () => {
   const { 
@@ -53,17 +37,20 @@ const AppContent = () => {
 
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  
   const [isSafeMode, setIsSafeMode] = useState(false);
 
-  const toggleSafeMode = (value) => {
-    setIsSafeMode(value);
-}
   const webViewRefs = useWebViewRefs();
   const { history, addToHistory, clearHistory } = useHistory();
   const { tabs, setTabs, activeTabIndex, setActiveTabIndex, isTabsLoading, addNewTab, closeTab, updateTabInfo } = useTabs(webViewRefs);
-  const { scripts, setScripts, saveScript } = useScripts();
+  const { scripts, setScripts, saveScript, toggleAllScripts } = useScripts();
   const { isDarkMode, isDesktopMode, toggleDarkMode, toggleDesktopMode } = useSettings();
+
+const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
+
+  const toggleSafeMode = useCallback((value) => {
+    setIsSafeMode(value);
+    toggleAllScripts(!value);  // Disable all scripts when safe mode is on, enable when it's off
+  }, [toggleAllScripts]);
 
   const toggleEruda = useCallback(() => { 
   const activeWebViewRef = webViewRefs.current[activeTabIndex];
@@ -127,6 +114,13 @@ const AppContent = () => {
       case 'performanceMetrics':
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
+        /*
+        case 'cookieUpdate':
+  updateTabInfo(activeTabIndex, { 
+    cookies: data.cookie 
+  });
+  break;
+  */
     }
   }, [activeTabIndex, tabs, updateTabInfo]);
 
@@ -142,6 +136,7 @@ const AppContent = () => {
 
   const updateTabUrl = useCallback((index, newUrl) => {
     updateTabInfo(index, { url: newUrl });
+    
     const webViewRef = webViewRefs.current[index];
     if (webViewRef && webViewRef.loadUrl) {
       webViewRef.loadUrl(newUrl);
@@ -215,7 +210,7 @@ const AppContent = () => {
     }} />;
   }
 
-  return (
+   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
       <CustomStatusBar isDarkMode={isDarkMode} />
       <TabBar
@@ -233,6 +228,16 @@ const AppContent = () => {
         isDarkMode={isDarkMode}
         textColor={isDarkMode ? '#FFFFFF' : '#000000'}
         addToHistory={addToHistory}
+        onFavoritesPress={() => setHistoryModalVisible(true)}
+  isFavorite={favorites.includes(tabs[activeTabIndex]?.url)}
+  onToggleFavorite={() => {
+    const currentUrl = tabs[activeTabIndex]?.url;
+    if (favorites.includes(currentUrl)) {
+      removeFromFavorites(currentUrl);
+    } else {
+      addToFavorites(currentUrl);
+    }
+  }}
         onMenuPress={() => setBottomSheetVisible(true)}
         goBack={() => webViewRefs.current[activeTabIndex]?.goBack()}
         goForward={() => webViewRefs.current[activeTabIndex]?.goForward()}
@@ -260,30 +265,33 @@ const AppContent = () => {
               onLoadStart={(event) => runAutoScripts(event.nativeEvent.url, 'start')}
               onLoad={(event) => runAutoScripts(event.nativeEvent.url, 'load')}
               addNewTab={addNewTab}
+              isSafeMode={isSafeMode}
             />
           </View>
         ))}
       </View>
-      <BottomNavigation
-        isDarkMode={isDarkMode}
-        onHomePress={() => updateTabUrl(activeTabIndex, 'https://www.google.com')}
-        onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
-        onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
-        onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
-        onSettingsPress={() => setBottomSheetVisible(true)}
-        onDevToolsPress={toggleDevTools}
-        onCRUDPress={() => openCrudModal()}
-        onScriptManagerPress={() => setScriptManagerVisible(true)}
-        canGoBack={tabs[activeTabIndex]?.canGoBack || false}
-        canGoForward={tabs[activeTabIndex]?.canGoForward || false}
-        onGetSourcePress={getSourceHtml}
-        onToggleErudaPress={toggleEruda}
-      />
+      {!isSafeMode && (
+        <BottomNavigation
+          isDarkMode={isDarkMode}
+          onHomePress={() => updateTabUrl(activeTabIndex, 'https://www.google.com')}
+          onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
+          onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
+          onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
+          onSettingsPress={() => setBottomSheetVisible(true)}
+          onDevToolsPress={toggleDevTools}
+          onCRUDPress={() => openCrudModal()}
+          onScriptManagerPress={() => setScriptManagerVisible(true)}
+          canGoBack={tabs[activeTabIndex]?.canGoBack || false}
+          canGoForward={tabs[activeTabIndex]?.canGoForward || false}
+          onGetSourcePress={getSourceHtml}
+          onToggleErudaPress={toggleEruda}
+        />
+      )}
       <BottomSheet
         visible={isBottomSheetVisible}
         onClose={() => setBottomSheetVisible(false)}
         isDarkMode={isDarkMode}
-        toggleDarkMode={toggleDarkMode}
+       openFavorites={() => setHistoryModalVisible(true)} toggleDarkMode={toggleDarkMode}
         toggleDesktopMode={toggleDesktopMode}
         isDesktopMode={isDesktopMode}
         shareUrl={() => shareUrl(tabs[activeTabIndex]?.url)}
@@ -291,6 +299,8 @@ const AppContent = () => {
         openHistory={() => setHistoryModalVisible(true)}
         openAboutModal={() => setAboutModalVisible(true)}
         currentUrl={tabs[activeTabIndex]?.url || ''}
+        isSafeMode={isSafeMode}
+        toggleSafeMode={toggleSafeMode}
       />
       {tabs[activeTabIndex] && (
         <>
@@ -331,17 +341,20 @@ const AppContent = () => {
           />
         </>
       )}
-      <HistoryModal
-        visible={isHistoryModalVisible}
-        onClose={() => setHistoryModalVisible(false)}
-        history={history}
-        onSelectUrl={(selectedUrl) => {
-          updateTabUrl(activeTabIndex, selectedUrl);
-          setHistoryModalVisible(false);
-        }}
-        clearHistory={clearHistory}
-        isDarkMode={isDarkMode}
-      />
+    <HistoryFavoritesModal
+  visible={isHistoryModalVisible}
+  onClose={() => setHistoryModalVisible(false)}
+  history={history}
+  favorites={favorites}
+  onSelectUrl={(selectedUrl) => {
+    updateTabUrl(activeTabIndex, selectedUrl);
+    setHistoryModalVisible(false);
+  }}
+  clearHistory={clearHistory}
+  addToFavorites={addToFavorites}
+  removeFromFavorites={removeFromFavorites}
+  isDarkMode={isDarkMode}
+/>
       <AboutModal
         visible={isAboutModalVisible}
         onClose={() => setAboutModalVisible(false)}
