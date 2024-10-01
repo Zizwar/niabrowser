@@ -8,14 +8,17 @@ import {
   StyleSheet, 
   Modal, 
   Switch, 
-  Alert 
+  Alert,
+  ScrollView,
+  Dimensions
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Icon, Button } from 'react-native-elements';
+import { Icon, Button, Overlay, Tooltip } from 'react-native-elements';
 import { createGreasemonkeyEnvironment, parseMetadata } from '../utils/GreasemonkeyCompatibility';
 
-const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode }) => {
-  const [scripts, setScripts] = useState([]);
+const { width } = Dimensions.get('window');
+
+const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, currentUrl, isDarkMode }) => {
   const [currentScript, setCurrentScript] = useState({
     name: '',
     code: '',
@@ -24,6 +27,9 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
     runAt: 'document-idle',
   });
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showEditOverlay, setShowEditOverlay] = useState(false);
+  const [isAdvancedUrlInput, setIsAdvancedUrlInput] = useState(false);
+  const [simpleUrl, setSimpleUrl] = useState('');
 
   useEffect(() => {
     loadScripts();
@@ -65,12 +71,14 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
       saveScripts(updatedScripts);
       setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
       setIsEditMode(false);
+      setShowEditOverlay(false);
     }
   };
 
   const editScript = (script) => {
     setCurrentScript(script);
     setIsEditMode(true);
+    setShowEditOverlay(true);
   };
 
   const deleteScript = (scriptName) => {
@@ -128,7 +136,12 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
     <View style={[styles.scriptItem, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
       <View style={styles.scriptHeader}>
         <Text style={[styles.scriptName, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{item.name}</Text>
-        <Switch value={item.isEnabled} onValueChange={() => toggleScript(item.name)} trackColor={{ false: "#767577", true: "#81b0ff" }} thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"} />
+        <Switch 
+          value={item.isEnabled} 
+          onValueChange={() => toggleScript(item.name)} 
+          trackColor={{ false: "#767577", true: "#81b0ff" }} 
+          thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"} 
+        />
       </View>
       <Text style={[styles.scriptUrls, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>URLs: {item.urls || 'All'}</Text>
       <Text style={[styles.scriptRunAt, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>Run at: {item.runAt}</Text>
@@ -144,17 +157,101 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
         </TouchableOpacity>
       </View>
     </View>
-  ), [isDarkMode,toggleScript]);
+  ), [isDarkMode, toggleScript, runScript, editScript, deleteScript]);
 
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Script Manager</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="times" type="font-awesome" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
-          </TouchableOpacity>
+  const handleSimpleUrlInput = () => {
+    if (!simpleUrl) return;
+
+    let processedUrl = simpleUrl;
+    if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+      processedUrl = 'https://' + processedUrl;
+    }
+
+    const urlObject = new URL(processedUrl);
+    
+    Alert.alert(
+      "URL Options",
+      "Choose URL matching option:",
+      [
+        {
+          text: "Exact URL",
+          onPress: () => setCurrentScript({...currentScript, urls: processedUrl})
+        },
+        {
+          text: "All pages on this domain",
+          onPress: () => setCurrentScript({...currentScript, urls: `${urlObject.protocol}//${urlObject.hostname}/*`})
+        },
+        {
+          text: "All subdomains",
+          onPress: () => setCurrentScript({...currentScript, urls: `${urlObject.protocol}//*.${urlObject.hostname.replace(/^www\./, '')}/*`})
+        },
+        {
+          text: "All protocols (http & https)",
+          onPress: () => setCurrentScript({...currentScript, urls: `*://${urlObject.hostname}/*`})
+        },
+        {
+          text: "Advanced input",
+          onPress: () => setIsAdvancedUrlInput(true)
+        }
+      ]
+    );
+  };
+
+  const renderUrlInput = () => (
+    <View style={styles.urlInputContainer}>
+      {isAdvancedUrlInput ? (
+        <View style={styles.advancedUrlContainer}>
+          <TextInput
+            style={[styles.input, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
+            placeholder="URLs (comma-separated, use * as wildcard or /regex/)"
+            placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+            value={currentScript.urls}
+            onChangeText={(text) => setCurrentScript({ ...currentScript, urls: text })}
+          />
+          <Tooltip
+            popover={<Text style={{color: '#FFF'}}>
+              Examples:{'\n'}
+              https://example.com/*{'\n'}
+              *://*.example.com/*{'\n'}
+              /^https?://([a-z]+\.)?example\.com/.*$/
+            </Text>}
+            width={250}
+            height={120}
+          >
+            <Icon name="info" type="feather" color={isDarkMode ? '#FFFFFF' : '#000000'} size={20} />
+          </Tooltip>
         </View>
+      ) : (
+        <View style={styles.simpleUrlContainer}>
+          <TextInput
+            style={[styles.input, { flex: 1, color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
+            placeholder="Enter website URL"
+            placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+            value={simpleUrl}
+            onChangeText={setSimpleUrl}
+          />
+          <Button
+            title="Set URL"
+            onPress={handleSimpleUrlInput}
+            buttonStyle={[styles.setUrlButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
+          />
+        </View>
+      )}
+      <TouchableOpacity onPress={() => setIsAdvancedUrlInput(!isAdvancedUrlInput)} style={styles.toggleUrlInputButton}>
+        <Text style={[styles.toggleUrlInputText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
+          Switch to {isAdvancedUrlInput ? 'Simple' : 'Advanced'} Input
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderEditOverlay = () => (
+    <Overlay
+      isVisible={showEditOverlay}
+      onBackdropPress={() => setShowEditOverlay(false)}
+      overlayStyle={[styles.overlay, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}
+    >
+      <ScrollView>
         <TextInput
           style={[styles.input, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
           placeholder="Script Name"
@@ -170,47 +267,70 @@ const ScriptManager = ({ visible, onClose, injectScript, currentUrl, isDarkMode 
           onChangeText={(text) => setCurrentScript({ ...currentScript, code: text })}
           multiline
         />
-        <TextInput
-          style={[styles.input, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
-          placeholder="URLs (comma-separated, use * as wildcard or /regex/)"
-          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-          value={currentScript.urls}
-          onChangeText={(text) => setCurrentScript({ ...currentScript, urls: text })}
+        {renderUrlInput()}
+        <View style={styles.runAtContainer}>
+          <Text style={[styles.runAtLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Run at:</Text>
+          {['document-start', 'document-end', 'document-idle'].map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[
+                styles.runAtOption,
+                currentScript.runAt === option && styles.runAtOptionActive,
+                { borderColor: isDarkMode ? '#FFFFFF' : '#000000' }
+              ]}
+              onPress={() => setCurrentScript({ ...currentScript, runAt: option })}
+            >
+              <Text style={[
+                styles.runAtOptionText,
+                { color: isDarkMode ? '#FFFFFF' : '#000000' },
+                currentScript.runAt === option && styles.runAtOptionTextActive
+              ]}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Button
+          title={isEditMode ? "Update Script" : "Add Script"}
+          onPress={addOrUpdateScript}
+          buttonStyle={[styles.addButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
         />
-        <View style={styles.optionsContainer}>
-          <Text style={[styles.optionLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Run at:</Text>
-          <TouchableOpacity
-            style={[styles.optionButton, currentScript.runAt === 'document-start' && styles.optionButtonActive]}
-            onPress={() => setCurrentScript({ ...currentScript, runAt: 'document-start' })}
-          >
-            <Text style={styles.optionButtonText}>Document Start</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, currentScript.runAt === 'document-end' && styles.optionButtonActive]}
-            onPress={() => setCurrentScript({ ...currentScript, runAt: 'document-end' })}
-          >
-            <Text style={styles.optionButtonText}>Document End</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.optionButton, currentScript.runAt === 'document-idle' && styles.optionButtonActive]}
-            onPress={() => setCurrentScript({ ...currentScript, runAt: 'document-idle' })}
-          >
-            <Text style={styles.optionButtonText}>Document Idle</Text>
+      </ScrollView>
+    </Overlay>
+  );
+
+
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Script Manager</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Icon name="times" type="font-awesome" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={addOrUpdateScript} style={styles.addButton}>
-          <Text style={styles.addButtonText}>{isEditMode ? 'Update Script' : 'Add Script'}</Text>
-        </TouchableOpacity>
+        <Button
+          title="Add New Script"
+          onPress={() => {
+            setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
+            setIsEditMode(false);
+            setShowEditOverlay(true);
+          }}
+          buttonStyle={[styles.addButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
+        />
         <FlatList
           data={scripts}
           renderItem={renderScriptItem}
           keyExtractor={(item) => item.name}
           style={styles.list}
         />
+        {renderEditOverlay()}
       </View>
     </Modal>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -230,54 +350,15 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 5,
   },
-  input: {
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-  },
-  codeInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  optionLabel: {
-    marginRight: 10,
-  },
-  optionButton: {
-    backgroundColor: '#DDDDDD',
-    padding: 8,
-    borderRadius: 5,
-    marginRight: 10,
-  },
-  optionButtonActive: {
-    backgroundColor: '#81b0ff',
-  },
-  optionButtonText: {
-    color: '#333',
-  },
   addButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
     marginBottom: 20,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
   },
   list: {
     flex: 1,
   },
   scriptItem: {
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 10,
     marginBottom: 10,
     elevation: 2,
   },
@@ -305,6 +386,70 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginLeft: 15,
+  },
+  overlay: {
+    width: width * 0.9,
+    maxHeight: '80%',
+    borderRadius: 10,
+    padding: 20,
+  },
+  input: {
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+  },
+  codeInput: {
+    height: 150,
+    textAlignVertical: 'top',
+  },
+  runAtContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    flexWrap: 'wrap',
+  },
+  runAtLabel: {
+    marginRight: 10,
+    fontSize: 16,
+  },
+  runAtOption: {
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 5,
+    marginRight: 5,
+    marginBottom: 5,
+  },
+  runAtOptionActive: {
+    backgroundColor: '#81b0ff',
+  },
+  runAtOptionText: {
+    fontSize: 14,
+  },
+  runAtOptionTextActive: {
+    color: '#FFFFFF',
+  },
+  urlInputContainer: {
+    marginBottom: 10,
+  },
+  advancedUrlContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  simpleUrlContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  setUrlButton: {
+    marginLeft: 10,
+  },
+  toggleUrlInputButton: {
+    marginTop: 5,
+    alignSelf: 'flex-end',
+  },
+  toggleUrlInputText: {
+    textDecorationLine: 'underline',
   },
 });
 

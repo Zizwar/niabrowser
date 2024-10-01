@@ -53,7 +53,12 @@ const AppContent = () => {
 
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  
+  const [isSafeMode, setIsSafeMode] = useState(false);
 
+  const toggleSafeMode = (value) => {
+    setIsSafeMode(value);
+}
   const webViewRefs = useWebViewRefs();
   const { history, addToHistory, clearHistory } = useHistory();
   const { tabs, setTabs, activeTabIndex, setActiveTabIndex, isTabsLoading, addNewTab, closeTab, updateTabInfo } = useTabs(webViewRefs);
@@ -290,7 +295,8 @@ const AppContent = () => {
       {tabs[activeTabIndex] && (
         <>
           <DevTools
-            visible={tabs[activeTabIndex].isDevToolsVisible}
+           isSafeMode={isSafeMode}
+      toggleSafeMode={toggleSafeMode} visible={tabs[activeTabIndex].isDevToolsVisible}
             onClose={() => updateTabInfo(activeTabIndex, { isDevToolsVisible: false })}
             networkLogs={tabs[activeTabIndex].networkLogs}
             consoleOutput={tabs[activeTabIndex].consoleOutput}
