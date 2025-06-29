@@ -28,23 +28,31 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "WRITE_EXTERNAL_STORAGE",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "34f041e6-855a-481c-a530-b068d0e3a889"
-      }
     },
     "owner": "zizwar",
     "plugins": [
       "expo-web-browser",
       "expo-media-library"
     ],
-    "keywords": ["developer", "browser", "devtools", "javascript", "webview"],
-    "githubUrl": "https://github.com/zizwar/webzview"
+    "keywords": [
+      "developer",
+      "browser",
+      "devtools",
+      "javascript",
+      "webview"
+    ],
+    "githubUrl": "https://github.com/zizwar/webzview",
+    "extra": {
+      "eas": {
+        "projectId": "555e1621-5260-4544-b3aa-5097690cbaee"
+      }
+    }
   }
 }

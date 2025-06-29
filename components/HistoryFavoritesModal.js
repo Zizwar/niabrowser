@@ -5,48 +5,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { Share } from 'react-native';
 
-const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHistory, isDarkMode }) => {
+const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHistory, isDarkMode, favorites, addToFavorites, removeFromFavorites }) => {
   const [activeTab, setActiveTab] = useState('history');
-  const [favorites, setFavorites] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
 
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  const loadFavorites = async () => {
-    try {
-      const savedFavorites = await AsyncStorage.getItem('favorites');
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    }
-  };
-
-  const saveFavorites = async (updatedFavorites) => {
-    try {
-      await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-    } catch (error) {
-      console.error('Error saving favorites:', error);
-    }
-  };
-
-  const addToFavorites = (url) => {
-    const updatedFavorites = [...favorites, url];
-    setFavorites(updatedFavorites);
-    saveFavorites(updatedFavorites);
-  };
-
-  const removeFromFavorites = (url) => {
-    const updatedFavorites = favorites.filter(fav => fav !== url);
-    setFavorites(updatedFavorites);
-    saveFavorites(updatedFavorites);
-  };
 
   const handleLongPress = (item) => {
     Alert.alert(
@@ -62,9 +27,24 @@ const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHi
     );
   };
 
-  const removeFromHistory = (url) => {
-    // Implement remove from history functionality
-    Alert.alert("Removed from history", url);
+  const removeFromHistory = async (url) => {
+    try {
+      const savedHistory = await AsyncStorage.getItem('browserHistory');
+      if (savedHistory) {
+        const historyArray = JSON.parse(savedHistory);
+        const updatedHistory = historyArray.filter(item => {
+          const itemUrl = typeof item === 'string' ? item : item.url;
+          return itemUrl !== url;
+        });
+        await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));
+        // Force re-render by calling onClose and onSelect to refresh the parent
+        Alert.alert("Removed from history", "Item has been removed from history");
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error removing from history:', error);
+      Alert.alert("Error", "Failed to remove item from history");
+    }
   };
 
   const copyToClipboard = async (url) => {
@@ -81,26 +61,50 @@ const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHi
   };
 
   const filteredData = activeTab === 'history' 
-    ? history.filter(item => item.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? history.filter(item => {
+        const url = typeof item === 'string' ? item : item.url;
+        const title = typeof item === 'string' ? item : item.title;
+        return url.toLowerCase().includes(searchQuery.toLowerCase()) || 
+               title.toLowerCase().includes(searchQuery.toLowerCase());
+      })
     : favorites.filter(item => item.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const renderItem = ({ item, index }) => (
-    <TouchableOpacity 
-      style={[
-        styles.item, 
-        { backgroundColor: index % 2 === 0 ? backgroundColor : isDarkMode ? '#2C2C2C' : '#F0F0F0' }
-      ]} 
-      onPress={() => onSelectUrl(item)}
-      onLongPress={() => handleLongPress(item)}
-    >
-      <Text style={[styles.itemText, { color: textColor }]}>{item}</Text>
-      {activeTab === 'favorites' && (
-        <TouchableOpacity onPress={() => removeFromFavorites(item)}>
-          <Icon name="star" type="material" color="#FFD700" />
+  const renderItem = ({ item, index }) => {
+    const url = typeof item === 'string' ? item : item.url;
+    const title = typeof item === 'string' ? item : item.title;
+    const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
+    
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.item, 
+          { backgroundColor: index % 2 === 0 ? backgroundColor : isDarkMode ? '#2C2C2C' : '#F0F0F0' }
+        ]} 
+        onPress={() => onSelectUrl(url)}
+        onLongPress={() => handleLongPress(url)}
+      >
+        <View style={styles.itemContent}>
+          {activeTab === 'history' && title !== url ? (
+            <>
+              <Text style={[styles.itemTitle, { color: textColor }]} numberOfLines={1}>{title}</Text>
+              <Text style={[styles.itemUrl, { color: isDarkMode ? '#AAAAAA' : '#666666' }]} numberOfLines={1}>{displayUrl}</Text>
+            </>
+          ) : (
+            <Text style={[styles.itemText, { color: textColor }]} numberOfLines={2}>{displayUrl}</Text>
+          )}
+        </View>
+        <TouchableOpacity onPress={() => {
+          if (activeTab === 'favorites') {
+            removeFromFavorites(url);
+          } else {
+            removeFromHistory(url);
+          }
+        }}>
+          <Icon name="delete" type="material" color="#FF5252" />
         </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <Modal
@@ -146,6 +150,23 @@ const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHi
           <TouchableOpacity style={styles.clearButton} onPress={clearHistory}>
             <Icon name="delete" type="material" color={textColor} />
             <Text style={[styles.clearButtonText, { color: textColor }]}>Clear History</Text>
+          </TouchableOpacity>
+        )}
+        {activeTab === 'favorites' && (
+          <TouchableOpacity style={styles.clearButton} onPress={() => {
+            Alert.alert(
+              "Clear All Favorites",
+              "Are you sure you want to clear all favorites?",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Clear", onPress: () => {
+                  favorites.forEach(fav => removeFromFavorites(fav));
+                }}
+              ]
+            );
+          }}>
+            <Icon name="delete" type="material" color={textColor} />
+            <Text style={[styles.clearButtonText, { color: textColor }]}>Clear All Favorites</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -200,8 +221,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#CCCCCC',
   },
+  itemContent: {
+    flex: 1,
+    marginRight: 10,
+  },
   itemText: {
     fontSize: 16,
+  },
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  itemUrl: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   clearButton: {
     flexDirection: 'row',

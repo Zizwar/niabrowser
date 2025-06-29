@@ -26,8 +26,9 @@ export const useHistory = () => {
     }
   };
 
-  const addToHistory = async (newUrl) => {
-    const updatedHistory = [newUrl, ...history.filter(item => item !== newUrl)].slice(0, 100);
+  const addToHistory = async (newUrl, title = null) => {
+    const historyItem = { url: newUrl, title: title || newUrl, timestamp: Date.now() };
+    const updatedHistory = [historyItem, ...history.filter(item => (typeof item === 'string' ? item : item.url) !== newUrl)].slice(0, 100);
     setHistory(updatedHistory);
     try {
       await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));

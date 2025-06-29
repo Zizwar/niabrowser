@@ -222,6 +222,29 @@ console.log("###: coookis header", requestCookies)
         }));
       });
 
+      // Intercept target="_blank" links to open in new tabs within the app
+      document.addEventListener('click', function(event) {
+        var target = event.target;
+        
+        // Find the nearest anchor tag
+        while (target && target.tagName !== 'A') {
+          target = target.parentElement;
+        }
+        
+        if (target && target.tagName === 'A') {
+          var href = target.href;
+          var targetAttr = target.getAttribute('target');
+          
+          if (targetAttr === '_blank' && href) {
+            event.preventDefault();
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'openInNewTab',
+              url: href
+            }));
+          }
+        }
+      }, true);
+
       true;
     })();
   `;

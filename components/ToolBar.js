@@ -15,7 +15,9 @@ const ToolBar = ({
   canGoBack,
   canGoForward,
   onFavoritesPress,
-  favicon
+  favicon,
+  isFavorite,
+  onToggleFavorite
 }) => {
   const [inputUrl, setInputUrl] = useState(url);
   const [isEditing, setIsEditing] = useState(false);
@@ -103,8 +105,11 @@ const ToolBar = ({
           placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
         />
       </View>
+      <TouchableOpacity onPress={onToggleFavorite}>
+        <Icon name={isFavorite ? "star" : "star-border"} type="material" color={isFavorite ? "#FFD700" : textColor} />
+      </TouchableOpacity>
       <TouchableOpacity onPress={onFavoritesPress}>
-        <Icon name="star" type="material" color={textColor} />
+        <Icon name="history" type="material" color={textColor} />
       </TouchableOpacity>
       <TouchableOpacity onPress={onMenuPress}>
         <Icon name="menu" type="material" color={textColor} />

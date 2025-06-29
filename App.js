@@ -116,6 +116,13 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       case 'performanceMetrics':
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
+      case 'openInNewTab':
+        addNewTab();
+        // Add a small delay to ensure the new tab is created before navigating
+        setTimeout(() => {
+          updateTabUrl(tabs.length, data.url);
+        }, 100);
+        break;
         /*
         case 'cookieUpdate':
   updateTabInfo(activeTabIndex, { 
@@ -127,13 +134,15 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
   }, [activeTabIndex, tabs, updateTabInfo]);
 
   const handleNavigationStateChange = useCallback((navState, tabIndex) => {
+    const title = navState.title || navState.url;
+    const truncatedTitle = title.length > 23 ? title.substring(0, 20) + '...' : title;
     updateTabInfo(tabIndex, {
       url: navState.url,
-      title: navState.title || navState.url,
+      title: truncatedTitle,
       canGoBack: navState.canGoBack,
       canGoForward: navState.canGoForward
     });
-    addToHistory(navState.url);
+    addToHistory(navState.url, title);
   }, [updateTabInfo, addToHistory]);
 
   const updateTabUrl = useCallback((index, newUrl) => {
@@ -144,6 +153,26 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       webViewRef.loadUrl(newUrl);
     }
   }, [updateTabInfo, webViewRefs]);
+
+  const goHome = useCallback(async () => {
+    try {
+      // Try to get the last visited URL from history
+      const savedHistory = await AsyncStorage.getItem('browserHistory');
+      let homeUrl = 'https://www.google.com'; // fallback
+      
+      if (savedHistory) {
+        const historyArray = JSON.parse(savedHistory);
+        if (historyArray.length > 0) {
+          homeUrl = historyArray[0]; // Use the most recent URL
+        }
+      }
+      
+      updateTabUrl(activeTabIndex, homeUrl);
+    } catch (error) {
+      console.error('Error getting home URL:', error);
+      updateTabUrl(activeTabIndex, 'https://www.google.com');
+    }
+  }, [activeTabIndex, updateTabUrl]);
 
   const getSourceHtml = useCallback(() => {
     const webViewRef = webViewRefs.current[activeTabIndex];
@@ -292,7 +321,7 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       {!isSafeMode && (
         <BottomNavigation
           isDarkMode={isDarkMode}
-          onHomePress={() => updateTabUrl(activeTabIndex, 'https://www.google.com')}
+          onHomePress={goHome}
           onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
           onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
           onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
@@ -338,6 +367,8 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
             injectJavaScript={(code) => injectJavaScript(webViewRefs.current[activeTabIndex], code)}
             onOpenScriptManager={() => setScriptManagerVisible(true)}
             updateStorageData={updateStorageData}
+            activeTabIndex={activeTabIndex}
+            updateTabInfo={updateTabInfo}
           />
           <NetworkLogModal
             visible={tabs[activeTabIndex].isNetworkLogModalVisible}

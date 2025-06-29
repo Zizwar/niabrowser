@@ -95,12 +95,6 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     );
   };
 
-  const toggleScript = (scriptName) => {
-    const updatedScripts = scripts.map(s =>
-      s.name === scriptName ? { ...s, isEnabled: !s.isEnabled } : s
-    );
-    saveScripts(updatedScripts);
-  };
 
   const runScript = (script) => {
     if (script.isEnabled && shouldRunOnCurrentUrl(script.urls, currentUrl)) {
@@ -132,13 +126,20 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     });
   };
 
+  const handleToggleScript = useCallback((scriptName) => {
+    const updatedScripts = scripts.map(s =>
+      s.name === scriptName ? { ...s, isEnabled: !s.isEnabled } : s
+    );
+    saveScripts(updatedScripts);
+  }, [scripts, saveScripts]);
+
   const renderScriptItem = useCallback(({ item }) => (
     <View style={[styles.scriptItem, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
       <View style={styles.scriptHeader}>
         <Text style={[styles.scriptName, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{item.name}</Text>
         <Switch 
           value={item.isEnabled} 
-          onValueChange={() => toggleScript(item.name)} 
+          onValueChange={() => handleToggleScript(item.name)} 
           trackColor={{ false: "#767577", true: "#81b0ff" }} 
           thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"} 
         />
@@ -157,7 +158,7 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
         </TouchableOpacity>
       </View>
     </View>
-  ), [isDarkMode, toggleScript, runScript, editScript, deleteScript]);
+  ), [isDarkMode, handleToggleScript, runScript, editScript, deleteScript]);
 
   const handleSimpleUrlInput = () => {
     if (!simpleUrl) return;

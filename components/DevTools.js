@@ -20,7 +20,9 @@ const DevTools = ({
   onOpenScriptManager,
   updateStorageData,
   isSafeMode,
-  toggleSafeMode
+  toggleSafeMode,
+  activeTabIndex,
+  updateTabInfo
 }) => {
   const [activeTab, setActiveTab] = useState('network');
   const [injectionCode, setInjectionCode] = useState('');
@@ -58,6 +60,19 @@ const DevTools = ({
     Alert.alert('Copied', 'Content copied to clipboard');
   };
 
+  const formatApiName = (url, method) => {
+    try {
+      // Extract the last segment after the final /
+      const urlParts = url.split('/');
+      const lastSegment = urlParts[urlParts.length - 1];
+      // If the last segment is empty (URL ends with /), use the second-to-last segment
+      const apiName = lastSegment || urlParts[urlParts.length - 2] || 'api';
+      return `${apiName} ${method.toUpperCase()}`;
+    } catch (error) {
+      return `${method.toUpperCase()} ${url}`;
+    }
+  };
+
   const clearNetworkLogs = () => {
     Alert.alert(
       'Clear Network Logs',
@@ -65,8 +80,10 @@ const DevTools = ({
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Clear', onPress: () => {
-          // Implement clear network logs functionality
-          Alert.alert('Cleared', 'Network logs have been cleared');
+          if (typeof updateTabInfo === 'function' && activeTabIndex !== undefined) {
+            updateTabInfo(activeTabIndex, { networkLogs: [] });
+            Alert.alert('Cleared', 'Network logs have been cleared');
+          }
         }}
       ]
     );
@@ -114,7 +131,7 @@ const renderNetworkTab = () => (
           delayLongPress={500}
         >
           <View style={styles.networkLogHeader}>
-            <Text style={[styles.networkLogMethod, { color: getMethodColor(item.method) }]}>{item.method}</Text>
+            <Text style={[styles.networkLogMethod, { color: getMethodColor(item.method) }]}>{formatApiName(item.url, item.method)}</Text>
             <Text style={[styles.networkLogUrl, { color: textColor }]} numberOfLines={1}>{item.url}</Text>
           </View>
           <View style={styles.networkLogDetails}>
@@ -227,23 +244,9 @@ const renderNetworkTab = () => (
     )
   );
 
-  const renderSafeModeToggle = () =>{
-      if  (false)return null;
-      return (
-    <View style={styles.safeModeContainer}>
-      <Text style={[styles.safeModeText, { color: textColor }]}>Safe Mode:</Text>
-      <Switch
-        value={isSafeMode}
-        onValueChange={(value) => {
-          setShowSafeModeModal(true);
-          toggleSafeMode(value);
-        }}
-        trackColor={{ false: "#767577", true: "#81b0ff" }}
-        thumbColor={isSafeMode ? "#f5dd4b" : "#f4f3f4"}
-      />
-    </View>
-  );
-}
+  const renderSafeModeToggle = () => {
+    return null; // Safe mode toggle removed
+  };
   const renderSafeModeModal = () => (
     showSafeModeModal && (
       <View style={styles.safeModeModalContainer}>
