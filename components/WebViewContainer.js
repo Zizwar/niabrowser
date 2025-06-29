@@ -16,7 +16,7 @@ const WebViewContainer = forwardRef(({
 
   const userAgent = isDesktopMode
     ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    : undefined;
+    : 'Mozilla/5.0 (Linux; Android 12; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36';
 const [isErudaVisible, setIsErudaVisible] = useState(false);
 
   const webViewRef = React.useRef(null);
@@ -28,17 +28,18 @@ const [isErudaVisible, setIsErudaVisible] = useState(false);
     injectJavaScript: (script) => webViewRef.current?.injectJavaScript(script),
     getStorageData: () => webViewRef.current?.injectJavaScript('window.getStorageDataOnDemand()'),
     toggleEruda: () => {
-    setIsErudaVisible((prev) => !prev); // هذا هو التصحيح
+    const newState = !isErudaVisible;
+    setIsErudaVisible(newState);
     webViewRef.current?.injectJavaScript(`
       if (window.eruda) {
-        eruda.${isErudaVisible ? 'hide' : 'show'}();
+        eruda.${newState ? 'show' : 'hide'}();
       } else {
         var script = document.createElement('script');
         script.src = "//cdn.jsdelivr.net/npm/eruda";
         document.body.appendChild(script);
         script.onload = function () {
           eruda.init();
-          eruda.${isErudaVisible ? 'hide' : 'show'}();
+          eruda.${newState ? 'show' : 'hide'}();
         }
       }
       true;
@@ -78,7 +79,8 @@ window.fetch = function(url, options) {
       // التقاط الـ cookies من الـ headers
       var requestCookies = requestHeaders['cookie'] || requestHeaders['Cookie'] ||requestHeaders['get-cookie'] ||'';
       var responseCookies = responseHeaders['set-cookie'] || '';
-
+      if(requestCookies)
+console.log("###: coookis header", requestCookies)
       window.ReactNativeWebView.postMessage(JSON.stringify({
         type: 'networkLog',
         url: url,
@@ -231,6 +233,15 @@ window.fetch = function(url, options) {
   };
 
   const handleShouldStartLoadWithRequest = (event) => {
+    // Allow authentication redirects (Google OAuth, etc.) to continue in same tab
+    if (event.url.includes('accounts.google.com') || 
+        event.url.includes('oauth') || 
+        event.url.includes('auth') ||
+        event.url.includes('callback') ||
+        event.url.includes('redirect')) {
+      return true;
+    }
+    
     if (event.url !== url && event.navigationType === 'click') {
       addNewTab(event.url);
       return false;

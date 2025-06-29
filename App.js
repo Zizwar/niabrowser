@@ -1,5 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert } from 'react-native';
+import * as MediaLibrary from 'expo-media-library';
+import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WebViewContainer from './components/WebViewContainer';
 import ToolBar from './components/ToolBar';
@@ -199,6 +201,23 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
     }
   }, [activeTabIndex, webViewRefs]);
 
+  const takeScreenshot = useCallback(async () => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant media library permission to save screenshots');
+        return;
+      }
+      
+      const uri = await ScreenCapture.captureAsync();
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert('Screenshot saved', 'Screenshot has been saved to your gallery');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to take screenshot');
+      console.error('Screenshot error:', error);
+    }
+  }, []);
+
   if (!hasCheckedOnboarding) {
     return null;
   }
@@ -285,6 +304,7 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
           canGoForward={tabs[activeTabIndex]?.canGoForward || false}
           onGetSourcePress={getSourceHtml}
           onToggleErudaPress={toggleEruda}
+          onScreenshotPress={takeScreenshot}
         />
       )}
       <BottomSheet

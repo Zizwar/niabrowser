@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimensions, Switch, Alert, FlatList } from 'react-native';
 import { Icon, Button } from 'react-native-elements';
 import * as Clipboard from 'expo-clipboard';
-import { LineChart } from 'react-native-chart-kit';
+//import { LineChart } from 'react-native-chart-kit';
 
 const { width } = Dimensions.get('window');
 
@@ -222,32 +222,7 @@ const renderNetworkTab = () => (
             </Text>
           </View>
         ))}
-        <LineChart
-          data={getPerformanceChartData(performanceMetrics)}
-          width={width - 40}
-          height={220}
-          chartConfig={{
-            backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-            backgroundGradientFrom: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-            backgroundGradientTo: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-            decimalPlaces: 2,
-            color: (opacity = 1) => isDarkMode ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
-            labelColor: (opacity = 1) => isDarkMode ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
-            style: {
-              borderRadius: 16
-            },
-            propsForDots: {
-              r: "6",
-              strokeWidth: "2",
-              stroke: "#ffa726"
-            }
-          }}
-          bezier
-          style={{
-            marginVertical: 8,
-            borderRadius: 16
-          }}
-        />
+        
       </View>
     )
   );

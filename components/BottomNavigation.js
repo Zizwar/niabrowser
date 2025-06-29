@@ -16,7 +16,8 @@ const BottomNavigation = ({
   canGoBack,
   canGoForward,
   onGetSourcePress,
-  onToggleErudaPress
+  onToggleErudaPress,
+  onScreenshotPress
 }) => {
   const iconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
@@ -51,6 +52,9 @@ const BottomNavigation = ({
         </TouchableOpacity>
         <TouchableOpacity onPress={onGetSourcePress} style={styles.button}>
           <Icon name="code" type="material" color={iconColor} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onScreenshotPress} style={styles.button}>
+          <Icon name="photo-camera" type="material" color={iconColor} />
         </TouchableOpacity>
       </ScrollView>
       <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
