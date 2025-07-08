@@ -10,13 +10,16 @@ const WebViewContainer = forwardRef(({
   onNavigationStateChange, 
   onLoadStart, 
   onLoad,
-  addNewTab
+  addNewTab,
+  userAgent: customUserAgent
 }, ref) => { 
 
 
-  const userAgent = isDesktopMode
+  const defaultUserAgent = isDesktopMode
     ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     : 'Mozilla/5.0 (Linux; Android 12; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36';
+  
+  const userAgent = customUserAgent || defaultUserAgent;
 const [isErudaVisible, setIsErudaVisible] = useState(false);
 
   const webViewRef = React.useRef(null);
@@ -64,9 +67,9 @@ const [isErudaVisible, setIsErudaVisible] = useState(false);
     }
   });
   */
-      // اعتراض وتسجيل طلبات الشبكة
+      // Intercept and log network requests
       var originalFetch = window.fetch;
-      // في WebViewContainer.js، داخل الـ injectedJavaScript
+      // In WebViewContainer.js, inside the injectedJavaScript
 window.fetch = function(url, options) {
   var start = new Date().getTime();
   return originalFetch.apply(this, arguments).then(function(response) {
@@ -76,7 +79,7 @@ window.fetch = function(url, options) {
       var requestHeaders = options ? options.headers : {};
       var responseHeaders = Object.fromEntries(response.headers.entries());
       
-      // التقاط الـ cookies من الـ headers
+      // Capture cookies from headers
       var requestCookies = requestHeaders['cookie'] || requestHeaders['Cookie'] ||requestHeaders['get-cookie'] ||'';
       var responseCookies = responseHeaders['set-cookie'] || '';
       if(requestCookies)
@@ -97,7 +100,7 @@ console.log("###: coookis header", requestCookies)
     return response;
   });
 };
-      // اعتراض وتسجيل مخرجات وحدة التحكم
+      // Intercept and log console outputs
       var originalConsole = window.console;
       window.console = {
         log: function() {
@@ -134,7 +137,7 @@ console.log("###: coookis header", requestCookies)
         }
       };
 
-      // تحسين مراقبة التخزين
+      // Improve storage monitoring
       let lastStorageSnapshot = {
         cookies: document.cookie,
         localStorage: JSON.stringify(localStorage)
@@ -166,7 +169,7 @@ console.log("###: coookis header", requestCookies)
         sendStorageDataIfChanged();
       };
 
-      // مراقبة مقاييس الأداء
+      // Monitor performance metrics
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const metrics = {
@@ -237,22 +240,61 @@ console.log("###: coookis header", requestCookies)
           
           if (targetAttr === '_blank' && href) {
             event.preventDefault();
+            // Ensure href is a string
+            var urlString = typeof href === 'string' ? href : href.toString();
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'openInNewTab',
-              url: href
+              url: urlString
             }));
           }
         }
       }, true);
+
+      // Override window.open to open in new tabs within the app
+      var originalOpen = window.open;
+      window.open = function(url, target, features) {
+        if (url) {
+          // Ensure url is a string
+          var urlString = typeof url === 'string' ? url : url.toString();
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'openInNewTab',
+            url: urlString
+          }));
+        }
+        return null;
+      };
 
       true;
     })();
   `;
 
   const handleMessage = (event) => { 
-    const data = JSON.parse(event.nativeEvent.data); 
-    console.log('Received message:', data.type);
-    onMessage(event);
+    try {
+      const data = JSON.parse(event.nativeEvent.data); 
+      console.log('Received message:', data.type);
+      
+      // Handle specific message types that might cause issues
+      if (data.type === 'openInNewTab') {
+        // Ensure URL is a string
+        if (data.url && typeof data.url !== 'string') {
+          data.url = data.url.toString();
+        }
+        // Create a new event with the sanitized data
+        const newEvent = {
+          ...event,
+          nativeEvent: {
+            ...event.nativeEvent,
+            data: JSON.stringify(data)
+          }
+        };
+        onMessage(newEvent);
+      } else {
+        onMessage(event);
+      }
+    } catch (error) {
+      console.error('Error parsing message:', error);
+      console.error('Raw message data:', event.nativeEvent.data);
+    }
   };
 
   const handleShouldStartLoadWithRequest = (event) => {

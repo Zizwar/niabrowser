@@ -154,16 +154,48 @@ const renderNetworkTab = () => (
     />
   </>
 );
+  const clearConsoleLogs = () => {
+    Alert.alert(
+      'Clear Console Logs',
+      'Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear', onPress: () => {
+          if (typeof updateTabInfo === 'function' && activeTabIndex !== undefined) {
+            updateTabInfo(activeTabIndex, { consoleOutput: [] });
+            Alert.alert('Cleared', 'All console logs have been cleared');
+          }
+        }}
+      ]
+    );
+  };
+
+  const copyAllLogs = async () => {
+    const allLogs = consoleOutput.map(log => `[${log.type}] ${log.message}`).join('\n');
+    await Clipboard.setStringAsync(allLogs);
+    Alert.alert('Copied', 'All logs have been copied');
+  };
+
   const renderConsoleTab = () => (
-    <FlatList
-      data={consoleOutput}
-      keyExtractor={(item, index) => index.toString()}
-      renderItem={({ item }) => (
-        <Text style={[styles.consoleLog, getConsoleLogStyle(item.type, isDarkMode)]}>
-          {item.message}
-        </Text>
-      )}
-    />
+    <>
+      <View style={styles.searchContainer}>
+        <TouchableOpacity onPress={copyAllLogs} style={styles.clearButton}>
+          <Icon name="content-copy" type="material" color={textColor} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={clearConsoleLogs} style={styles.clearButton}>
+          <Icon name="delete" type="material" color={textColor} />
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        data={consoleOutput}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <Text style={[styles.consoleLog, getConsoleLogStyle(item.type, isDarkMode)]}>
+            {item.message}
+          </Text>
+        )}
+      />
+    </>
   );
 
   const renderStorageTab = () => (
@@ -229,7 +261,10 @@ const renderNetworkTab = () => (
   const renderPerformanceTab = () => (
     performanceMetrics && (
       <View style={styles.performanceContainer}>
-        {Object.entries(performanceMetrics).map(([key, value]) => (
+        {Object.entries(performanceMetrics)
+          .filter(([key, value]) => value > 0) // Filter out zero values
+          .reverse() // Reverse order
+          .map(([key, value]) => (
           <View key={key} style={styles.metricItem}>
             <Icon name={getMetricIcon(key)} type="material" color={textColor} size={24} />
             <Text style={[styles.metricLabel, { color: textColor }]}>{formatMetricLabel(key)}:</Text>

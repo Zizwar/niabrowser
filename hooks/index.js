@@ -77,12 +77,18 @@ export const useTabs = (webViewRefs) => {
     setIsTabsLoading(true);
     try {
       const savedTabs = await AsyncStorage.getItem('savedTabs');
+      const savedActiveIndex = await AsyncStorage.getItem('activeTabIndex');
+      
       if (savedTabs) {
         const parsedTabs = JSON.parse(savedTabs);
         setTabs(parsedTabs.map(tab => ({
           ...createNewTab(tab.url, tab.title),
           ...tab
         })));
+        
+        if (savedActiveIndex) {
+          setActiveTabIndex(parseInt(savedActiveIndex));
+        }
       }
     } catch (error) {
       console.error('Error loading tabs:', error);
@@ -91,22 +97,24 @@ export const useTabs = (webViewRefs) => {
     }
   };
 
-  const saveTabs = async (tabsToSave) => {
+  const saveTabs = async (tabsToSave, activeIndex) => {
     try {
-      const tabsData = tabsToSave.map(tab => ({
+      const tabsData = tabsToSave.map((tab, index) => ({
         url: tab.url,
         title: tab.title,
-        id: tab.id
+        id: tab.id,
+        isActive: index === (activeIndex !== undefined ? activeIndex : activeTabIndex)
       }));
       await AsyncStorage.setItem('savedTabs', JSON.stringify(tabsData));
+      await AsyncStorage.setItem('activeTabIndex', (activeIndex !== undefined ? activeIndex : activeTabIndex).toString());
     } catch (error) {
       console.error('Error saving tabs:', error);
     }
   };
 
-  const addNewTab = useCallback(() => {
+  const addNewTab = useCallback((url = null) => {
     setTabs(prevTabs => {
-      const newTabs = [...prevTabs, createNewTab()];
+      const newTabs = [...prevTabs, createNewTab(url)];
       saveTabs(newTabs);
       setTimeout(() => setActiveTabIndex(newTabs.length - 1), 0);
       return newTabs;

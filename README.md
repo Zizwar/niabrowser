@@ -1,7 +1,7 @@
-# WebZview Developer Browser
+# نيةبراوزر - البراوزر الذكي
 
 <p align="center">
-  <img src="./assets/icon.png" alt="WebZview Logo" width="120" height="120">
+  <img src="./assets/icon.png" alt="NIABrowser Logo" width="120" height="120">
 </p>
 
 <p align="center">
@@ -47,8 +47,8 @@
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/zizwar/webzview.git
-cd webzview
+git clone https://github.com/zizwar/niabrowser.git
+cd niabrowser
 ```
 
 2. Install dependencies:
@@ -96,7 +96,7 @@ eas build --platform ios
 
 ## 🏗️ Architecture
 
-WebZview is built using:
+NIABrowser is built using:
 - **React Native & Expo**: Cross-platform mobile development
 - **React Native WebView**: Advanced web rendering engine
 - **Context API**: State management
@@ -139,7 +139,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔒 Privacy
 
-WebZview respects your privacy:
+NIABrowser respects your privacy:
 - No data collection or tracking
 - All data stored locally on your device
 - Open source for transparency
@@ -147,9 +147,9 @@ WebZview respects your privacy:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/zizwar/webzview/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/zizwar/webzview/discussions)
-- **Email**: [contact@webzview.com]
+- **Issues**: [GitHub Issues](https://github.com/zizwar/niabrowser/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/zizwar/niabrowser/discussions)
+- **Email**: [contact@niabrowser.com]
 
 ## 🏆 Acknowledgments
 

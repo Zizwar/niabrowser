@@ -21,14 +21,14 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
         <ScrollView style={styles.content}>
           <Text style={[styles.title, { color: textColor }]}>About webZview</Text>
           <Text style={[styles.text, { color: textColor }]}>
-            webZview is an open-source web browser application designed specifically for developers working on mobile devices. It provides a rich set of features to assist in web development and debugging on-the-go.
+            webZview - The Smart Browser is an open-source web browser application designed specifically for developers working on mobile devices. It provides a rich set of features to assist in web development and debugging on-the-go.
           </Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Developer</Text>
           <Text style={[styles.text, { color: textColor }]}>Brahim Bidi</Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Contact</Text>
           <Text style={[styles.text, { color: textColor }]}>zip.exe@googlemail.com</Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Source Code</Text>
-          <TouchableOpacity onPress={() => openLink('https://github.com/zizwar/webZview')}>
+          <TouchableOpacity onPress={() => openLink('https://github.com/zizwar/niabrowser')}>
             <Text style={[styles.link, { color: '#4A90E2' }]}>GitHub Repository</Text>
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>License</Text>
