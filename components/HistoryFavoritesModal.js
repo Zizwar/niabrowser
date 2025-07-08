@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { Share } from 'react-native';
 
-const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHistory, isDarkMode, favorites, addToFavorites, removeFromFavorites }) => {
+const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHistory, isDarkMode, favorites, addToFavorites, removeFromFavorites, onHistoryUpdate }) => {
   const [activeTab, setActiveTab] = useState('history');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -27,24 +27,37 @@ const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHi
     );
   };
 
-  const removeFromHistory = async (url) => {
-    try {
-      const savedHistory = await AsyncStorage.getItem('browserHistory');
-      if (savedHistory) {
-        const historyArray = JSON.parse(savedHistory);
-        const updatedHistory = historyArray.filter(item => {
-          const itemUrl = typeof item === 'string' ? item : item.url;
-          return itemUrl !== url;
-        });
-        await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));
-        // Force re-render by calling onClose and onSelect to refresh the parent
-        Alert.alert("Removed from history", "Item has been removed from history");
-        onClose();
-      }
-    } catch (error) {
-      console.error('Error removing from history:', error);
-      Alert.alert("Error", "Failed to remove item from history");
-    }
+  const removeFromHistory = async (urlToRemove) => {
+    Alert.alert(
+      'Delete from History',
+      'Are you sure you want to delete this item?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => {
+          try {
+            const savedHistory = await AsyncStorage.getItem('browserHistory');
+            if (savedHistory) {
+              const historyArray = JSON.parse(savedHistory);
+              const updatedHistory = historyArray.filter(item => {
+                const itemUrl = typeof item === 'string' ? item : item.url;
+                return itemUrl !== urlToRemove;
+              });
+              await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));
+              
+              // Call the parent callback to update the history state
+              if (onHistoryUpdate) {
+                onHistoryUpdate(updatedHistory);
+              }
+              
+              Alert.alert('Deleted', 'Item has been deleted from history');
+            }
+          } catch (error) {
+            console.error('Error removing from history:', error);
+            Alert.alert('Error', 'Failed to delete item from history');
+          }
+        }}
+      ]
+    );
   };
 
   const copyToClipboard = async (url) => {

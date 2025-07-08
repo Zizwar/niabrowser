@@ -1,16 +1,38 @@
-import React from 'react';
-import { Modal, View, TouchableOpacity, StyleSheet, Text, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Modal, View, TouchableOpacity, StyleSheet, Text, ScrollView, FlatList, Alert, ActivityIndicator } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 
 const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
   const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const borderColor = isDarkMode ? '#444444' : '#CCCCCC';
+  const [useVirtualized, setUseVirtualized] = useState(false);
 
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(sourceCode);
-    // You might want to show a toast or some feedback here
+    Alert.alert('Copied', 'Source code copied to clipboard');
   };
+
+  // Split source code into lines for virtualization
+  const sourceLines = useMemo(() => {
+    if (!sourceCode) return [];
+    const lines = sourceCode.split('\n');
+    
+    // If more than 1000 lines, use virtualization
+    if (lines.length > 1000) {
+      setUseVirtualized(true);
+      return lines.map((line, index) => ({ id: index, text: line }));
+    }
+    
+    setUseVirtualized(false);
+    return lines;
+  }, [sourceCode]);
+
+  const renderLine = ({ item }) => (
+    <Text style={[styles.codeText, { color: textColor }]}>
+      {item.text}
+    </Text>
+  );
 
   return (
     <Modal
@@ -26,15 +48,42 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
             <Text style={[styles.closeButtonText, { color: textColor }]}>✕</Text>
           </TouchableOpacity>
         </View>
-        <ScrollView style={styles.codeContainer}>
-          <Text style={[styles.codeText, { color: textColor }]}>{sourceCode}</Text>
-        </ScrollView>
-        <TouchableOpacity 
-          style={[styles.copyButton, { borderTopColor: borderColor }]} 
-          onPress={copyToClipboard}
-        >
-          <Text style={[styles.copyButtonText, { color: textColor }]}>Copy to Clipboard</Text>
-        </TouchableOpacity>
+        {!sourceCode ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={isDarkMode ? '#FFFFFF' : '#000000'} />
+            <Text style={[styles.loadingText, { color: textColor }]}>Loading source code...</Text>
+          </View>
+        ) : useVirtualized ? (
+          <FlatList
+            data={sourceLines}
+            renderItem={renderLine}
+            keyExtractor={(item) => item.id.toString()}
+            style={styles.codeContainer}
+            initialNumToRender={50}
+            maxToRenderPerBatch={50}
+            windowSize={10}
+            removeClippedSubviews={true}
+            getItemLayout={(data, index) => ({
+              length: 16, // Approximate line height
+              offset: 16 * index,
+              index,
+            })}
+          />
+        ) : (
+          <ScrollView style={styles.codeContainer}>
+            <Text style={[styles.codeText, { color: textColor }]}>
+              {sourceCode}
+            </Text>
+          </ScrollView>
+        )}
+        {sourceCode && (
+          <TouchableOpacity 
+            style={[styles.copyButton, { borderTopColor: borderColor }]} 
+            onPress={copyToClipboard}
+          >
+            <Text style={[styles.copyButtonText, { color: textColor }]}>Copy to Clipboard</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Modal>
   );
@@ -66,9 +115,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+  },
   codeText: {
     fontFamily: 'monospace',
     fontSize: 12,
+    lineHeight: 16,
   },
   copyButton: {
     alignItems: 'center',

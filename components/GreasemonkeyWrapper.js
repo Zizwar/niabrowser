@@ -1,7 +1,7 @@
 export const createGreasemonkeyEnvironment = (script, metadata) => {
   return `
     (function() {
-      // محاكاة وظائف Greasemonkey
+      // Simulate Greasemonkey functions
       const GM = {
         addStyle: (css) => {
           const style = document.createElement('style');
@@ -9,7 +9,7 @@ export const createGreasemonkeyEnvironment = (script, metadata) => {
           document.head.appendChild(style);
         },
         xmlHttpRequest: (details) => {
-          // تنفيذ بسيط لـ GM_xmlhttpRequest
+          // Simple implementation of GM_xmlhttpRequest
           return fetch(details.url, {
             method: details.method || 'GET',
             headers: details.headers,
@@ -22,29 +22,29 @@ export const createGreasemonkeyEnvironment = (script, metadata) => {
             });
         },
         getValue: (key, defaultValue) => {
-          // في الواقع، ستحتاج إلى تنفيذ التخزين المحلي هنا
+          // Actually, you will need to implement local storage here
           return defaultValue;
         },
         setValue: (key, value) => {
-          // في الواقع، ستحتاج إلى تنفيذ التخزين المحلي هنا
+          // Actually, you will need to implement local storage here
           console.log('setValue called with', key, value);
         },
-        // يمكنك إضافة المزيد من وظائف GM حسب الحاجة
+        // You can add more GM functions as needed
       };
 
-      // إضافة متغيرات البيانات الوصفية
+      // Add metadata variables
       const GM_info = {
         script: ${JSON.stringify(metadata)}
       };
 
-      // تعريف الوظائف العالمية لـ Greasemonkey
+      // Define global functions for Greasemonkey
       window.GM_addStyle = GM.addStyle;
       window.GM_xmlhttpRequest = GM.xmlHttpRequest;
       window.GM_getValue = GM.getValue;
       window.GM_setValue = GM.setValue;
       window.GM_info = GM_info;
 
-      // تنفيذ السكريبت
+      // Execute the script
       ${script}
     })();
   `;

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "WebZview Developer Browser",
-    "slug": "webzview-developer-browser",
+    "name": "نيةبراوزر - البراوزر الذكي",
+    "slug": "niabrowser-smart-browser",
     "version": "2.0.0",
     "orientation": "default",
     "description": "Advanced developer browser with DevTools, JavaScript injection, network monitoring, and Greasemonkey support",
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.zizwar.webzview",
+      "package": "com.zizwar.niabrowser",
       "versionCode": 2,
       "permissions": [
         "INTERNET",
@@ -48,7 +48,7 @@
       "javascript",
       "webview"
     ],
-    "githubUrl": "https://github.com/zizwar/webzview",
+    "githubUrl": "https://github.com/zizwar/niabrowser",
     "extra": {
       "eas": {
         "projectId": "555e1621-5260-4544-b3aa-5097690cbaee"

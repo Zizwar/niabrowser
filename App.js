@@ -17,6 +17,7 @@ import CrudModal from './components/CrudModal';
 import OnboardingScreen from './components/OnboardingScreen';
 import AboutModal from './components/AboutModal';
 import ScriptManager from './components/ScriptManager';
+import UserAgentSelector from './components/UserAgentSelector';
 
 import HistoryFavoritesModal from './components/HistoryFavoritesModal';
 
@@ -40,19 +41,43 @@ const AppContent = () => {
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [isSafeMode, setIsSafeMode] = useState(false);
+  const [currentUserAgent, setCurrentUserAgent] = useState(null);
+  const [isUserAgentSelectorVisible, setUserAgentSelectorVisible] = useState(false);
 
   const webViewRefs = useWebViewRefs();
-  const { history, addToHistory, clearHistory } = useHistory();
+  const { history, addToHistory, clearHistory, setHistory } = useHistory();
   const { tabs, setTabs, activeTabIndex, setActiveTabIndex, isTabsLoading, addNewTab, closeTab, updateTabInfo } = useTabs(webViewRefs);
   const { scripts, setScripts, saveScript, toggleAllScripts } = useScripts();
   const { isDarkMode, isDesktopMode, toggleDarkMode, toggleDesktopMode } = useSettings();
 
 const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
 
-  const toggleSafeMode = useCallback((value) => {
+  const toggleSafeMode = useCallback(async (value) => {
+    if (value) {
+      // Entering Safe Mode - save enabled scripts
+      const enabledScripts = scripts.filter(s => s.isEnabled).map(s => s.name);
+      await AsyncStorage.setItem('enabledScriptsBeforeSafeMode', JSON.stringify(enabledScripts));
+      toggleAllScripts(false); // Disable all scripts
+    } else {
+      // Exiting Safe Mode - restore previously enabled scripts
+      try {
+        const savedScripts = await AsyncStorage.getItem('enabledScriptsBeforeSafeMode');
+        if (savedScripts) {
+          const scriptNames = JSON.parse(savedScripts);
+          // Re-enable the previously enabled scripts
+          const updatedScripts = scripts.map(script => ({
+            ...script,
+            isEnabled: scriptNames.includes(script.name)
+          }));
+          setScripts(updatedScripts);
+          await AsyncStorage.setItem('userScripts', JSON.stringify(updatedScripts));
+        }
+      } catch (error) {
+        console.error('Error restoring scripts:', error);
+      }
+    }
     setIsSafeMode(value);
-    toggleAllScripts(!value);  // Disable all scripts when safe mode is on, enable when it's off
-  }, [toggleAllScripts]);
+  }, [scripts, setScripts, toggleAllScripts]);
 
   const toggleEruda = useCallback(() => { 
   const activeWebViewRef = webViewRefs.current[activeTabIndex];
@@ -92,11 +117,12 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
   };
 
   const handleMessage = useCallback((event) => {
-    const data = JSON.parse(event.nativeEvent.data);
-    const activeTab = tabs[activeTabIndex];
-    if (!activeTab) return;
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      const activeTab = tabs[activeTabIndex];
+      if (!activeTab) return;
 
-    switch (data.type) {
+      switch (data.type) {
       case 'networkLog':
         updateTabInfo(activeTabIndex, { 
           networkLogs: [data, ...activeTab.networkLogs.slice(0, 99)] 
@@ -117,11 +143,17 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
       case 'openInNewTab':
-        addNewTab();
-        // Add a small delay to ensure the new tab is created before navigating
-        setTimeout(() => {
-          updateTabUrl(tabs.length, data.url);
-        }, 100);
+        // Ensure URL is a string, fallback to Google if invalid
+        let urlToOpen;
+        if (typeof data.url === 'string' && data.url.trim() !== '') {
+          urlToOpen = data.url;
+        } else if (data.url && typeof data.url === 'object' && data.url.href) {
+          urlToOpen = data.url.href;
+        } else {
+          urlToOpen = 'https://www.google.com';
+        }
+        addNewTab(urlToOpen);
+        setTimeout(() => setActiveTabIndex(tabs.length), 100);
         break;
         /*
         case 'cookieUpdate':
@@ -130,6 +162,10 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
   });
   break;
   */
+    }
+    } catch (error) {
+      console.error('Error handling message:', error);
+      console.error('Event data:', event.nativeEvent.data);
     }
   }, [activeTabIndex, tabs, updateTabInfo]);
 
@@ -314,6 +350,7 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
               onLoad={(event) => runAutoScripts(event.nativeEvent.url, 'load')}
               addNewTab={addNewTab}
               isSafeMode={isSafeMode}
+              userAgent={currentUserAgent}
             />
           </View>
         ))}
@@ -347,6 +384,7 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         clearData={clearData}
         openHistory={() => setHistoryModalVisible(true)}
         openAboutModal={() => setAboutModalVisible(true)}
+        openUserAgentSelector={() => setUserAgentSelectorVisible(true)}
         currentUrl={tabs[activeTabIndex]?.url || ''}
         isSafeMode={isSafeMode}
         toggleSafeMode={toggleSafeMode}
@@ -404,6 +442,7 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
   clearHistory={clearHistory}
   addToFavorites={addToFavorites}
   removeFromFavorites={removeFromFavorites}
+  onHistoryUpdate={setHistory}
   isDarkMode={isDarkMode}
 />
       <AboutModal
@@ -418,6 +457,13 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         setScripts={setScripts} 
         injectScript={(code) => injectJavaScript(webViewRefs.current[activeTabIndex], code)} 
         currentUrl={tabs[activeTabIndex]?.url || ''}
+        isDarkMode={isDarkMode}
+      />
+      <UserAgentSelector
+        visible={isUserAgentSelectorVisible}
+        onClose={() => setUserAgentSelectorVisible(false)}
+        onSelectUserAgent={setCurrentUserAgent}
+        currentUserAgent={currentUserAgent}
         isDarkMode={isDarkMode}
       />
     </SafeAreaView>

@@ -15,7 +15,8 @@ const BottomSheet = ({
   openAboutModal,
   currentUrl,
   isSafeMode,
-  toggleSafeMode
+  toggleSafeMode,
+  openUserAgentSelector
 }) => {
   if (!visible) return null;
 
@@ -26,6 +27,7 @@ const BottomSheet = ({
     { icon: 'brightness-6', title: 'Dark Mode', onPress: toggleDarkMode, value: isDarkMode },
     { icon: 'desktop-windows', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
     { icon: 'security', title: 'Safe Mode', onPress: toggleSafeMode, value: isSafeMode },
+    { icon: 'person', title: 'User Agent', onPress: openUserAgentSelector },
     { icon: 'history', title: 'History', onPress: openHistory },
     { icon: 'share', title: 'Share', onPress: () => shareUrl(currentUrl) },
     { icon: 'delete', title: 'Clear Data', onPress: clearData },

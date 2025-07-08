@@ -30,16 +30,186 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const [showEditOverlay, setShowEditOverlay] = useState(false);
   const [isAdvancedUrlInput, setIsAdvancedUrlInput] = useState(false);
   const [simpleUrl, setSimpleUrl] = useState('');
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [aiTaskDescription, setAiTaskDescription] = useState('');
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
+  const [apiKey, setApiKey] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showAdvancedAI, setShowAdvancedAI] = useState(false);
+  const [sessionCosts, setSessionCosts] = useState({ totalTokens: { input: 0, output: 0 }, totalCost: 0.0000, requestCount: 0 });
 
   useEffect(() => {
     loadScripts();
+    loadApiKey();
+    loadSessionCosts();
   }, []);
+
+  const loadApiKey = async () => {
+    try {
+      const savedKey = await AsyncStorage.getItem('openrouter_api_key');
+      if (savedKey) setApiKey(savedKey);
+    } catch (error) {
+      console.error('Error loading API key:', error);
+    }
+  };
+
+  const saveApiKey = async (key) => {
+    try {
+      await AsyncStorage.setItem('openrouter_api_key', key);
+      setApiKey(key);
+    } catch (error) {
+      console.error('Error saving API key:', error);
+    }
+  };
+
+  const loadSessionCosts = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('ai_session_costs');
+      if (saved) setSessionCosts(JSON.parse(saved));
+    } catch (error) {
+      console.error('Error loading session costs:', error);
+    }
+  };
+
+  const saveSessionCosts = async (costs) => {
+    try {
+      await AsyncStorage.setItem('ai_session_costs', JSON.stringify(costs));
+      setSessionCosts(costs);
+    } catch (error) {
+      console.error('Error saving session costs:', error);
+    }
+  };
 
   useEffect(() => {
     if (currentUrl) {
       runAutoScripts(currentUrl);
     }
   }, [currentUrl]);
+
+  const AIConfig = {
+    openrouter: {
+      baseURL: 'https://openrouter.ai/api/v1/chat/completions',
+      models: {
+        basic: [
+          'openai/gpt-4o-mini',
+          'anthropic/claude-3-haiku',
+          'google/gemini-flash-1.5'
+        ],
+        advanced: 'manual_input'
+      }
+    },
+    
+    systemPrompt: `You are an assistant for creating JavaScript code to be executed in React Native WebView.
+
+Technical Context:
+- Environment: WebView with React Native
+- Communication: window.ReactNativeWebView.postMessage(JSON.stringify({...}))
+- DOM: Full access to page elements
+- Security: Avoid malicious code
+
+IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown formatting, or additional text. Just provide the raw JavaScript code that can be executed directly.`
+  };
+
+  const calculateCost = (model, inputTokens, outputTokens) => {
+    const pricing = {
+      'openai/gpt-4o-mini': { input: 0.000150, output: 0.000600 },
+      'anthropic/claude-3-haiku': { input: 0.000250, output: 0.001250 },
+      'google/gemini-flash-1.5': { input: 0.000075, output: 0.000300 }
+    };
+    
+    const modelPricing = pricing[model] || { input: 0.001, output: 0.002 };
+    return (inputTokens * modelPricing.input + outputTokens * modelPricing.output) / 1000;
+  };
+
+  const generateScriptWithAI = async () => {
+    if (!aiTaskDescription.trim() || !apiKey.trim()) {
+      Alert.alert('Error', 'Please enter task description and API Key');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch(AIConfig.openrouter.baseURL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://github.com/zizwar/niabrowser',
+          'X-Title': 'NIABrowser Script Generator'
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: [
+            { role: 'system', content: AIConfig.systemPrompt },
+            { role: 'user', content: `Create a JavaScript script for the following task: ${aiTaskDescription}` }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.choices && data.choices[0]) {
+        let generatedCode = data.choices[0].message.content;
+        
+        // Extract JavaScript code from markdown code blocks if present
+        const jsCodeMatch = generatedCode.match(/```(?:javascript|js)?\n?([\s\S]*?)```/);
+        if (jsCodeMatch) {
+          generatedCode = jsCodeMatch[1];
+        }
+        
+        // Remove common prefixes and explanations
+        generatedCode = generatedCode
+          .replace(/^Here's the JavaScript code.*?:\s*/i, '')
+          .replace(/^Here is the JavaScript code.*?:\s*/i, '')
+          .replace(/^JavaScript code:\s*/i, '')
+          .replace(/^The JavaScript code:\s*/i, '')
+          .replace(/^This JavaScript code.*?:\s*/i, '')
+          .trim();
+        
+        const usage = data.usage;
+        
+        // Update session costs
+        const cost = calculateCost(selectedModel, usage.prompt_tokens, usage.completion_tokens);
+        const newCosts = {
+          totalTokens: {
+            input: sessionCosts.totalTokens.input + usage.prompt_tokens,
+            output: sessionCosts.totalTokens.output + usage.completion_tokens
+          },
+          totalCost: sessionCosts.totalCost + cost,
+          requestCount: sessionCosts.requestCount + 1
+        };
+        saveSessionCosts(newCosts);
+
+        // Show cost info
+        Alert.alert(
+          '💰 Request Cost',
+          `Model: ${selectedModel}\nTokens: ${usage.prompt_tokens} → ${usage.completion_tokens}\nCost: $${cost.toFixed(6)}\nSession Total: $${newCosts.totalCost.toFixed(6)}`,
+          [{ text: 'OK' }]
+        );
+
+        // Set the generated script
+        setCurrentScript({
+          name: `AI Generated: ${aiTaskDescription.substring(0, 30)}...`,
+          code: generatedCode,
+          urls: '*',
+          isEnabled: true,
+          runAt: 'document-idle'
+        });
+        setShowAIGenerator(false);
+        setShowEditOverlay(true);
+        setIsEditMode(false);
+      } else {
+        Alert.alert('Error', 'Failed to generate script. Check API Key and connection.');
+      }
+    } catch (error) {
+      Alert.alert('Error', `An error occurred: ${error.message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const loadScripts = async () => {
     try {
@@ -294,32 +464,199 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
         <Button
           title={isEditMode ? "Update Script" : "Add Script"}
           onPress={addOrUpdateScript}
-          buttonStyle={[styles.addButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
+          buttonStyle={[styles.addButton, { backgroundColor: isDarkMode ? '#4A4A4A' : '#E0E0E0' }]}
+          titleStyle={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}
         />
       </ScrollView>
     </Overlay>
   );
 
+  const renderInfoModal = () => (
+    <Modal visible={showInfoModal} transparent animationType="fade" onRequestClose={() => setShowInfoModal(false)}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.infoModal, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={[styles.infoTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>📖 Script Manager Guide</Text>
+            
+            <Text style={[styles.infoSection, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>💡 What is Script Manager?</Text>
+            <Text style={[styles.infoText, { color: isDarkMode ? '#CCCCCC' : '#333333' }]}>
+              Allows you to inject and run custom JavaScript code on any website.
+            </Text>
+            
+            <Text style={[styles.infoSection, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>📝 Usage Examples:</Text>
+            <Text style={[styles.infoText, { color: isDarkMode ? '#CCCCCC' : '#333333' }]}>
+              • Change website appearance{'\n'}
+              • Extract data{'\n'}
+              • Automate tasks{'\n'}
+              • Add new features to websites
+            </Text>
+            
+            <Text style={[styles.infoSection, { color: '#FF6B6B' }]}>⚠️ Important Warnings:</Text>
+            <Text style={[styles.infoText, { color: '#FF6B6B' }]}>
+              • Don't use scripts from untrusted sources{'\n'}
+              • Make sure you understand the code before running it{'\n'}
+              • You take full responsibility{'\n'}
+              • May affect website security
+            </Text>
+            
+            <Text style={[styles.infoSection, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>🧠 Artificial Intelligence:</Text>
+            <Text style={[styles.infoText, { color: isDarkMode ? '#CCCCCC' : '#333333' }]}>
+              You can use AI to generate scripts with a simple description of the required task.
+            </Text>
+          </ScrollView>
+          
+          <TouchableOpacity onPress={() => setShowInfoModal(false)} style={[styles.closeInfoButton, { backgroundColor: isDarkMode ? '#4A4A4A' : '#E0E0E0' }]}>
+            <Text style={styles.closeInfoButtonText}>Got it</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
+  const renderAIGenerator = () => (
+    <Modal visible={showAIGenerator} transparent animationType="slide" onRequestClose={() => setShowAIGenerator(false)}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.aiModal, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={[styles.aiTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>🧠 AI Script Generator</Text>
+            
+            <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Task Description:</Text>
+            <TextInput
+              style={[styles.aiTextInput, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#1E1E1E' : '#F0F0F0' }]}
+              placeholder="Write a description of the required script (example: hide all ads from the page)"
+              placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+              value={aiTaskDescription}
+              onChangeText={setAiTaskDescription}
+              multiline
+              numberOfLines={3}
+            />
+            
+            <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Choose Model:</Text>
+            <View style={styles.modelPickerContainer}>
+              <View style={styles.modelDropdown}>
+                <Text style={[styles.modelDropdownText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
+                  {selectedModel.split('/')[1] || selectedModel}
+                </Text>
+                <Icon name="expand-more" type="material" color={isDarkMode ? '#FFFFFF' : '#000000'} />
+              </View>
+              <View style={styles.modelOptions}>
+                {AIConfig.openrouter.models.basic.map((model) => (
+                  <TouchableOpacity
+                    key={model}
+                    style={[
+                      styles.modelOption,
+                      { backgroundColor: selectedModel === model ? '#4A90E2' : (isDarkMode ? '#1E1E1E' : '#F0F0F0') }
+                    ]}
+                    onPress={() => setSelectedModel(model)}
+                  >
+                    <Text style={[styles.modelOptionText, { color: selectedModel === model ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000') }]}>
+                      {model.split('/')[1]} ({model.split('/')[0]})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <TouchableOpacity onPress={() => setShowAdvancedAI(!showAdvancedAI)} style={styles.advancedToggle}>
+              <Text style={[styles.advancedToggleText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
+                {showAdvancedAI ? 'Hide' : 'Show'} Advanced Settings
+              </Text>
+            </TouchableOpacity>
+
+            {showAdvancedAI && (
+              <View style={styles.advancedSection}>
+                <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Custom Model:</Text>
+                <TextInput
+                  style={[styles.aiTextInput, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#1E1E1E' : '#F0F0F0' }]}
+                  placeholder="Enter custom model name (example: anthropic/claude-3-opus)"
+                  placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+                  value={selectedModel.includes('/') && !AIConfig.openrouter.models.basic.includes(selectedModel) ? selectedModel : ''}
+                  onChangeText={setSelectedModel}
+                />
+              </View>
+            )}
+
+            <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>OpenRouter API Key:</Text>
+            <TextInput
+              style={[styles.aiTextInput, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#1E1E1E' : '#F0F0F0' }]}
+              placeholder="Enter OpenRouter API Key"
+              placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+              value={apiKey}
+              onChangeText={(text) => {
+                setApiKey(text);
+                saveApiKey(text);
+              }}
+              secureTextEntry
+            />
+
+            <View style={styles.costDisplay}>
+              <Text style={[styles.costText, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
+                📊 Session Statistics:{'\n'}
+                Requests: {sessionCosts.requestCount}{'\n'}
+                Tokens: {sessionCosts.totalTokens.input + sessionCosts.totalTokens.output}{'\n'}
+                Total Cost: ${sessionCosts.totalCost.toFixed(6)}
+              </Text>
+            </View>
+          </ScrollView>
+          
+          <View style={styles.aiButtonContainer}>
+            <TouchableOpacity 
+              onPress={generateScriptWithAI} 
+              style={[styles.generateButton, { backgroundColor: isDarkMode ? '#4A4A4A' : '#E0E0E0' }]}
+              disabled={isGenerating}
+            >
+              <Text style={styles.generateButtonText}>
+                {isGenerating ? '⏳ Generating...' : '🚀 Generate Script'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowAIGenerator(false)} style={[styles.cancelButton, { backgroundColor: isDarkMode ? '#3A3A3A' : '#D0D0D0' }]}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Script Manager</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="times" type="font-awesome" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => setShowInfoModal(true)} style={styles.infoButton}>
+              <Icon name="info" type="feather" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="times" type="font-awesome" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.addButtonContainer}>
+          <TouchableOpacity 
+            onPress={() => {
+              // Show options for manual or AI creation
+              Alert.alert(
+                'Add Script', 
+                'Choose how to create the script:',
+                [
+                  { text: 'Manual Creation', onPress: () => {
+                    setCurrentScript({ name: '', code: '', urls: '*', isEnabled: true, runAt: 'document-idle' });
+                    setIsEditMode(false);
+                    setShowEditOverlay(true);
+                  }},
+                  { text: 'AI Generator', onPress: () => setShowAIGenerator(true) },
+                  { text: 'Cancel', style: 'cancel' }
+                ]
+              );
+            }}
+            style={[styles.mainAddButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
+          >
+            <Text style={[styles.mainAddButtonText, { color: '#FFFFFF' }]}>
+              ➕ Add New Script
+            </Text>
           </TouchableOpacity>
         </View>
-        <Button
-          title="Add New Script"
-          onPress={() => {
-            setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
-            setIsEditMode(false);
-            setShowEditOverlay(true);
-          }}
-          buttonStyle={[styles.addButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
-        />
         <FlatList
           data={scripts}
           renderItem={renderScriptItem}
@@ -327,6 +664,8 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
           style={styles.list}
         />
         {renderEditOverlay()}
+        {renderInfoModal()}
+        {renderAIGenerator()}
       </View>
     </Modal>
   );
@@ -451,6 +790,179 @@ const styles = StyleSheet.create({
   },
   toggleUrlInputText: {
     textDecorationLine: 'underline',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoButton: {
+    marginRight: 15,
+    padding: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoModal: {
+    width: width * 0.9,
+    maxHeight: '80%',
+    borderRadius: 15,
+    padding: 20,
+    elevation: 5,
+  },
+  infoTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  infoSection: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  closeInfoButton: {
+    marginTop: 20,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  closeInfoButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  addButtonContainer: {
+    marginBottom: 20,
+  },
+  mainAddButton: {
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  mainAddButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  aiButton: {
+    flex: 1,
+  },
+  aiModal: {
+    width: width * 0.95,
+    maxHeight: '90%',
+    borderRadius: 15,
+    padding: 20,
+    elevation: 5,
+  },
+  aiTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  aiLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 8,
+  },
+  aiTextInput: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    textAlignVertical: 'top',
+  },
+  modelPickerContainer: {
+    marginBottom: 15,
+  },
+  modelDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 8,
+    backgroundColor: '#F0F0F0',
+    marginBottom: 8,
+  },
+  modelDropdownText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modelOptions: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  modelOption: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CCCCCC',
+  },
+  modelOptionText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  advancedToggle: {
+    marginBottom: 15,
+    alignSelf: 'center',
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  advancedSection: {
+    marginBottom: 15,
+  },
+  costDisplay: {
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  costText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  aiButtonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  generateButton: {
+    flex: 2,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  generateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
