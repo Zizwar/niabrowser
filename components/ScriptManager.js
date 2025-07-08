@@ -194,7 +194,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         setCurrentScript({
           name: `AI Generated: ${aiTaskDescription.substring(0, 30)}...`,
           code: generatedCode,
-          urls: currentUrl || '*',
+          urls: '*',
           isEnabled: true,
           runAt: 'document-idle'
         });
@@ -633,22 +633,29 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           </View>
         </View>
         <View style={styles.addButtonContainer}>
-          <Button
-            title="Add New Script"
+          <TouchableOpacity 
             onPress={() => {
-              setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
-              setIsEditMode(false);
-              setShowEditOverlay(true);
+              // Show options for manual or AI creation
+              Alert.alert(
+                'Add Script', 
+                'Choose how to create the script:',
+                [
+                  { text: 'Manual Creation', onPress: () => {
+                    setCurrentScript({ name: '', code: '', urls: '*', isEnabled: true, runAt: 'document-idle' });
+                    setIsEditMode(false);
+                    setShowEditOverlay(true);
+                  }},
+                  { text: 'AI Generator', onPress: () => setShowAIGenerator(true) },
+                  { text: 'Cancel', style: 'cancel' }
+                ]
+              );
             }}
-            buttonStyle={[styles.addButton, { backgroundColor: isDarkMode ? '#4A4A4A' : '#E0E0E0' }]}
-            titleStyle={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}
-          />
-          <Button
-            title="🧠 AI Generator"
-            onPress={() => setShowAIGenerator(true)}
-            buttonStyle={[styles.aiButton, { backgroundColor: isDarkMode ? '#3A3A3A' : '#D0D0D0' }]}
-            titleStyle={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}
-          />
+            style={[styles.mainAddButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
+          >
+            <Text style={[styles.mainAddButtonText, { color: '#FFFFFF' }]}>
+              ➕ Add New Script
+            </Text>
+          </TouchableOpacity>
         </View>
         <FlatList
           data={scripts}
@@ -834,9 +841,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   addButtonContainer: {
-    flexDirection: 'row',
     marginBottom: 20,
-    gap: 10,
+  },
+  mainAddButton: {
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  mainAddButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   aiButton: {
     flex: 1,

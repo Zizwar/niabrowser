@@ -46,7 +46,7 @@ export const useHistory = () => {
     }
   };
 
-  return { history, addToHistory, clearHistory };
+  return { history, addToHistory, clearHistory, setHistory };
 };
 
 export const useTabs = (webViewRefs) => {
@@ -114,7 +114,9 @@ export const useTabs = (webViewRefs) => {
 
   const addNewTab = useCallback((url = null) => {
     setTabs(prevTabs => {
-      const newTabs = [...prevTabs, createNewTab(url)];
+      // Ensure URL is a string or use default
+      const urlString = url ? (typeof url === 'string' ? url : url.toString()) : null;
+      const newTabs = [...prevTabs, createNewTab(urlString)];
       saveTabs(newTabs);
       setTimeout(() => setActiveTabIndex(newTabs.length - 1), 0);
       return newTabs;

@@ -45,7 +45,7 @@ const AppContent = () => {
   const [isUserAgentSelectorVisible, setUserAgentSelectorVisible] = useState(false);
 
   const webViewRefs = useWebViewRefs();
-  const { history, addToHistory, clearHistory } = useHistory();
+  const { history, addToHistory, clearHistory, setHistory } = useHistory();
   const { tabs, setTabs, activeTabIndex, setActiveTabIndex, isTabsLoading, addNewTab, closeTab, updateTabInfo } = useTabs(webViewRefs);
   const { scripts, setScripts, saveScript, toggleAllScripts } = useScripts();
   const { isDarkMode, isDesktopMode, toggleDarkMode, toggleDesktopMode } = useSettings();
@@ -143,8 +143,15 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
       case 'openInNewTab':
-        // Ensure URL is a string
-        const urlToOpen = typeof data.url === 'string' ? data.url : data.url.toString();
+        // Ensure URL is a string, fallback to Google if invalid
+        let urlToOpen;
+        if (typeof data.url === 'string' && data.url.trim() !== '') {
+          urlToOpen = data.url;
+        } else if (data.url && typeof data.url === 'object' && data.url.href) {
+          urlToOpen = data.url.href;
+        } else {
+          urlToOpen = 'https://www.google.com';
+        }
         addNewTab(urlToOpen);
         setTimeout(() => setActiveTabIndex(tabs.length), 100);
         break;

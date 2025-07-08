@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, View, TouchableOpacity, StyleSheet, Text, ScrollView, FlatList, Alert } from 'react-native';
+import { Modal, View, TouchableOpacity, StyleSheet, Text, ScrollView, FlatList, Alert, ActivityIndicator } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 
 const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
@@ -48,7 +48,12 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
             <Text style={[styles.closeButtonText, { color: textColor }]}>✕</Text>
           </TouchableOpacity>
         </View>
-        {useVirtualized ? (
+        {!sourceCode ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={isDarkMode ? '#FFFFFF' : '#000000'} />
+            <Text style={[styles.loadingText, { color: textColor }]}>Loading source code...</Text>
+          </View>
+        ) : useVirtualized ? (
           <FlatList
             data={sourceLines}
             renderItem={renderLine}
@@ -71,12 +76,14 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
             </Text>
           </ScrollView>
         )}
-        <TouchableOpacity 
-          style={[styles.copyButton, { borderTopColor: borderColor }]} 
-          onPress={copyToClipboard}
-        >
-          <Text style={[styles.copyButtonText, { color: textColor }]}>Copy to Clipboard</Text>
-        </TouchableOpacity>
+        {sourceCode && (
+          <TouchableOpacity 
+            style={[styles.copyButton, { borderTopColor: borderColor }]} 
+            onPress={copyToClipboard}
+          >
+            <Text style={[styles.copyButtonText, { color: textColor }]}>Copy to Clipboard</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Modal>
   );
@@ -107,6 +114,16 @@ const styles = StyleSheet.create({
   codeContainer: {
     flex: 1,
     padding: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
   codeText: {
     fontFamily: 'monospace',

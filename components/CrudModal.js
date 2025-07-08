@@ -1,6 +1,6 @@
 // components/CrudModal.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator, FlatList, Alert } from 'react-native';
 import { Icon, Button, Divider, Overlay } from 'react-native-elements';
 import { Picker } from '@react-native-picker/picker';
 import * as Clipboard from 'expo-clipboard';
@@ -155,6 +155,14 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
     alert('Response copied to clipboard');
   };
 
+  const showInfoModal = () => {
+    Alert.alert(
+      'Same-Origin Request Info',
+      'This CRUD tool automatically sends requests as if they were made from the same webpage currently open in the browser. This helps bypass CORS (Cross-Origin Resource Sharing) restrictions that would normally block requests from different domains.\n\nTechnical details:\n• The request is executed in the WebView context\n• Headers like Origin and Referer are automatically set\n• Cookies and session data are preserved\n• CORS policies are bypassed naturally\n• The request appears to come from the same domain',
+      [{ text: 'OK' }]
+    );
+  };
+
   const renderSavedApiItem = ({ item, index }) => (
     <View style={styles.savedApiItem}>
       <TouchableOpacity onPress={() => loadApi(item)} style={styles.savedApiInfo}>
@@ -180,6 +188,9 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
           <View style={styles.headerButtons}>
             <TouchableOpacity onPress={saveCurrentApi} style={styles.headerButton}>
               <Icon name="save" type="material" color={textColor} size={24} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={showInfoModal} style={styles.headerButton}>
+              <Icon name="info" type="material" color={textColor} size={24} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setIsSavedApisVisible(true)} style={styles.headerButton}>
               <Icon name="folder" type="material" color={textColor} size={24} />
