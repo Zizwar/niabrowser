@@ -7,16 +7,27 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const borderColor = isDarkMode ? '#444444' : '#CCCCCC';
   const [useVirtualized, setUseVirtualized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [displayCode, setDisplayCode] = useState('');
+
+  useEffect(() => {
+    if (visible && !sourceCode) {
+      setIsLoading(true);
+    } else if (sourceCode) {
+      setIsLoading(false);
+      setDisplayCode(sourceCode);
+    }
+  }, [visible, sourceCode]);
 
   const copyToClipboard = async () => {
-    await Clipboard.setStringAsync(sourceCode);
+    await Clipboard.setStringAsync(displayCode);
     Alert.alert('Copied', 'Source code copied to clipboard');
   };
 
   // Split source code into lines for virtualization
   const sourceLines = useMemo(() => {
-    if (!sourceCode) return [];
-    const lines = sourceCode.split('\n');
+    if (!displayCode) return [];
+    const lines = displayCode.split('\n');
     
     // If more than 1000 lines, use virtualization
     if (lines.length > 1000) {
@@ -26,7 +37,7 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
     
     setUseVirtualized(false);
     return lines;
-  }, [sourceCode]);
+  }, [displayCode]);
 
   const renderLine = ({ item }) => (
     <Text style={[styles.codeText, { color: textColor }]}>
@@ -48,7 +59,7 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
             <Text style={[styles.closeButtonText, { color: textColor }]}>✕</Text>
           </TouchableOpacity>
         </View>
-        {!sourceCode ? (
+        {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={isDarkMode ? '#FFFFFF' : '#000000'} />
             <Text style={[styles.loadingText, { color: textColor }]}>Loading source code...</Text>
@@ -72,11 +83,11 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
         ) : (
           <ScrollView style={styles.codeContainer}>
             <Text style={[styles.codeText, { color: textColor }]}>
-              {sourceCode}
+              {displayCode}
             </Text>
           </ScrollView>
         )}
-        {sourceCode && (
+        {displayCode && (
           <TouchableOpacity 
             style={[styles.copyButton, { borderTopColor: borderColor }]} 
             onPress={copyToClipboard}

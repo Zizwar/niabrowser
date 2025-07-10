@@ -13,6 +13,7 @@ import {
   Dimensions
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Icon, Button, Overlay, Tooltip } from 'react-native-elements';
 import { createGreasemonkeyEnvironment, parseMetadata } from '../utils/GreasemonkeyCompatibility';
 
@@ -47,19 +48,19 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
 
   const loadApiKey = async () => {
     try {
-      const savedKey = await AsyncStorage.getItem('openrouter_api_key');
+      const savedKey = await SecureStore.getItemAsync('openrouter_api_key');
       if (savedKey) setApiKey(savedKey);
     } catch (error) {
-      console.error('Error loading API key:', error);
+      console.error('Error loading API key securely:', error);
     }
   };
 
   const saveApiKey = async (key) => {
     try {
-      await AsyncStorage.setItem('openrouter_api_key', key);
+      await SecureStore.setItemAsync('openrouter_api_key', key);
       setApiKey(key);
     } catch (error) {
-      console.error('Error saving API key:', error);
+      console.error('Error saving API key securely:', error);
     }
   };
 
