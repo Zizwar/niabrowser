@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Icon, Button, Overlay, Tooltip } from 'react-native-elements';
 import { createGreasemonkeyEnvironment, parseMetadata } from '../utils/GreasemonkeyCompatibility';
+import { theme } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -517,9 +518,23 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
   const renderAIGenerator = () => (
     <Modal visible={showAIGenerator} transparent animationType="slide" onRequestClose={() => setShowAIGenerator(false)}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.aiModal, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
+        <View style={[styles.aiModal, { backgroundColor: isDarkMode ? theme.dark.surface : theme.light.surface }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={[styles.aiTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>🧠 AI Script Generator</Text>
+            <View style={styles.warningContainer}>
+              <Icon name="warning" type="material" color={theme.colors.warning} size={24} />
+              <Text style={[styles.warningText, { color: isDarkMode ? theme.dark.text : theme.light.text }]}>
+                ⚠️ AI Usage Costs: This app uses external AI services that may charge fees. You are responsible for all API costs. Monitor your usage carefully.
+              </Text>
+            </View>
+            
+            <View style={styles.costSummary}>
+              <Text style={[styles.costTitle, { color: isDarkMode ? theme.dark.text : theme.light.text }]}>Session Summary:</Text>
+              <Text style={[styles.costDetail, { color: isDarkMode ? theme.dark.textSecondary : theme.light.textSecondary }]}>
+                Requests: {sessionCosts.requestCount} | Cost: ${sessionCosts.totalCost.toFixed(6)}
+              </Text>
+            </View>
+            
+            <Text style={[styles.aiTitle, { color: isDarkMode ? theme.dark.text : theme.light.text }]}>🧠 AI Script Generator</Text>
             
             <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Task Description:</Text>
             <TextInput
@@ -964,6 +979,34 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  warningContainer: {
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  warningText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginLeft: 10,
+    flex: 1,
+  },
+  costSummary: {
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+  },
+  costTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  costDetail: {
+    fontSize: 14,
   },
 });
 

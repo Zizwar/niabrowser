@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, Linking, Image } from 'react-native';
 import { Icon } from 'react-native-elements';
+import { theme } from '../constants/theme';
 
 const AboutModal = ({ visible, onClose, isDarkMode }) => {
-  const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
-  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
+  const backgroundColor = isDarkMode ? theme.dark.background : theme.light.background;
+  const textColor = isDarkMode ? theme.dark.text : theme.light.text;
+  const secondaryTextColor = isDarkMode ? theme.dark.textSecondary : theme.light.textSecondary;
 
   const openLink = (url) => {
     Linking.openURL(url).catch((err) => console.error('An error occurred', err));
@@ -19,17 +21,28 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
     >
       <View style={[styles.container, { backgroundColor }]}>
         <ScrollView style={styles.content}>
-          <Text style={[styles.title, { color: textColor }]}>About webZview</Text>
+          <View style={styles.logoContainer}>
+            <Image source={require('../assets/icon.png')} style={styles.logo} />
+            <Text style={[styles.appName, { color: textColor }]}>NIABrowser</Text>
+            <Text style={[styles.version, { color: secondaryTextColor }]}>Version 2.0.0</Text>
+          </View>
+          <Text style={[styles.title, { color: textColor }]}>About NIABrowser</Text>
           <Text style={[styles.text, { color: textColor }]}>
-            webZview - The Smart Browser is an open-source web browser application designed specifically for developers working on mobile devices. It provides a rich set of features to assist in web development and debugging on-the-go.
+            NIABrowser - Smart Developer Browser is an advanced web browser application designed specifically for developers. It provides developer tools, JavaScript injection capabilities, and network monitoring features to assist in web development and debugging.
           </Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Developer</Text>
           <Text style={[styles.text, { color: textColor }]}>Brahim Bidi</Text>
+          <Text style={[styles.subTitle, { color: textColor }]}>Website</Text>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>niabrowser.com</Text>
+          </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Contact</Text>
-          <Text style={[styles.text, { color: textColor }]}>zip.exe@googlemail.com</Text>
+          <TouchableOpacity onPress={() => openLink('mailto:contact@niabrowser.com')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>contact@niabrowser.com</Text>
+          </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Source Code</Text>
           <TouchableOpacity onPress={() => openLink('https://github.com/zizwar/niabrowser')}>
-            <Text style={[styles.link, { color: '#4A90E2' }]}>GitHub Repository</Text>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>GitHub Repository</Text>
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>License</Text>
           <Text style={[styles.text, { color: textColor }]}>
@@ -56,6 +69,24 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
+  },
+  appName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  version: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -74,6 +105,7 @@ const styles = StyleSheet.create({
   link: {
     fontSize: 16,
     textDecorationLine: 'underline',
+    marginBottom: 10,
   },
   closeButton: {
     position: 'absolute',

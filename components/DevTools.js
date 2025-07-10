@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimensions, Switch, Alert, FlatList } from 'react-native';
 import { Icon, Button } from 'react-native-elements';
 import * as Clipboard from 'expo-clipboard';
+import { theme } from '../constants/theme';
 //import { LineChart } from 'react-native-chart-kit';
 
 const { width } = Dimensions.get('window');
@@ -29,12 +30,19 @@ const DevTools = ({
   const [searchQuery, setSearchQuery] = useState('');
   const scrollViewRef = useRef(null);
   const [showSafeModeModal, setShowSafeModeModal] = useState(false);
+  const [selectedMethods, setSelectedMethods] = useState(['GET', 'POST', 'PUT', 'DELETE']);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+
+  const updatePerformanceMetrics = useCallback(() => {
+    // This function would normally trigger a performance metrics update
+    // For now, it's just a placeholder that ensures the component doesn't crash
+  }, []);
 
   useEffect(() => {
     if (visible && activeTab === 'performance') {
       updatePerformanceMetrics();
     }
-  }, [visible, activeTab]);
+  }, [visible, activeTab, updatePerformanceMetrics]);
 
   useEffect(() => {
     if (showSafeModeModal) {
@@ -45,15 +53,23 @@ const DevTools = ({
     }
   }, [showSafeModeModal]);
 
+  const filterNetworkLogs = useCallback(() => {
+    return networkLogs.filter(log => {
+      if (!log || typeof log.url !== 'string') return false;
+      const methodMatch = selectedMethods.includes(log.method);
+      const urlMatch = log.url.toLowerCase().includes(searchQuery.toLowerCase());
+      const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(log.status);
+      return methodMatch && urlMatch && statusMatch;
+    });
+  }, [networkLogs, selectedMethods, searchQuery, selectedStatuses]);
+
   if (!visible) return null;
 
-  const backgroundColor = isDarkMode ? '#1E1E1E' : '#F1F3F4';
-  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const cardColor = isDarkMode ? '#2C2C2C' : '#FFFFFF';
-
-  const filteredNetworkLogs = networkLogs.filter(log => 
-    log && typeof log.url === 'string' && log.url.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const backgroundColor = isDarkMode ? theme.dark.background : theme.light.background;
+  const textColor = isDarkMode ? theme.dark.text : theme.light.text;
+  const cardColor = isDarkMode ? theme.dark.surface : theme.light.surface;
+  
+  const filteredNetworkLogs = filterNetworkLogs();
 
   const copyToClipboard = async (text) => {
     await Clipboard.setStringAsync(text);
@@ -119,6 +135,37 @@ const renderNetworkTab = () => (
       <TouchableOpacity onPress={clearNetworkLogs} style={styles.clearButton}>
         <Icon name="delete" type="material" color={textColor} />
       </TouchableOpacity>
+    </View>
+    
+    <View style={styles.filterContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+        {['GET', 'POST', 'PUT', 'DELETE'].map(method => (
+          <TouchableOpacity
+            key={method}
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor: selectedMethods.includes(method) ? theme.colors.primary : 'transparent',
+                borderColor: theme.colors.primary
+              }
+            ]}
+            onPress={() => {
+              setSelectedMethods(prev => 
+                prev.includes(method) 
+                  ? prev.filter(m => m !== method)
+                  : [...prev, method]
+              );
+            }}
+          >
+            <Text style={[
+              styles.filterButtonText, 
+              { color: selectedMethods.includes(method) ? '#FFFFFF' : theme.colors.primary }
+            ]}>
+              {method}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
     <FlatList
       data={filteredNetworkLogs}
@@ -378,6 +425,26 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     padding: 10,
+  },
+  filterContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  filterScroll: {
+    flexDirection: 'row',
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   networkLogItem: {
     padding: 10,
