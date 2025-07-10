@@ -1,7 +1,7 @@
 import { Share, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const createNewTab = (url = 'about:blank', title = 'New Tab') => ({
+export const createNewTab = (url, title = 'New Tab') => ({
   id: Date.now(),
   url: url || 'about:blank',
   title,

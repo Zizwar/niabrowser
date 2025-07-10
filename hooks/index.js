@@ -114,9 +114,20 @@ export const useTabs = (webViewRefs) => {
 
   const addNewTab = useCallback((url = null) => {
     setTabs(prevTabs => {
-      // Ensure URL is a string or use default
-      const urlString = url ? (typeof url === 'string' ? url : url.toString()) : null;
-      const newTabs = [...prevTabs, createNewTab(urlString)];
+      let processedUrl = null;
+      
+      if (url) {
+        if (typeof url === 'string' && url.trim() !== '') {
+          processedUrl = url.trim();
+        } else if (url.href && typeof url.href === 'string') {
+          processedUrl = url.href;
+        } else {
+          console.warn('Invalid URL object:', url);
+          processedUrl = 'https://www.google.com';
+        }
+      }
+      
+      const newTabs = [...prevTabs, createNewTab(processedUrl)];
       saveTabs(newTabs);
       setTimeout(() => setActiveTabIndex(newTabs.length - 1), 0);
       return newTabs;

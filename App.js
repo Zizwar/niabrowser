@@ -143,17 +143,28 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         updateTabInfo(activeTabIndex, { performanceMetrics: data.metrics });
         break;
       case 'openInNewTab':
-        // Ensure URL is a string, fallback to Google if invalid
-        let urlToOpen;
-        if (typeof data.url === 'string' && data.url.trim() !== '') {
-          urlToOpen = data.url;
-        } else if (data.url && typeof data.url === 'object' && data.url.href) {
-          urlToOpen = data.url.href;
-        } else {
-          urlToOpen = 'https://www.google.com';
+        let urlToOpen = 'https://www.google.com'; // fallback
+        
+        if (data.url) {
+          if (typeof data.url === 'string' && data.url.trim() !== '') {
+            urlToOpen = data.url.trim();
+          } else if (data.url.href && typeof data.url.href === 'string') {
+            urlToOpen = data.url.href;
+          } else if (data.url.toString && data.url.toString() !== '[object Object]') {
+            urlToOpen = data.url.toString();
+          }
         }
+        
+        // Validate URL format
+        if (!urlToOpen.startsWith('http://') && !urlToOpen.startsWith('https://')) {
+          if (urlToOpen.includes('.') && !urlToOpen.includes(' ')) {
+            urlToOpen = `https://${urlToOpen}`;
+          } else {
+            urlToOpen = `https://www.google.com/search?q=${encodeURIComponent(urlToOpen)}`;
+          }
+        }
+        
         addNewTab(urlToOpen);
-        setTimeout(() => setActiveTabIndex(tabs.length), 100);
         break;
         /*
         case 'cookieUpdate':

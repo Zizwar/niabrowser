@@ -2,10 +2,11 @@
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "expo start --android", 
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
+  "name": "niabrowser",
   "dependencies": {
     "@expo/html-elements": "^0.10.1",
     "@expo/vector-icons": "^14.1.0",
@@ -31,6 +32,7 @@
     "expo-notifications": "~0.31.3",
     "expo-random": "~14.0.1",
     "expo-screen-capture": "~7.1.4",
+    "expo-secure-store": "^14.2.3",
     "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",

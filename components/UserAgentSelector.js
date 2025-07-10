@@ -65,23 +65,23 @@ const UserAgentSelector = ({ visible, onClose, onSelectUserAgent, currentUserAge
     }
   };
 
-  const renderUserAgentItem = ({ name, value, description }) => (
+  const renderUserAgentItem = (userAgent) => (
     <TouchableOpacity
-      key={name}
+      key={userAgent.name}
       style={[
         styles.userAgentItem,
         { backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' },
-        currentUserAgent === value && styles.selectedItem
+        currentUserAgent === userAgent.value && styles.selectedItem
       ]}
-      onPress={() => handleSelectUserAgent(value)}
+      onPress={() => handleSelectUserAgent(userAgent.value)}
     >
       <View style={styles.userAgentInfo}>
-        <Text style={[styles.userAgentName, { color: textColor }]}>{name}</Text>
+        <Text style={[styles.userAgentName, { color: textColor }]}>{userAgent.name}</Text>
         <Text style={[styles.userAgentDescription, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
-          {description}
+          {userAgent.description}
         </Text>
       </View>
-      {currentUserAgent === value && (
+      {currentUserAgent === userAgent.value && (
         <Icon name="check" type="material" color="#4CAF50" />
       )}
     </TouchableOpacity>
@@ -99,7 +99,7 @@ const UserAgentSelector = ({ visible, onClose, onSelectUserAgent, currentUserAge
           </View>
           
           <ScrollView style={styles.scrollView}>
-            {userAgents.map(renderUserAgentItem)}
+            {userAgents.map(userAgent => renderUserAgentItem(userAgent))}
             
             <TouchableOpacity
               style={[styles.customButton, { backgroundColor: isDarkMode ? '#3A3A3A' : '#E0E0E0' }]}
