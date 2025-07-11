@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import * as MediaLibrary from 'expo-media-library';
 import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -333,7 +334,11 @@ const goHomeOld = useCallback(async () => {
 
    return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
-      <CustomStatusBar isDarkMode={isDarkMode} />
+      {isFullscreen ? (
+        <StatusBar hidden={true} />
+      ) : (
+        <CustomStatusBar isDarkMode={isDarkMode} />
+      )}
       {!isFullscreen && (
         <>
           <TabBar
@@ -420,7 +425,7 @@ const goHomeOld = useCallback(async () => {
         visible={isBottomSheetVisible}
         onClose={() => setBottomSheetVisible(false)}
         isDarkMode={isDarkMode}
-       openFavorites={() => setHistoryModalVisible(true)} toggleDarkMode={toggleDarkMode}
+        toggleDarkMode={toggleDarkMode}
         toggleDesktopMode={toggleDesktopMode}
         isDesktopMode={isDesktopMode}
         shareUrl={() => shareUrl(tabs[activeTabIndex]?.url)}
@@ -431,6 +436,7 @@ const goHomeOld = useCallback(async () => {
         currentUrl={tabs[activeTabIndex]?.url || ''}
         isSafeMode={isSafeMode}
         toggleSafeMode={toggleSafeMode}
+        webViewRef={webViewRefs.current[activeTabIndex]}
       />
       {tabs[activeTabIndex] && (
         <>

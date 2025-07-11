@@ -36,6 +36,7 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [aiTaskDescription, setAiTaskDescription] = useState('');
   const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAdvancedAI, setShowAdvancedAI] = useState(false);
@@ -323,12 +324,6 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     <View style={[styles.scriptItem, { backgroundColor: isDarkMode ? '#2C2C2C' : '#FFFFFF' }]}>
       <View style={styles.scriptHeader}>
         <Text style={[styles.scriptName, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{item.name}</Text>
-        <Switch 
-          value={item.isEnabled} 
-          onValueChange={() => handleToggleScript(item.name)} 
-          trackColor={{ false: "#767577", true: "#81b0ff" }} 
-          thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"} 
-        />
       </View>
       <Text style={[styles.scriptUrls, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>URLs: {item.urls || 'All'}</Text>
       <Text style={[styles.scriptRunAt, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>Run at: {item.runAt}</Text>
@@ -342,6 +337,14 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         <TouchableOpacity onPress={() => deleteScript(item.name)} style={styles.actionButton}>
           <Icon name="trash" type="font-awesome" size={20} color="#F44336" />
         </TouchableOpacity>
+        <View style={styles.actionButton}>
+          <Switch 
+            value={item.isEnabled} 
+            onValueChange={() => handleToggleScript(item.name)} 
+            trackColor={{ false: "#767577", true: "#81b0ff" }} 
+            thumbColor={item.isEnabled ? "#f5dd4b" : "#f4f3f4"} 
+          />
+        </View>
       </View>
     </View>
   ), [isDarkMode, handleToggleScript, runScript, editScript, deleteScript]);
@@ -529,6 +532,14 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     </Modal>
   );
 
+  const taskExamples = [
+    "كود يقوم بجمع روابط الصور والفيديوهات ووضع رابط التنزيل",
+    "كود يقوم بتحويل اتجاه الصفحة من اليسار إلى اليمين", 
+    "إخفاء جميع الإعلانات من الصفحة",
+    "تغيير ألوان الصفحة إلى الوضع المظلم",
+    "استخراج جميع روابط البريد الإلكتروني من الصفحة"
+  ];
+
   const renderAIGenerator = () => (
     <Modal visible={showAIGenerator} transparent animationType="slide" onRequestClose={() => setShowAIGenerator(false)}>
       <View style={styles.modalOverlay}>
@@ -561,38 +572,73 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               numberOfLines={3}
             />
             
+            <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>أمثلة المهام:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.examplesContainer}>
+              {taskExamples.map((example, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={[styles.exampleButton, { backgroundColor: isDarkMode ? '#3A3A3A' : '#E0E0E0' }]} 
+                  onPress={() => setAiTaskDescription(example)}
+                >
+                  <Text 
+                    style={[styles.exampleText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]} 
+                    numberOfLines={3}
+                  >
+                    {example}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            
             <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Choose Model:</Text>
             <View style={styles.modelPickerContainer}>
-              <View style={styles.modelDropdown}>
+              <TouchableOpacity 
+                style={styles.modelDropdown} 
+                onPress={() => setShowModelDropdown(!showModelDropdown)}
+              >
                 <Text style={[styles.modelDropdownText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
                   {selectedModel.split('/')[1] || selectedModel}
                 </Text>
-                <Icon name="expand-more" type="material" color={isDarkMode ? '#FFFFFF' : '#000000'} />
-              </View>
-              <View style={styles.modelOptions}>
-                {Object.entries(AIConfig.openrouter.models).map(([provider, models]) => (
-                  <View key={provider} style={styles.providerSection}>
-                    <Text style={[styles.providerTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                    </Text>
-                    {models.map((model) => (
-                      <TouchableOpacity
-                        key={model}
-                        style={[styles.modelOption, {
-                          backgroundColor: selectedModel === model ? '#4A90E2' : 'transparent'
-                        }]}
-                        onPress={() => setSelectedModel(model)}
-                      >
-                        <Text style={[styles.modelOptionText, {
-                          color: selectedModel === model ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000')
-                        }]}>
-                          {model.split('/')[1]}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                ))}
-              </View>
+                <Icon
+                  name={showModelDropdown ? "expand-less" : "expand-more"}
+                  type="material" 
+                  color={isDarkMode ? '#FFFFFF' : '#000000'}
+                />
+              </TouchableOpacity>
+              
+              {showModelDropdown && (
+                <ScrollView 
+                  style={styles.modelOptions} 
+                  nestedScrollEnabled={true} 
+                  showsVerticalScrollIndicator={false}
+                >
+                  {Object.entries(AIConfig.openrouter.models).map(([provider, models]) => (
+                    <View key={provider} style={styles.providerSection}>
+                      <Text style={[styles.providerTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
+                        {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                      </Text>
+                      {models.map((model) => (
+                        <TouchableOpacity
+                          key={model}
+                          style={[styles.modelOption, {
+                            backgroundColor: selectedModel === model ? '#4A90E2' : 'transparent'
+                          }]}
+                          onPress={() => {
+                            setSelectedModel(model);
+                            setShowModelDropdown(false);
+                          }}
+                        >
+                          <Text style={[styles.modelOptionText, {
+                            color: selectedModel === model ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000')
+                          }]}>
+                            {model.split('/')[1]}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             <TouchableOpacity onPress={() => setShowAdvancedAI(!showAdvancedAI)} style={styles.advancedToggle}>
@@ -944,6 +990,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CCCCCC',
     borderRadius: 8,
+    maxHeight: 200,
     overflow: 'hidden',
   },
   modelOption: {
@@ -1010,6 +1057,23 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: '#000000',
+  },
+  examplesContainer: {
+    marginBottom: 15,
+    paddingHorizontal: 5,
+  },
+  exampleButton: {
+    padding: 10,
+    marginRight: 10,
+    borderRadius: 8,
+    width: 160,
+    minHeight: 70,
+    justifyContent: 'center',
+  },
+  exampleText: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
     fontSize: 16,
     fontWeight: 'bold',
   },

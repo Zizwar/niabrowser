@@ -139,14 +139,15 @@ const renderNetworkTab = () => (
     
     <View style={styles.filterContainer}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-        {['GET', 'POST', 'PUT', 'DELETE'].map(method => (
+        {['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map(method => (
           <TouchableOpacity
             key={method}
             style={[
               styles.filterButton,
               {
-                backgroundColor: selectedMethods.includes(method) ? theme.colors.primary : 'transparent',
-                borderColor: theme.colors.primary
+                backgroundColor: selectedMethods.includes(method) ? getMethodColor(method) : 'transparent',
+                borderColor: getMethodColor(method),
+                borderWidth: 2
               }
             ]}
             onPress={() => {
@@ -159,7 +160,10 @@ const renderNetworkTab = () => (
           >
             <Text style={[
               styles.filterButtonText, 
-              { color: selectedMethods.includes(method) ? '#FFFFFF' : theme.colors.primary }
+              {
+                color: selectedMethods.includes(method) ? '#FFFFFF' : getMethodColor(method),
+                fontWeight: 'bold'
+              }
             ]}>
               {method}
             </Text>
@@ -610,11 +614,14 @@ const getMethodIcon = (method) => {
 
 const getMethodColor = (method) => {
   switch (method) {
-    case 'GET': return '#2E7D32';     // Green
-    case 'POST': return '#1565C0';    // Blue  
-    case 'PUT': return '#F57C00';     // Orange
-    case 'DELETE': return '#C62828';  // Red
-    default: return '#616161';        // Gray
+    case 'GET': return '#28A745';      // أخضر قوي
+    case 'POST': return '#007BFF';     // أزرق قوي
+    case 'PUT': return '#FD7E14';      // برتقالي قوي
+    case 'DELETE': return '#DC3545';   // أحمر قوي
+    case 'PATCH': return '#6F42C1';    // بنفسجي
+    case 'HEAD': return '#6C757D';     // رمادي
+    case 'OPTIONS': return '#20C997';  // تركوازي
+    default: return '#6C757D';         // رمادي افتراضي
   }
 };
 
