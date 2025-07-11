@@ -1,5 +1,5 @@
 // components/BottomNavigation.js
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Icon } from 'react-native-elements';
 
@@ -21,46 +21,47 @@ const BottomNavigation = ({
   onFullscreenToggle,
   isFullscreen
 }) => {
+  const [showAllButtons, setShowAllButtons] = useState(false);
   const iconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#F1F3F4' }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
-        <TouchableOpacity 
-          onPress={onHomePress} 
-          onLongPress={onHomeLongPress}
-          style={styles.button}
-        >
-          <Icon name="home" type="material" color={iconColor} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onFullscreenToggle} style={styles.button}>
-          <Icon 
-            name={isFullscreen ? "fullscreen-exit" : "fullscreen"} 
-            type="material" 
-            color={iconColor} 
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onRefreshPress} style={styles.button}>
-          <Icon name="refresh" type="material" color={iconColor} />
-          
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onToggleErudaPress} style={styles.button}>
-          <Icon name="bug-report" type="material" color={iconColor} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onDevToolsPress} style={styles.button}>
-          <Icon name="developer-mode" type="material" color={iconColor} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onCRUDPress} style={styles.button}>
-          <Icon name="build" type="material" color={iconColor} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onScriptManagerPress} style={styles.button}>
-          <Icon name="extension" type="material" color={iconColor} />
-          
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onGetSourcePress} style={styles.button}>
-          <Icon name="code" type="material" color={iconColor} />
-        </TouchableOpacity>
-      </ScrollView>
+      {showAllButtons && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
+          <TouchableOpacity 
+            onPress={onHomePress} 
+            onLongPress={onHomeLongPress}
+            style={styles.button}
+          >
+            <Icon name="home" type="material" color={iconColor} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onFullscreenToggle} style={styles.button}>
+            <Icon 
+              name={isFullscreen ? "fullscreen-exit" : "fullscreen"} 
+              type="material" 
+              color={iconColor} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onRefreshPress} style={styles.button}>
+            <Icon name="refresh" type="material" color={iconColor} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onToggleErudaPress} style={styles.button}>
+            <Icon name="bug-report" type="material" color={iconColor} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDevToolsPress} style={styles.button}>
+            <Icon name="developer-mode" type="material" color={iconColor} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onCRUDPress} style={styles.button}>
+            <Icon name="build" type="material" color={iconColor} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onScriptManagerPress} style={styles.button}>
+            <Icon name="extension" type="material" color={iconColor} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onGetSourcePress} style={styles.button}>
+            <Icon name="code" type="material" color={iconColor} />
+          </TouchableOpacity>
+        </ScrollView>
+      )}
       <TouchableOpacity
         onPress={() => setShowAllButtons(!showAllButtons)}
         style={styles.settingsButton}
