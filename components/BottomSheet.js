@@ -133,10 +133,8 @@ const BottomSheet = ({
     </TouchableOpacity>
   ), [textColor]);
 
-  if (!visible) return null;
-
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor, display: visible ? 'flex' : 'none' }]}>
       <FlatList
         data={settingsData}
         renderItem={renderItem}

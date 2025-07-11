@@ -42,6 +42,10 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
             <Text style={[styles.link, { color: theme.colors.primary }]}>niabrowser.com</Text>
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Contact</Text>
+          <TouchableOpacity onPress={() => openLink('mailto:contact@niabrowser.com')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>contact@niabrowser.com</Text>
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: textColor }]}>Feedback</Text>
           <TouchableOpacity onPress={() => openLink('mailto:feedback@niabrowser.com')}>
             <Text style={[styles.link, { color: theme.colors.primary }]}>feedback@niabrowser.com</Text>
           </TouchableOpacity>

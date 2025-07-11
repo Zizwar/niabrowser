@@ -572,7 +572,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               numberOfLines={3}
             />
             
-            <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>أمثلة المهام:</Text>
+            <Text style={[styles.aiLabel, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>Task Examples:</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.examplesContainer}>
               {taskExamples.map((example, index) => (
                 <TouchableOpacity 
@@ -654,7 +654,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                   style={[styles.aiTextInput, { color: isDarkMode ? '#FFFFFF' : '#000000', backgroundColor: isDarkMode ? '#1E1E1E' : '#F0F0F0' }]}
                   placeholder="Enter custom model name (example: anthropic/claude-3-opus)"
                   placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-                  value={selectedModel.includes('/') && !AIConfig.openrouter.models.basic.includes(selectedModel) ? selectedModel : ''}
+                  value={selectedModel.includes('/') && !Object.values(AIConfig.openrouter.models).flat().includes(selectedModel) ? selectedModel : ''}
                   onChangeText={setSelectedModel}
                 />
               </View>
