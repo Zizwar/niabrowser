@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Modal, Alert } from 'react-native';
 import { Icon } from 'react-native-elements';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BottomSheet = ({ 
   visible, 
@@ -16,18 +17,43 @@ const BottomSheet = ({
   currentUrl,
   isSafeMode,
   toggleSafeMode,
-  openUserAgentSelector
+  openUserAgentSelector,
+  webViewRef
 }) => {
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   
   const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
 
-  const clearBrowserData = () => {
-    // Clear cookies and history logic here
+  const clearBrowserData = async () => {
+    // مسح الكوكيز من WebView
+    if (webViewRef && webViewRef.current) {
+      webViewRef.current.injectJavaScript(`
+        // مسح جميع الكوكيز
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // مسح localStorage
+        localStorage.clear();
+        
+        // مسح sessionStorage
+        sessionStorage.clear();
+        
+        true;
+      `);
+    }
+    
+    // مسح التاريخ والفيفوريت
+    try {
+      await AsyncStorage.removeItem('browserHistory');
+      await AsyncStorage.removeItem('favorites');
+    } catch (error) {
+      console.error('Error clearing browser data:', error);
+    }
+    
     setShowClearDataModal(false);
-    // Call the original clearData function or specific browser data clearing
-    if (clearData) clearData();
+    Alert.alert('Success', 'Browser data cleared successfully');
   };
 
   const clearFavorites = () => {
@@ -48,10 +74,27 @@ const BottomSheet = ({
     // Implementation for clearing app storage
   };
 
-  const clearAllData = () => {
-    // Clear all data logic here
-    setShowClearDataModal(false);
-    if (clearData) clearData();
+  const clearAllData = async () => {
+    Alert.alert(
+      "Clear All Data",
+      "This will delete:\n• All browsing history\n• All favorites\n• All saved scripts\n• All app settings\n\nThis action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.clear();
+              Alert.alert("Data Cleared", "All app data has been cleared successfully.");
+              setShowClearDataModal(false);
+            } catch (error) {
+              Alert.alert("Error", "Failed to clear data. Please try again.");
+            }
+          }
+        }
+      ]
+    );
   };
 
   const settingsData = [

@@ -61,7 +61,10 @@ const BottomNavigation = ({
           <Icon name="code" type="material" color={iconColor} />
         </TouchableOpacity>
       </ScrollView>
-      <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
+      <TouchableOpacity
+        onPress={() => setShowAllButtons(!showAllButtons)}
+        style={styles.settingsButton}
+      >
         <Icon name="settings" type="material" color={iconColor} />
       </TouchableOpacity>
     </View>
