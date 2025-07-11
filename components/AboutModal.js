@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, Linking, Image } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { theme } from '../constants/theme';
+import appJson from '../app.json';
 
 const AboutModal = ({ visible, onClose, isDarkMode }) => {
   const backgroundColor = isDarkMode ? theme.dark.background : theme.light.background;
@@ -24,7 +25,9 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
           <View style={styles.logoContainer}>
             <Image source={require('../assets/icon.png')} style={styles.logo} />
             <Text style={[styles.appName, { color: textColor }]}>NIABrowser</Text>
-            <Text style={[styles.version, { color: secondaryTextColor }]}>Version 2.0.0</Text>
+            <Text style={[styles.version, { color: secondaryTextColor }]}>
+              Version {appJson.expo?.version || '2.0.0'}
+            </Text>
           </View>
           <Text style={[styles.title, { color: textColor }]}>About NIABrowser</Text>
           <Text style={[styles.text, { color: textColor }]}>

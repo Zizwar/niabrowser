@@ -178,7 +178,17 @@ const renderNetworkTab = () => (
           delayLongPress={500}
         >
           <View style={styles.networkLogHeader}>
-            <Text style={[styles.networkLogMethod, { color: getMethodColor(item.method) }]}>{formatApiName(item.url, item.method)}</Text>
+            <View style={styles.methodContainer}>
+              <Icon 
+                name={getMethodIcon(item.method)} 
+                type="material" 
+                size={16} 
+                color={getMethodColor(item.method)} 
+              />
+              <Text style={[styles.networkLogMethod, { color: getMethodColor(item.method) }]}>
+                {item.method}
+              </Text>
+            </View>
             <Text style={[styles.networkLogUrl, { color: textColor }]} numberOfLines={1}>{item.url}</Text>
           </View>
           <View style={styles.networkLogDetails}>
@@ -224,7 +234,7 @@ const renderNetworkTab = () => (
   };
 
   const renderConsoleTab = () => (
-    <>
+    <View style={styles.consoleContainer}>
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={copyAllLogs} style={styles.clearButton}>
           <Icon name="content-copy" type="material" color={textColor} />
@@ -234,6 +244,7 @@ const renderNetworkTab = () => (
         </TouchableOpacity>
       </View>
       <FlatList
+        style={styles.consoleList}
         data={consoleOutput}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
@@ -242,7 +253,7 @@ const renderNetworkTab = () => (
           </Text>
         )}
       />
-    </>
+    </View>
   );
 
   const renderStorageTab = () => (
@@ -359,13 +370,13 @@ const renderNetworkTab = () => (
       
       {renderSafeModeToggle()}
       
-      <ScrollView style={styles.content} ref={scrollViewRef}>
+      <View style={styles.content}>
         {activeTab === 'Network' && renderNetworkTab()}
         {activeTab === 'Console' && renderConsoleTab()}
         {activeTab === 'Storage' && renderStorageTab()}
         {activeTab === 'Inject' && renderInjectTab()}
         {activeTab === 'Performance' && renderPerformanceTab()}
-      </ScrollView>
+      </View>
 
       {renderSafeModeModal()}
     </View>
@@ -458,7 +469,8 @@ const styles = StyleSheet.create({
   },
   networkLogMethod: {
     fontWeight: 'bold',
-    marginRight: 10,
+    marginLeft: 5,
+    fontSize: 12,
   },
   networkLogUrl: {
     flex: 1,
@@ -568,26 +580,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   cookieInfo: {
-  marginTop: 5,
-},
-cookieText: {
-  fontSize: 12,
-  fontStyle: 'italic',
-},
+    marginTop: 5,
+  },
+  cookieText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  consoleContainer: {
+    flex: 1,
+  },
+  consoleList: {
+    flex: 1,
+  },
+  methodContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
+
+const getMethodIcon = (method) => {
+  switch (method) {
+    case 'GET': return 'download';
+    case 'POST': return 'upload';
+    case 'PUT': return 'edit';
+    case 'DELETE': return 'delete';
+    default: return 'http';
+  }
+};
 
 const getMethodColor = (method) => {
   switch (method) {
-    case 'GET':
-      return '#4CAF50';
-    case 'POST':
-      return '#2196F3';
-    case 'PUT':
-      return '#FFC107';
-    case 'DELETE':
-      return '#F44336';
-    default:
-      return '#9E9E9E';
+    case 'GET': return '#2E7D32';     // Green
+    case 'POST': return '#1565C0';    // Blue  
+    case 'PUT': return '#F57C00';     // Orange
+    case 'DELETE': return '#C62828';  // Red
+    default: return '#616161';        // Gray
   }
 };
 
