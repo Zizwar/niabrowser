@@ -34,14 +34,16 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
             NIABrowser - Smart Developer Browser is an advanced web browser application designed specifically for developers. It provides developer tools, JavaScript injection capabilities, and network monitoring features to assist in web development and debugging.
           </Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Developer</Text>
-          <Text style={[styles.text, { color: textColor }]}>Brahim Bidi</Text>
+          <TouchableOpacity onPress={() => openLink('https://brah.im')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>Brahim Bidi</Text>
+          </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Website</Text>
           <TouchableOpacity onPress={() => openLink('https://niabrowser.com')}>
             <Text style={[styles.link, { color: theme.colors.primary }]}>niabrowser.com</Text>
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Contact</Text>
-          <TouchableOpacity onPress={() => openLink('mailto:contact@niabrowser.com')}>
-            <Text style={[styles.link, { color: theme.colors.primary }]}>contact@niabrowser.com</Text>
+          <TouchableOpacity onPress={() => openLink('mailto:feedback@niabrowser.com')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>feedback@niabrowser.com</Text>
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Source Code</Text>
           <TouchableOpacity onPress={() => openLink('https://github.com/zizwar/niabrowser')}>
@@ -51,7 +53,17 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
           <Text style={[styles.text, { color: textColor }]}>
             This project is open source and available under the MIT License.
           </Text>
-          <Text style={[styles.subTitle, { color: textColor }]}>Disclaimer</Text>
+          <Text style={[styles.subTitle, { color: textColor }]}>Legal</Text>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/disclaimer.html')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>Disclaimer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/terms.html')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>Terms of Service</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/privacy.html')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={[styles.subTitle, { color: textColor }]}>Important Notice</Text>
           <Text style={[styles.text, { color: textColor }]}>
             This app is intended for developers who understand its capabilities and the potential risks associated with injecting code. Users should exercise caution when using the app's features.
           </Text>

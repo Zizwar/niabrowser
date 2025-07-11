@@ -533,11 +533,11 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
   );
 
   const taskExamples = [
-    "كود يقوم بجمع روابط الصور والفيديوهات ووضع رابط التنزيل",
-    "كود يقوم بتحويل اتجاه الصفحة من اليسار إلى اليمين", 
-    "إخفاء جميع الإعلانات من الصفحة",
-    "تغيير ألوان الصفحة إلى الوضع المظلم",
-    "استخراج جميع روابط البريد الإلكتروني من الصفحة"
+    "Collect all image and video links and add download buttons",
+    "Convert page direction from left-to-right to right-to-left", 
+    "Hide all advertisements from the page",
+    "Change page colors to dark mode theme",
+    "Extract all email addresses from the page"
   ];
 
   const renderAIGenerator = () => (

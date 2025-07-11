@@ -437,6 +437,8 @@ const goHomeOld = useCallback(async () => {
         isSafeMode={isSafeMode}
         toggleSafeMode={toggleSafeMode}
         webViewRef={webViewRefs.current[activeTabIndex]}
+        currentUserAgent={currentUserAgent}
+        onSelectUserAgent={setCurrentUserAgent}
       />
       {tabs[activeTabIndex] && (
         <>

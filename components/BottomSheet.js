@@ -18,9 +18,12 @@ const BottomSheet = ({
   isSafeMode,
   toggleSafeMode,
   openUserAgentSelector,
-  webViewRef
+  webViewRef,
+  currentUserAgent,
+  onSelectUserAgent
 }) => {
   const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [showUserAgentModal, setShowUserAgentModal] = useState(false);
   
   const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
@@ -97,11 +100,18 @@ const BottomSheet = ({
     );
   };
 
+  const handleUserAgentSelect = (userAgent) => {
+    if (onSelectUserAgent) {
+      onSelectUserAgent(userAgent);
+    }
+    setShowUserAgentModal(false);
+  };
+
   const settingsData = [
     { icon: 'brightness-6', title: 'Dark Mode', onPress: toggleDarkMode, value: isDarkMode },
     { icon: 'desktop-windows', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
     { icon: 'security', title: 'Safe Mode', onPress: toggleSafeMode, value: isSafeMode },
-    { icon: 'person', title: 'User Agent', onPress: openUserAgentSelector },
+    { icon: 'person', title: 'User Agent', onPress: () => setShowUserAgentModal(true) },
     { icon: 'history', title: 'History', onPress: openHistory },
     { icon: 'share', title: 'Share', onPress: () => shareUrl(currentUrl) },
     { icon: 'delete', title: 'Clear Data', onPress: () => setShowClearDataModal(true) },
@@ -163,6 +173,51 @@ const BottomSheet = ({
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.cancelButton} onPress={() => setShowClearDataModal(false)}>
+                <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* User Agent Selection Modal */}
+      {showUserAgentModal && (
+        <Modal transparent visible={true} animationType="slide">
+          <View style={styles.clearDataModalOverlay}>
+            <View style={[styles.clearDataModal, { backgroundColor }]}>
+              <Text style={[styles.clearDataTitle, { color: textColor }]}>Select User Agent</Text>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => handleUserAgentSelect(null)}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>🔄 Default (Auto)</Text>
+                {!currentUserAgent && <Text style={{ color: '#4CAF50', marginLeft: 10 }}>✓</Text>}
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => handleUserAgentSelect('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>💻 Chrome Desktop</Text>
+                {currentUserAgent === 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' && <Text style={{ color: '#4CAF50', marginLeft: 10 }}>✓</Text>}
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => handleUserAgentSelect('Mozilla/5.0 (Linux; Android 12; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>📱 Chrome Mobile</Text>
+                {currentUserAgent === 'Mozilla/5.0 (Linux; Android 12; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36' && <Text style={{ color: '#4CAF50', marginLeft: 10 }}>✓</Text>}
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => handleUserAgentSelect('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.0 Safari/537.36')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>🍎 Safari Desktop</Text>
+                {currentUserAgent === 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.0 Safari/537.36' && <Text style={{ color: '#4CAF50', marginLeft: 10 }}>✓</Text>}
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => handleUserAgentSelect('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/537.36')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>📱 Safari iOS</Text>
+                {currentUserAgent === 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/537.36' && <Text style={{ color: '#4CAF50', marginLeft: 10 }}>✓</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.clearOption} onPress={() => handleUserAgentSelect('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>🌐 Edge Desktop</Text>
+                {currentUserAgent === 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0' && <Text style={{ color: '#4CAF50', marginLeft: 10 }}>✓</Text>}
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowUserAgentModal(false)}>
                 <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
