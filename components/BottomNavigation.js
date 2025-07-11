@@ -6,6 +6,7 @@ import { Icon } from 'react-native-elements';
 const BottomNavigation = ({ 
   isDarkMode, 
   onHomePress, 
+  onHomeLongPress,
   onBackPress, 
   onForwardPress, 
   onRefreshPress, 
@@ -16,21 +17,28 @@ const BottomNavigation = ({
   canGoBack,
   canGoForward,
   onGetSourcePress,
-  onToggleErudaPress
+  onToggleErudaPress,
+  onFullscreenToggle,
+  isFullscreen
 }) => {
   const iconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#F1F3F4' }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
-        <TouchableOpacity onPress={onHomePress} style={styles.button}>
+        <TouchableOpacity 
+          onPress={onHomePress} 
+          onLongPress={onHomeLongPress}
+          style={styles.button}
+        >
           <Icon name="home" type="material" color={iconColor} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={onBackPress} style={styles.button} disabled={!canGoBack}>
-          <Icon name="arrow-back" type="material" color={canGoBack ? iconColor : '#888888'} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onForwardPress} style={styles.button} disabled={!canGoForward}>
-          <Icon name="arrow-forward" type="material" color={canGoForward ? iconColor : '#888888'} />
+        <TouchableOpacity onPress={onFullscreenToggle} style={styles.button}>
+          <Icon 
+            name={isFullscreen ? "fullscreen-exit" : "fullscreen"} 
+            type="material" 
+            color={iconColor} 
+          />
         </TouchableOpacity>
         <TouchableOpacity onPress={onRefreshPress} style={styles.button}>
           <Icon name="refresh" type="material" color={iconColor} />

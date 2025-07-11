@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert } from 'react-native';
+import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -43,6 +43,9 @@ const AppContent = () => {
   const [isSafeMode, setIsSafeMode] = useState(false);
   const [currentUserAgent, setCurrentUserAgent] = useState(null);
   const [isUserAgentSelectorVisible, setUserAgentSelectorVisible] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [customHomePage, setCustomHomePage] = useState('https://www.google.com');
+  const [showHomePageModal, setShowHomePageModal] = useState(false);
 
   const webViewRefs = useWebViewRefs();
   const { history, addToHistory, clearHistory, setHistory } = useHistory();
@@ -88,7 +91,17 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
 
   useEffect(() => {
     checkOnboardingStatus();
+    loadCustomHomePage();
   }, []);
+
+  const loadCustomHomePage = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('customHomePage');
+      if (saved) setCustomHomePage(saved);
+    } catch (error) {
+      console.error('Error loading custom home page:', error);
+    }
+  };
 
   useEffect(() => {
     const backAction = () => {
@@ -201,7 +214,20 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
     }
   }, [updateTabInfo, webViewRefs]);
 
-  const goHome = useCallback(async () => {
+  const goHome = useCallback(() => {
+    updateTabUrl(activeTabIndex, customHomePage);
+  }, [activeTabIndex, updateTabUrl, customHomePage]);
+
+  const saveHomePage = async () => {
+    try {
+      await AsyncStorage.setItem('customHomePage', customHomePage);
+      setShowHomePageModal(false);
+    } catch (error) {
+      console.error('Error saving home page:', error);
+    }
+  };
+
+const goHomeOld = useCallback(async () => {
     try {
       // Try to get the last visited URL from history
       const savedHistory = await AsyncStorage.getItem('browserHistory');
@@ -308,38 +334,42 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
    return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
       <CustomStatusBar isDarkMode={isDarkMode} />
-      <TabBar
-        tabs={tabs}
-        activeTabIndex={activeTabIndex}
-        onTabPress={setActiveTabIndex}
-        onCloseTab={closeTab}
-        onAddTab={addNewTab}
-        isDarkMode={isDarkMode}
-        isLoading={isTabsLoading}
-      />
-      <ToolBar 
-        url={tabs[activeTabIndex]?.url || ''}
-        setUrl={(newUrl) => updateTabUrl(activeTabIndex, newUrl)}
-        isDarkMode={isDarkMode}
-        textColor={isDarkMode ? '#FFFFFF' : '#000000'}
-        addToHistory={addToHistory}
-        onFavoritesPress={() => setHistoryModalVisible(true)}
-  isFavorite={favorites.includes(tabs[activeTabIndex]?.url)}
-  onToggleFavorite={() => {
-    const currentUrl = tabs[activeTabIndex]?.url;
-    if (favorites.includes(currentUrl)) {
-      removeFromFavorites(currentUrl);
-    } else {
-      addToFavorites(currentUrl);
-    }
-  }}
-        onMenuPress={() => setBottomSheetVisible(true)}
-        goBack={() => webViewRefs.current[activeTabIndex]?.goBack()}
-        goForward={() => webViewRefs.current[activeTabIndex]?.goForward()}
-        reload={() => webViewRefs.current[activeTabIndex]?.reload()}
-        canGoBack={tabs[activeTabIndex]?.canGoBack || false}
-        canGoForward={tabs[activeTabIndex]?.canGoForward || false}
-      />
+      {!isFullscreen && (
+        <>
+          <TabBar
+            tabs={tabs}
+            activeTabIndex={activeTabIndex}
+            onTabPress={setActiveTabIndex}
+            onCloseTab={closeTab}
+            onAddTab={addNewTab}
+            isDarkMode={isDarkMode}
+            isLoading={isTabsLoading}
+          />
+          <ToolBar 
+            url={tabs[activeTabIndex]?.url || ''}
+            setUrl={(newUrl) => updateTabUrl(activeTabIndex, newUrl)}
+            isDarkMode={isDarkMode}
+            textColor={isDarkMode ? '#FFFFFF' : '#000000'}
+            addToHistory={addToHistory}
+            onFavoritesPress={() => setHistoryModalVisible(true)}
+            isFavorite={favorites.includes(tabs[activeTabIndex]?.url)}
+            onToggleFavorite={() => {
+              const currentUrl = tabs[activeTabIndex]?.url;
+              if (favorites.includes(currentUrl)) {
+                removeFromFavorites(currentUrl);
+              } else {
+                addToFavorites(currentUrl);
+              }
+            }}
+            onMenuPress={() => setBottomSheetVisible(true)}
+            goBack={() => webViewRefs.current[activeTabIndex]?.goBack()}
+            goForward={() => webViewRefs.current[activeTabIndex]?.goForward()}
+            reload={() => webViewRefs.current[activeTabIndex]?.reload()}
+            canGoBack={tabs[activeTabIndex]?.canGoBack || false}
+            canGoForward={tabs[activeTabIndex]?.canGoForward || false}
+          />
+        </>
+      )}
       <View style={{ flex: 1 }}>
         {tabs.map((tab, index) => (
           <View key={tab.id} style={{ 
@@ -370,6 +400,7 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         <BottomNavigation
           isDarkMode={isDarkMode}
           onHomePress={goHome}
+          onHomeLongPress={() => setShowHomePageModal(true)}
           onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
           onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
           onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
@@ -381,7 +412,8 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
           canGoForward={tabs[activeTabIndex]?.canGoForward || false}
           onGetSourcePress={getSourceHtml}
           onToggleErudaPress={toggleEruda}
-          onScreenshotPress={takeScreenshot}
+          onFullscreenToggle={() => setIsFullscreen(!isFullscreen)}
+          isFullscreen={isFullscreen}
         />
       )}
       <BottomSheet
@@ -477,6 +509,43 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         currentUserAgent={currentUserAgent}
         isDarkMode={isDarkMode}
       />
+      
+      {showHomePageModal && (
+        <Modal visible={true} transparent animationType="slide">
+          <View style={styles.homeModalOverlay}>
+            <View style={[styles.homeModal, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]}>
+              <Text style={[styles.homeModalTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
+                Set Home Page
+              </Text>
+              <TextInput
+                style={[styles.homeInput, { 
+                  color: isDarkMode ? '#FFFFFF' : '#000000',
+                  borderColor: isDarkMode ? '#444' : '#CCC',
+                  backgroundColor: isDarkMode ? '#2A2A2A' : '#F8F8F8'
+                }]}
+                value={customHomePage}
+                onChangeText={setCustomHomePage}
+                placeholder="Enter home page URL"
+                placeholderTextColor={isDarkMode ? '#888' : '#666'}
+              />
+              <View style={styles.homeModalButtons}>
+                <TouchableOpacity 
+                  style={[styles.homeModalButton, { backgroundColor: isDarkMode ? '#444' : '#DDD' }]}
+                  onPress={() => setShowHomePageModal(false)}
+                >
+                  <Text style={[styles.homeModalButtonText, { color: isDarkMode ? '#FFF' : '#000' }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.homeModalButton, { backgroundColor: '#28A745' }]}
+                  onPress={saveHomePage}
+                >
+                  <Text style={[styles.homeModalButtonText, { color: '#FFFFFF' }]}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -484,6 +553,45 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  homeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  homeModal: {
+    width: '80%',
+    borderRadius: 15,
+    padding: 20,
+  },
+  homeModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  homeInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  homeModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  homeModalButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  homeModalButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

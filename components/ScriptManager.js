@@ -93,12 +93,26 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     openrouter: {
       baseURL: 'https://openrouter.ai/api/v1/chat/completions',
       models: {
-        basic: [
-          'openai/gpt-4o-mini',
-          'anthropic/claude-3-haiku',
-          'google/gemini-flash-1.5'
+        google: [
+          'google/gemini-pro-1.5',
+          'google/gemini-flash-1.5',
+          'google/gemma-2-9b-it'
         ],
-        advanced: 'manual_input'
+        openai: [
+          'openai/gpt-4o',
+          'openai/gpt-4o-mini',
+          'openai/gpt-3.5-turbo'
+        ],
+        anthropic: [
+          'anthropic/claude-3-5-sonnet',
+          'anthropic/claude-3-haiku',
+          'anthropic/claude-3-opus'
+        ],
+        opensource: [
+          'meta-llama/llama-3.1-70b-instruct',
+          'mistralai/mixtral-8x7b-instruct',
+          'microsoft/wizardlm-2-8x22b'
+        ]
       }
     },
     
@@ -556,19 +570,27 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                 <Icon name="expand-more" type="material" color={isDarkMode ? '#FFFFFF' : '#000000'} />
               </View>
               <View style={styles.modelOptions}>
-                {AIConfig.openrouter.models.basic.map((model) => (
-                  <TouchableOpacity
-                    key={model}
-                    style={[
-                      styles.modelOption,
-                      { backgroundColor: selectedModel === model ? '#4A90E2' : (isDarkMode ? '#1E1E1E' : '#F0F0F0') }
-                    ]}
-                    onPress={() => setSelectedModel(model)}
-                  >
-                    <Text style={[styles.modelOptionText, { color: selectedModel === model ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000') }]}>
-                      {model.split('/')[1]} ({model.split('/')[0]})
+                {Object.entries(AIConfig.openrouter.models).map(([provider, models]) => (
+                  <View key={provider} style={styles.providerSection}>
+                    <Text style={[styles.providerTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
+                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
                     </Text>
-                  </TouchableOpacity>
+                    {models.map((model) => (
+                      <TouchableOpacity
+                        key={model}
+                        style={[styles.modelOption, {
+                          backgroundColor: selectedModel === model ? '#4A90E2' : 'transparent'
+                        }]}
+                        onPress={() => setSelectedModel(model)}
+                      >
+                        <Text style={[styles.modelOptionText, {
+                          color: selectedModel === model ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000')
+                        }]}>
+                          {model.split('/')[1]}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 ))}
               </View>
             </View>
@@ -618,11 +640,11 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           <View style={styles.aiButtonContainer}>
             <TouchableOpacity 
               onPress={generateScriptWithAI} 
-              style={[styles.generateButton, { backgroundColor: isDarkMode ? '#4A4A4A' : '#E0E0E0' }]}
+              style={[styles.generateButton, { backgroundColor: '#28A745' }]}
               disabled={isGenerating}
             >
               <Text style={styles.generateButtonText}>
-                {isGenerating ? '⏳ Generating...' : '🚀 Generate Script'}
+                {isGenerating ? '⏳ Generating...' : '🚀 Generate'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowAIGenerator(false)} style={[styles.cancelButton, { backgroundColor: isDarkMode ? '#3A3A3A' : '#D0D0D0' }]}>
@@ -656,17 +678,17 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                 'Add Script', 
                 'Choose how to create the script:',
                 [
+                  { text: 'Cancel', style: 'cancel' },
                   { text: 'Manual Creation', onPress: () => {
                     setCurrentScript({ name: '', code: '', urls: '*', isEnabled: true, runAt: 'document-idle' });
                     setIsEditMode(false);
                     setShowEditOverlay(true);
                   }},
-                  { text: 'AI Generator', onPress: () => setShowAIGenerator(true) },
-                  { text: 'Cancel', style: 'cancel' }
+                  { text: 'AI Generator', onPress: () => setShowAIGenerator(true) }
                 ]
               );
             }}
-            style={[styles.mainAddButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
+            style={[styles.mainAddButton, { backgroundColor: '#28A745' }]}
           >
             <Text style={[styles.mainAddButtonText, { color: '#FFFFFF' }]}>
               ➕ Add New Script
@@ -932,6 +954,17 @@ const styles = StyleSheet.create({
   modelOptionText: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  providerSection: {
+    marginBottom: 10,
+  },
+  providerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   advancedToggle: {
     marginBottom: 15,

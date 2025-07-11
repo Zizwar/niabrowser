@@ -49,6 +49,16 @@ const UserAgentSelector = ({ visible, onClose, onSelectUserAgent, currentUserAge
       name: 'Opera Desktop',
       value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0',
       description: 'Opera on Windows'
+    },
+    {
+      name: 'Chrome Android Tablet',
+      value: 'Mozilla/5.0 (Linux; Android 12; SM-T870) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      description: 'Chrome on Android Tablet'
+    },
+    {
+      name: 'iPad Safari',  
+      value: 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/537.36',
+      description: 'Safari on iPad'
     }
   ];
 
