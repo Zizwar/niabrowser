@@ -3,220 +3,450 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms & Conditions - webZview</title>
+    <title>Terms of Service - NIABrowser</title>
+    <meta name="description" content="Terms of Service for NIABrowser - Smart Developer Browser">
+    <link rel="icon" href="./assets/icon.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
             line-height: 1.6;
-            color: #333;
-            background: #f8f9fa;
         }
-
+        
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 20px;
         }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 60px 0;
-            text-align: center;
-            margin-bottom: 40px;
+        
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e1e8ed;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
         }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-left: 20px;
+            padding-right: 20px;
         }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4a90e2;
+            text-decoration: none;
         }
-
+        
+        .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            border-radius: 8px;
+        }
+        
+        .back-link {
+            color: #5a6c7d;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-link:hover {
+            color: #4a90e2;
+            background: rgba(74, 144, 226, 0.1);
+        }
+        
+        /* Main Content */
+        main {
+            padding: 120px 0 60px;
+        }
+        
         .content {
             background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
+            border-radius: 12px;
+            padding: 3rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e1e8ed;
         }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
         }
-
-        p {
-            margin-bottom: 15px;
-            color: #555;
-        }
-
-        ul {
-            margin-bottom: 15px;
-            padding-left: 20px;
-        }
-
-        li {
-            margin-bottom: 5px;
-            color: #555;
-        }
-
-        .back-link {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 25px;
-            margin-bottom: 20px;
-            transition: background 0.3s ease;
-        }
-
-        .back-link:hover {
-            background: #5a6fd8;
-        }
-
+        
         .last-updated {
-            font-style: italic;
-            color: #666;
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+            color: #5a6c7d;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #4a90e2;
         }
-
-        .highlight {
-            background: #fff3cd;
-            padding: 15px;
-            border-left: 4px solid #ffc107;
-            margin: 20px 0;
-            border-radius: 5px;
+        
+        h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
+            font-weight: 600;
+            border-bottom: 2px solid #4a90e2;
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.5rem;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            color: #5a6c7d;
+            line-height: 1.7;
+        }
+        
+        ul {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            color: #5a6c7d;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #e17055, #d63031);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .warning-box h3 {
+            color: white;
+            margin-top: 0;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .info-box h3 {
+            color: white;
+            margin-top: 0;
+        }
+        
+        .license-box {
+            background: #f8f9fa;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .license-box h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .license-box code {
+            background: #e9ecef;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .contact-info {
+            background: #f8f9fa;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .contact-info h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .contact-info a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+        
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Footer */
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        footer p {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        footer a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 2rem 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            nav {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <img src="./assets/icon.png" alt="NIABrowser Logo">
+                NIABrowser
+            </a>
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+        </nav>
+    </header>
+
+    <main>
         <div class="container">
-            <h1>Terms & Conditions</h1>
-            <p>webZview Developer Browser</p>
-        </div>
-    </div>
+            <div class="content">
+                <h1><i class="fas fa-file-contract"></i> Terms of Service</h1>
+                <div class="last-updated">
+                    <i class="fas fa-clock"></i> Last updated: December 2024
+                </div>
 
-    <div class="container">
-        <a href="index.html" class="back-link">← Back to Home</a>
-        
-        <div class="content">
-            <div class="highlight">
-                <strong>Important:</strong> By downloading, installing, or using webZview, you agree to be bound by these Terms and Conditions.
+                <div class="warning-box">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Important Notice</h3>
+                    <p>NIABrowser is a powerful developer tool. By using this application, you acknowledge that you understand its capabilities and accept full responsibility for its use.</p>
+                </div>
+
+                <h2>1. Acceptance of Terms</h2>
+                <p>By downloading, installing, or using NIABrowser, you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the application.</p>
+
+                <h2>2. Description of Service</h2>
+                <p>NIABrowser is a smart developer browser application that provides:</p>
+                <ul>
+                    <li>Advanced web browsing capabilities</li>
+                    <li>Developer tools and debugging features</li>
+                    <li>JavaScript injection and script management</li>
+                    <li>Network monitoring and analysis</li>
+                    <li>CRUD operations for API testing</li>
+                    <li>Greasemonkey script compatibility</li>
+                </ul>
+
+                <h2>3. User Responsibilities</h2>
+                
+                <h3>3.1 Intended Use</h3>
+                <p>NIABrowser is designed for developers and advanced users who understand web technologies. You are responsible for:</p>
+                <ul>
+                    <li>Understanding the functionality before use</li>
+                    <li>Using the application ethically and legally</li>
+                    <li>Respecting website terms of service</li>
+                    <li>Ensuring script safety before execution</li>
+                </ul>
+
+                <h3>3.2 Prohibited Activities</h3>
+                <p>You agree NOT to use NIABrowser for:</p>
+                <ul>
+                    <li>Illegal activities or unauthorized access</li>
+                    <li>Malicious script execution or distribution</li>
+                    <li>Bypassing security measures without permission</li>
+                    <li>Violating website terms of service or privacy policies</li>
+                    <li>Automated scraping without website consent</li>
+                    <li>Any activity that may harm others or their systems</li>
+                </ul>
+
+                <h2>4. Developer Tool Disclaimer</h2>
+                
+                <div class="warning-box">
+                    <h3><i class="fas fa-code"></i> Advanced Tool Warning</h3>
+                    <p>NIABrowser provides powerful capabilities that can modify website behavior, inject code, and access browser data. Users must understand these capabilities and their implications before use.</p>
+                </div>
+
+                <h3>4.1 Script Execution</h3>
+                <p>The JavaScript injection and script management features allow you to:</p>
+                <ul>
+                    <li>Execute custom code on websites</li>
+                    <li>Modify website appearance and behavior</li>
+                    <li>Access and manipulate DOM elements</li>
+                    <li>Interact with website APIs and services</li>
+                </ul>
+                <p><strong>You are fully responsible for any scripts you create, install, or execute.</strong></p>
+
+                <h3>4.2 Network Monitoring</h3>
+                <p>The network monitoring features provide access to:</p>
+                <ul>
+                    <li>HTTP requests and responses</li>
+                    <li>Headers and cookies</li>
+                    <li>API calls and data transmission</li>
+                </ul>
+                <p>Use this information responsibly and in compliance with applicable laws and website policies.</p>
+
+                <h2>5. Third-Party Services</h2>
+                
+                <h3>5.1 External Websites</h3>
+                <p>NIABrowser allows you to browse external websites. You are subject to those websites' terms of service and privacy policies.</p>
+
+                <h3>5.2 AI Services</h3>
+                <p>If you use the AI script generation feature:</p>
+                <ul>
+                    <li>You provide your own API key for OpenRouter.ai</li>
+                    <li>You are responsible for API usage costs</li>
+                    <li>You must comply with OpenRouter.ai's terms of service</li>
+                    <li>Generated scripts should be reviewed before execution</li>
+                </ul>
+
+                <h2>6. Intellectual Property</h2>
+                
+                <h3>6.1 NIABrowser License</h3>
+                <p>NIABrowser is open source software licensed under the MIT License. You may:</p>
+                <ul>
+                    <li>Use the software for any purpose</li>
+                    <li>Modify and distribute the source code</li>
+                    <li>Create derivative works</li>
+                </ul>
+
+                <h3>6.2 User Content</h3>
+                <p>You retain ownership of scripts and configurations you create. However, you grant us permission to store them locally on your device for application functionality.</p>
+
+                <h2>7. Disclaimers and Limitations</h2>
+                
+                <h3>7.1 No Warranty</h3>
+                <p>NIABrowser is provided "as is" without warranties of any kind. We do not guarantee:</p>
+                <ul>
+                    <li>Uninterrupted or error-free operation</li>
+                    <li>Compatibility with all websites</li>
+                    <li>Security of user-generated scripts</li>
+                    <li>Data accuracy or completeness</li>
+                </ul>
+
+                <h3>7.2 Limitation of Liability</h3>
+                <p>To the maximum extent permitted by law, we shall not be liable for:</p>
+                <ul>
+                    <li>Direct, indirect, incidental, or consequential damages</li>
+                    <li>Data loss or corruption</li>
+                    <li>Security breaches resulting from user actions</li>
+                    <li>Third-party website interactions</li>
+                    <li>Misuse of developer tools</li>
+                </ul>
+
+                <h2>8. Indemnification</h2>
+                <p>You agree to indemnify and hold harmless the developers, contributors, and associated parties from any claims, damages, or expenses arising from:</p>
+                <ul>
+                    <li>Your use of NIABrowser</li>
+                    <li>Scripts you create or execute</li>
+                    <li>Violation of these terms</li>
+                    <li>Violation of third-party rights</li>
+                </ul>
+
+                <h2>9. Updates and Modifications</h2>
+                <p>We reserve the right to:</p>
+                <ul>
+                    <li>Update the application and its features</li>
+                    <li>Modify these terms of service</li>
+                    <li>Discontinue support for the application</li>
+                </ul>
+                <p>Continued use after changes constitutes acceptance of new terms.</p>
+
+                <h2>10. Age Restrictions</h2>
+                <p>NIABrowser is intended for users aged 18 and above or those with sufficient technical knowledge to understand its implications. Minors should use the application under adult supervision.</p>
+
+                <h2>11. Governing Law</h2>
+                <p>These terms are governed by the laws of the jurisdiction where the developer resides. Any disputes will be resolved through appropriate legal channels.</p>
+
+                <div class="license-box">
+                    <h3><i class="fab fa-github"></i> Open Source License</h3>
+                    <p>NIABrowser is licensed under the <code>MIT License</code>. The full license text is available in the GitHub repository. This provides you with broad permissions while requiring attribution.</p>
+                </div>
+
+                <div class="info-box">
+                    <h3><i class="fas fa-graduation-cap"></i> Educational Purpose</h3>
+                    <p>NIABrowser is designed as an educational and development tool. We encourage responsible use for learning, testing, and legitimate development purposes.</p>
+                </div>
+
+                <h2>12. Contact and Support</h2>
+                <p>For questions, support, or reporting issues:</p>
+
+                <div class="contact-info">
+                    <h3><i class="fas fa-envelope"></i> Contact Information</h3>
+                    <ul>
+                        <li><strong>Email:</strong> <a href="mailto:contact@niascript.com">contact@niascript.com</a></li>
+                        <li><strong>GitHub Issues:</strong> <a href="https://github.com/zizwar/niabrowser/issues">Report Issues</a></li>
+                        <li><strong>Source Code:</strong> <a href="https://github.com/zizwar/niabrowser">GitHub Repository</a></li>
+                        <li><strong>Developer:</strong> Brahim Bidi</li>
+                    </ul>
+                </div>
+
+                <h2>13. Acknowledgment</h2>
+                <p>By using NIABrowser, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. You also acknowledge that you understand the powerful capabilities of this developer tool and accept full responsibility for its use.</p>
+
+                <div class="warning-box">
+                    <h3><i class="fas fa-shield-alt"></i> Final Reminder</h3>
+                    <p>NIABrowser is a powerful tool that requires responsible use. Always ensure you have permission to modify or test websites, and never use the application for malicious purposes.</p>
+                </div>
             </div>
-
-            <h2>Acceptance of Terms</h2>
-            <p>These Terms and Conditions ("Terms") govern your use of webZview Developer Browser ("the App"). By accessing or using the App, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use the App.</p>
-
-            <h2>License and Use</h2>
-            <p>webZview grants you a limited, non-exclusive, non-transferable license to use the App for personal and educational purposes. You may:</p>
-            <ul>
-                <li>Use the App for web browsing and development purposes</li>
-                <li>Create and manage user scripts for legitimate purposes</li>
-                <li>Use developer tools for debugging and analysis</li>
-                <li>Share the App with others through official distribution channels</li>
-            </ul>
-
-            <h2>Prohibited Uses</h2>
-            <p>You agree not to use webZview for any of the following prohibited activities:</p>
-            <ul>
-                <li>Illegal activities or violation of any applicable laws</li>
-                <li>Accessing websites or content without proper authorization</li>
-                <li>Creating malicious scripts or code that could harm systems</li>
-                <li>Circumventing security measures or access controls</li>
-                <li>Collecting personal information without consent</li>
-                <li>Distributing malware, viruses, or harmful code</li>
-                <li>Reverse engineering or modifying the App without permission</li>
-            </ul>
-
-            <h2>User Responsibilities</h2>
-            <p>As a user of webZview, you are responsible for:</p>
-            <ul>
-                <li>Using the App in compliance with all applicable laws and regulations</li>
-                <li>Respecting the terms of service of websites you visit</li>
-                <li>Ensuring your user scripts do not violate third-party rights</li>
-                <li>Maintaining the security of your device and data</li>
-                <li>Using safe mode when accessing untrusted content</li>
-            </ul>
-
-            <h2>Developer Tools and Scripts</h2>
-            <p>webZview provides powerful developer tools and script injection capabilities:</p>
-            <ul>
-                <li>Use these features responsibly and ethically</li>
-                <li>Test scripts in safe environments before deploying</li>
-                <li>Respect website security measures and access controls</li>
-                <li>Do not use tools to bypass authentication or authorization</li>
-                <li>Scripts are executed at your own risk</li>
-            </ul>
-
-            <h2>Disclaimer of Warranties</h2>
-            <p>webZview is provided "as is" without any warranties of any kind. We do not warrant that:</p>
-            <ul>
-                <li>The App will be error-free or uninterrupted</li>
-                <li>All features will work as expected in all environments</li>
-                <li>The App will be compatible with all devices or operating systems</li>
-                <li>User scripts will function properly on all websites</li>
-            </ul>
-
-            <h2>Limitation of Liability</h2>
-            <p>To the maximum extent permitted by law, webZview and its developers shall not be liable for any direct, indirect, incidental, special, or consequential damages resulting from your use of the App, including but not limited to:</p>
-            <ul>
-                <li>Data loss or corruption</li>
-                <li>System damage or security breaches</li>
-                <li>Financial losses</li>
-                <li>Privacy violations on third-party websites</li>
-            </ul>
-
-            <h2>Updates and Modifications</h2>
-            <p>We reserve the right to:</p>
-            <ul>
-                <li>Update or modify the App at any time</li>
-                <li>Change these Terms and Conditions with notice</li>
-                <li>Discontinue features or the entire App</li>
-                <li>Block access for users who violate these Terms</li>
-            </ul>
-
-            <h2>Open Source and Community</h2>
-            <p>webZview is open source software:</p>
-            <ul>
-                <li>Source code is available on GitHub</li>
-                <li>Community contributions are welcome</li>
-                <li>Modifications must comply with the project license</li>
-                <li>Commercial use may have additional restrictions</li>
-            </ul>
-
-            <h2>Termination</h2>
-            <p>These Terms remain in effect until terminated. You may terminate your use of the App at any time by uninstalling it. We may terminate or suspend your access if you violate these Terms.</p>
-
-            <h2>Contact Information</h2>
-            <p>If you have questions about these Terms and Conditions, please contact us at:</p>
-            <ul>
-                <li><strong>Name:</strong> brahim BIDI</li>
-                <li><strong>Email:</strong> zip.exe@googlemail.com</li>
-                <li><strong>Website:</strong> <a href="https://zizwar.github.io/niabrowser/" target="_blank">https://zizwar.github.io/niabrowser/</a></li>
-            </ul>
-
-            <div class="last-updated">
-                Last updated: December 2024
-            </div>
         </div>
-    </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Brahim Bidi. All rights reserved. | <a href="index.html">NIABrowser</a> | <a href="privacy.html">Privacy Policy</a></p>
+        </div>
+    </footer>
 </body>
 </html>
