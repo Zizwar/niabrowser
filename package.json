@@ -2,7 +2,7 @@
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android", 
+    "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
@@ -20,7 +20,7 @@
     "@react-navigation/stack": "^6.3.17",
     "cors": "^2.8.5",
     "cros": "^1.0.1",
-    "expo": "^53.0.13",
+    "expo": "^53.0.19",
     "expo-background-fetch": "~13.1.5",
     "expo-clipboard": "~7.1.4",
     "expo-constants": "~17.1.6",
