@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "NIABrowser - Smart Developer Browser",
-    "slug": "niabrowser-smart-browser",
-    "version": "0.7.0",
+    "name": "NIABrowser - AI-Powered DevTools",
+    "slug": "niabrowser-smart-devtools",
+    "version": "1.0.0",
     "orientation": "default",
-    "description": "Advanced developer browser with DevTools, JavaScript injection, network monitoring, and Greasemonkey support",
+    "description": "AI-powered developer browser: Generate scripts, monitor networks, inject code",
     "privacy": "public",
     "primaryColor": "#000000",
     "icon": "./assets/icon.png",
@@ -53,7 +53,7 @@
     "githubUrl": "https://github.com/zizwar/niabrowser",
     "extra": {
       "eas": {
-        "projectId": "e4056f16-2e02-4eed-8da4-b8b660c99273"
+        "projectId": "356c4c34-7f12-444c-921b-817101da5ce4"
       }
     }
   }
