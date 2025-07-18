@@ -104,7 +104,9 @@ console.log("###: coookis header", requestCookies)
       var originalConsole = window.console;
       window.console = {
         log: function() {
-          var args = Array.from(arguments);
+          var args = Array.from(arguments).map(arg => 
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          );
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'consoleLog',
             message: { type: 'log', message: args.join(' ') }
@@ -112,7 +114,9 @@ console.log("###: coookis header", requestCookies)
           originalConsole.log.apply(originalConsole, arguments);
         },
         error: function() {
-          var args = Array.from(arguments);
+          var args = Array.from(arguments).map(arg => 
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          );
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'consoleLog',
             message: { type: 'error', message: args.join(' ') }
@@ -120,7 +124,9 @@ console.log("###: coookis header", requestCookies)
           originalConsole.error.apply(originalConsole, arguments);
         },
         warn: function() {
-          var args = Array.from(arguments);
+          var args = Array.from(arguments).map(arg => 
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          );
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'consoleLog',
             message: { type: 'warn', message: args.join(' ') }
@@ -128,7 +134,9 @@ console.log("###: coookis header", requestCookies)
           originalConsole.warn.apply(originalConsole, arguments);
         },
         info: function() {
-          var args = Array.from(arguments);
+          var args = Array.from(arguments).map(arg => 
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          );
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'consoleLog',
             message: { type: 'info', message: args.join(' ') }

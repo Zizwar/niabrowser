@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
 import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -94,6 +95,30 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
     checkOnboardingStatus();
     loadCustomHomePage();
   }, []);
+
+  useEffect(() => {
+    const handleDeepLink = (url) => {
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        Alert.alert(
+          'Open Link',
+          `Would you like to open this link in NIABrowser?\n\n${url}`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open', onPress: () => addNewTab(url) }
+          ]
+        );
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    
+    // Check if app was opened with a URL
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink(url);
+    });
+
+    return () => subscription?.remove();
+  }, [addNewTab]);
 
   const loadCustomHomePage = async () => {
     try {

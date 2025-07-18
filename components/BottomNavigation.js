@@ -21,13 +21,12 @@ const BottomNavigation = ({
   onFullscreenToggle,
   isFullscreen
 }) => {
-  const [showAllButtons, setShowAllButtons] = useState(false);
+  const [showAllButtons, setShowAllButtons] = useState(true);
   const iconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#F1F3F4' }]}>
-      {showAllButtons && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
           <TouchableOpacity 
             onPress={onHomePress} 
             onLongPress={onHomeLongPress}
@@ -61,11 +60,7 @@ const BottomNavigation = ({
             <Icon name="code" type="material" color={iconColor} />
           </TouchableOpacity>
         </ScrollView>
-      )}
-      <TouchableOpacity
-        onPress={() => setShowAllButtons(!showAllButtons)}
-        style={styles.settingsButton}
-      >
+      <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
         <Icon name="settings" type="material" color={iconColor} />
       </TouchableOpacity>
     </View>

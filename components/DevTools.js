@@ -237,6 +237,32 @@ const renderNetworkTab = () => (
     Alert.alert('Copied', 'All logs have been copied');
   };
 
+  const ConsoleLogItem = ({ item, index, isDarkMode, textColor }) => {
+    const [expanded, setExpanded] = useState(false);
+    
+    const truncatedMessage = item.message.length > 100 
+      ? item.message.substring(0, 100) + '...' 
+      : item.message;
+
+    const copyMessage = async () => {
+      await Clipboard.setStringAsync(item.message);
+      Alert.alert('Copied', 'Log message copied to clipboard');
+    };
+
+    return (
+      <TouchableOpacity 
+        style={[styles.consoleLogItem, { backgroundColor: index % 2 === 0 ? (isDarkMode ? '#2A2A2A' : '#F8F8F8') : 'transparent' }]}
+        onPress={() => setExpanded(!expanded)}
+        onLongPress={copyMessage}
+      >
+        <Text style={[styles.consoleLog, getConsoleLogStyle(item.type, isDarkMode)]}>
+          {expanded ? item.message : truncatedMessage}
+        </Text>
+        <View style={[styles.consoleSeparator, { backgroundColor: isDarkMode ? '#444' : '#E0E0E0' }]} />
+      </TouchableOpacity>
+    );
+  };
+
   const renderConsoleTab = () => (
     <View style={styles.consoleContainer}>
       <View style={styles.searchContainer}>
@@ -251,10 +277,13 @@ const renderNetworkTab = () => (
         style={styles.consoleList}
         data={consoleOutput}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <Text style={[styles.consoleLog, getConsoleLogStyle(item.type, isDarkMode)]}>
-            {item.message}
-          </Text>
+        renderItem={({ item, index }) => (
+          <ConsoleLogItem 
+            item={item} 
+            index={index} 
+            isDarkMode={isDarkMode} 
+            textColor={textColor}
+          />
         )}
       />
     </View>
@@ -599,6 +628,14 @@ const styles = StyleSheet.create({
   methodContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  consoleLogItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  consoleSeparator: {
+    height: 1,
+    marginTop: 5,
   },
 });
 

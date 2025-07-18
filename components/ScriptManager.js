@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import * as Linking from 'expo-linking';
 import { Icon, Button, Overlay, Tooltip } from 'react-native-elements';
 import { createGreasemonkeyEnvironment, parseMetadata } from '../utils/GreasemonkeyCompatibility';
 import { theme } from '../constants/theme';
@@ -35,17 +36,20 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [aiTaskDescription, setAiTaskDescription] = useState('');
-  const [selectedModel, setSelectedModel] = useState('openai/gpt-4o-mini');
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-4.1-mini');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAdvancedAI, setShowAdvancedAI] = useState(false);
   const [sessionCosts, setSessionCosts] = useState({ totalTokens: { input: 0, output: 0 }, totalCost: 0.0000, requestCount: 0 });
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
 
   useEffect(() => {
     loadScripts();
     loadApiKey();
     loadSessionCosts();
+    setCustomPrompt(AIConfig.systemPrompt);
   }, []);
 
   const loadApiKey = async () => {
@@ -93,28 +97,17 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const AIConfig = {
     openrouter: {
       baseURL: 'https://openrouter.ai/api/v1/chat/completions',
-      models: {
-        google: [
-          'google/gemini-pro-1.5',
-          'google/gemini-flash-1.5',
-          'google/gemma-2-9b-it'
-        ],
-        openai: [
-          'openai/gpt-4o',
-          'openai/gpt-4o-mini',
-          'openai/gpt-3.5-turbo'
-        ],
-        anthropic: [
-          'anthropic/claude-3-5-sonnet',
-          'anthropic/claude-3-haiku',
-          'anthropic/claude-3-opus'
-        ],
-        opensource: [
-          'meta-llama/llama-3.1-70b-instruct',
-          'mistralai/mixtral-8x7b-instruct',
-          'microsoft/wizardlm-2-8x22b'
-        ]
-      }
+      models: [
+        { name: 'GPT-4o', value: 'openai/gpt-4o', provider: 'OpenAI', cost: 'High' },
+        { name: 'GPT-4.1 Mini', value: 'openai/gpt-4.1-mini', provider: 'OpenAI', cost: 'Low' },
+        { name: 'Claude 3.5 Sonnet', value: 'anthropic/claude-3-5-sonnet', provider: 'Anthropic', cost: 'Medium' },
+        { name: 'Gemini 1.5 Pro', value: 'google/gemini-1.5-pro', provider: 'Google', cost: 'Medium' },
+        { name: 'DeepSeek R1 Distill (Free)', value: 'deepseek/deepseek-r1-distill-0528:free', provider: 'DeepSeek', cost: 'Free' },
+        { name: 'Code Llama 70B', value: 'meta/code-llama-70b-instruct', provider: 'Meta', cost: 'Medium' },
+        { name: 'Mixtral 8x7B', value: 'mistralai/mixtral-8x7b-instruct', provider: 'Mistral', cost: 'Low' },
+        { name: 'Qwen 2 72B', value: 'qwen/qwen2-72b-instruct', provider: 'Qwen', cost: 'Medium' },
+        { name: 'Llama 3 70B (Groq)', value: 'meta/llama-3-70b-instruct', provider: 'Meta/Groq', cost: 'Low' }
+      ]
     },
     
     systemPrompt: `You are an assistant for creating JavaScript code to be executed in React Native WebView.
@@ -158,7 +151,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         body: JSON.stringify({
           model: selectedModel,
           messages: [
-            { role: 'system', content: AIConfig.systemPrompt },
+            { role: 'system', content: customPrompt },
             { role: 'user', content: `Create a JavaScript script for the following task: ${aiTaskDescription}` }
           ],
           temperature: 0.7,
@@ -597,7 +590,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                 onPress={() => setShowModelDropdown(!showModelDropdown)}
               >
                 <Text style={[styles.modelDropdownText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                  {selectedModel.split('/')[1] || selectedModel}
+                  {AIConfig.openrouter.models.find(m => m.value === selectedModel)?.name || selectedModel.split('/')[1] || selectedModel}
                 </Text>
                 <Icon
                   name={showModelDropdown ? "expand-less" : "expand-more"}
@@ -612,30 +605,30 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                   nestedScrollEnabled={true} 
                   showsVerticalScrollIndicator={false}
                 >
-                  {Object.entries(AIConfig.openrouter.models).map(([provider, models]) => (
-                    <View key={provider} style={styles.providerSection}>
-                      <Text style={[styles.providerTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>
-                        {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                      </Text>
-                      {models.map((model) => (
-                        <TouchableOpacity
-                          key={model}
-                          style={[styles.modelOption, {
-                            backgroundColor: selectedModel === model ? '#4A90E2' : 'transparent'
-                          }]}
-                          onPress={() => {
-                            setSelectedModel(model);
-                            setShowModelDropdown(false);
-                          }}
-                        >
-                          <Text style={[styles.modelOptionText, {
-                            color: selectedModel === model ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000')
-                          }]}>
-                            {model.split('/')[1]}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
+                  {AIConfig.openrouter.models.map((model) => (
+                    <TouchableOpacity
+                      key={model.value}
+                      style={[styles.modelOption, {
+                        backgroundColor: selectedModel === model.value ? '#4A90E2' : 'transparent'
+                      }]}
+                      onPress={() => {
+                        setSelectedModel(model.value);
+                        setShowModelDropdown(false);
+                      }}
+                    >
+                      <View style={styles.modelOptionContent}>
+                        <Text style={[styles.modelOptionText, {
+                          color: selectedModel === model.value ? '#FFFFFF' : (isDarkMode ? '#FFFFFF' : '#000000')
+                        }]}>
+                          {model.name}
+                        </Text>
+                        <Text style={[styles.modelOptionProvider, {
+                          color: selectedModel === model.value ? '#CCCCCC' : (isDarkMode ? '#BBBBBB' : '#666666')
+                        }]}>
+                          {model.provider} • {model.cost}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
                   ))}
                 </ScrollView>
               )}
@@ -673,6 +666,14 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               secureTextEntry
             />
 
+            <TouchableOpacity onPress={() => Linking.openURL('https://openrouter.ai/docs')} style={styles.docLink}>
+              <Text style={[styles.docLinkText, { color: theme.colors.primary }]}>OpenRouter Documentation</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setShowPromptEditor(true)} style={styles.docLink}>
+              <Text style={[styles.docLinkText, { color: theme.colors.primary }]}>Edit System Prompt</Text>
+            </TouchableOpacity>
+
             <View style={styles.costDisplay}>
               <Text style={[styles.costText, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>
                 📊 Session Statistics:{'\n'}
@@ -695,6 +696,46 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowAIGenerator(false)} style={[styles.cancelButton, { backgroundColor: isDarkMode ? '#3A3A3A' : '#D0D0D0' }]}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderPromptEditor = () => (
+    <Modal visible={showPromptEditor} transparent animationType="slide" onRequestClose={() => setShowPromptEditor(false)}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.promptModal, { backgroundColor: isDarkMode ? theme.dark.surface : theme.light.surface }]}>
+          <Text style={[styles.promptTitle, { color: isDarkMode ? theme.dark.text : theme.light.text }]}>Edit System Prompt</Text>
+          <ScrollView style={styles.promptScrollView}>
+            <TextInput
+              style={[styles.promptTextInput, { 
+                color: isDarkMode ? '#FFFFFF' : '#000000', 
+                backgroundColor: isDarkMode ? '#1E1E1E' : '#F0F0F0' 
+              }]}
+              placeholder="Enter custom system prompt..."
+              placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
+              value={customPrompt}
+              onChangeText={setCustomPrompt}
+              multiline
+              numberOfLines={15}
+            />
+          </ScrollView>
+          <View style={styles.promptButtonContainer}>
+            <TouchableOpacity 
+              onPress={() => {
+                setCustomPrompt(AIConfig.systemPrompt);
+              }} 
+              style={[styles.resetPromptButton, { backgroundColor: '#FF6B6B' }]}
+            >
+              <Text style={styles.promptButtonText}>Reset to Default</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => setShowPromptEditor(false)} 
+              style={[styles.savePromptButton, { backgroundColor: '#28A745' }]}
+            >
+              <Text style={styles.promptButtonText}>Save & Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -750,6 +791,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         {renderEditOverlay()}
         {renderInfoModal()}
         {renderAIGenerator()}
+        {renderPromptEditor()}
       </View>
     </Modal>
   );
@@ -1104,6 +1146,70 @@ const styles = StyleSheet.create({
   },
   costDetail: {
     fontSize: 14,
+  },
+  modelOptionContent: {
+    flexDirection: 'column',
+  },
+  modelOptionProvider: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  docLink: {
+    marginVertical: 5,
+    alignItems: 'center',
+  },
+  docLinkText: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  promptModal: {
+    width: '90%',
+    height: '80%',
+    borderRadius: 10,
+    padding: 20,
+  },
+  promptTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  promptScrollView: {
+    flex: 1,
+    marginBottom: 15,
+  },
+  promptTextInput: {
+    borderRadius: 5,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    fontSize: 14,
+    fontFamily: 'monospace',
+    textAlignVertical: 'top',
+    minHeight: 300,
+  },
+  promptButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  resetPromptButton: {
+    flex: 1,
+    borderRadius: 25,
+    paddingVertical: 12,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  savePromptButton: {
+    flex: 1,
+    borderRadius: 25,
+    paddingVertical: 12,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  promptButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
