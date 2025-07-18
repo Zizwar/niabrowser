@@ -1,11 +1,11 @@
-# نيةبراوزر - البراوزر الذكي
+# NIA Browser
 
 <p align="center">
   <img src="./assets/icon.png" alt="NIABrowser Logo" width="120" height="120">
 </p>
 
 <p align="center">
-  <strong>🚀 Advanced Web Browser Built for Developers</strong>
+  <strong>Smart Developer Browser with Advanced DevTools</strong>
 </p>
 
 <p align="center">
@@ -123,7 +123,7 @@ The app uses React Context for global state:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! 
 
 ### Development Setup
 
@@ -143,7 +143,7 @@ NIABrowser respects your privacy:
 - No data collection or tracking
 - All data stored locally on your device
 - Open source for transparency
-- See our [Privacy Policy](privacy-policy.md) for details
+- See our [Privacy Policy](privacy.html) for details
 
 ## 📞 Support
 
@@ -157,9 +157,3 @@ NIABrowser respects your privacy:
 - React Native WebView contributors
 - Eruda developers for mobile debugging tools
 - Open source community for inspiration
-
----
-
-<p align="center">
-  Made with ❤️ for the developer community
-</p>

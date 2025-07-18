@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, View, TouchableOpacity, StyleSheet, Text, ScrollView, FlatList, Alert, ActivityIndicator } from 'react-native';
+import { WebView } from 'react-native-webview';
 import * as Clipboard from 'expo-clipboard';
 
 const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
@@ -64,28 +65,23 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
             <ActivityIndicator size="large" color={isDarkMode ? '#FFFFFF' : '#000000'} />
             <Text style={[styles.loadingText, { color: textColor }]}>Loading source code...</Text>
           </View>
-        ) : useVirtualized ? (
-          <FlatList
-            data={sourceLines}
-            renderItem={renderLine}
-            keyExtractor={(item) => item.id.toString()}
-            style={styles.codeContainer}
-            initialNumToRender={50}
-            maxToRenderPerBatch={50}
-            windowSize={10}
-            removeClippedSubviews={true}
-            getItemLayout={(data, index) => ({
-              length: 16, // Approximate line height
-              offset: 16 * index,
-              index,
-            })}
-          />
         ) : (
-          <ScrollView style={styles.codeContainer}>
-            <Text style={[styles.codeText, { color: textColor }]}>
-              {displayCode}
-            </Text>
-          </ScrollView>
+          <WebView 
+            source={{ html: `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${isDarkMode ? 'dark' : 'default'}.min.css">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+              </head>
+              <body style="margin:0;padding:10px;background:${isDarkMode ? '#1e1e1e' : '#ffffff'};">
+                <pre><code class="language-html">${displayCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                <script>hljs.highlightAll();</script>
+              </body>
+              </html>
+            ` }}
+            style={{ flex: 1 }}
+          />
         )}
         {displayCode && (
           <TouchableOpacity 

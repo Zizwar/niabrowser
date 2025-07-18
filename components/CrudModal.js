@@ -140,8 +140,23 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
         webViewRef.current.injectJavaScript(script);
       } else {
         const response = await fetch(url, requestOptions);
-        const data = await response.text();
-        setResponse(data);
+        
+        // Get response headers
+        const responseHeaders = {};
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+        
+        const responseText = await response.text();
+        
+        const fullResponse = {
+          status: response.status,
+          statusText: response.statusText,
+          headers: responseHeaders,
+          body: responseText
+        };
+        
+        setResponse(JSON.stringify(fullResponse, null, 2));
       }
     } catch (err) {
       setError(err.toString());

@@ -2,6 +2,9 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Modal, Alert } from 'react-native';
 import { Icon } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 const BottomSheet = ({ 
   visible, 
@@ -24,6 +27,7 @@ const BottomSheet = ({
 }) => {
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showUserAgentModal, setShowUserAgentModal] = useState(false);
+  const [showDataModal, setShowDataModal] = useState(false);
   
   const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
@@ -100,6 +104,79 @@ const BottomSheet = ({
     );
   };
 
+  const exportData = async (dataType) => {
+    try {
+      let dataToExport = {};
+      
+      switch(dataType) {
+        case 'favorites':
+          const favorites = await AsyncStorage.getItem('favorites');
+          dataToExport = { favorites: favorites ? JSON.parse(favorites) : [] };
+          break;
+        case 'history':
+          const history = await AsyncStorage.getItem('browserHistory');
+          dataToExport = { history: history ? JSON.parse(history) : [] };
+          break;
+        case 'scripts':
+          const scripts = await AsyncStorage.getItem('userScripts');
+          dataToExport = { scripts: scripts ? JSON.parse(scripts) : [] };
+          break;
+        case 'all':
+          const allKeys = await AsyncStorage.getAllKeys();
+          const allData = await AsyncStorage.multiGet(allKeys);
+          dataToExport = allData.reduce((acc, [key, value]) => {
+            acc[key] = value ? JSON.parse(value) : null;
+            return acc;
+          }, {});
+          break;
+      }
+      
+      const fileName = `niabrowser_${dataType}_${new Date().getTime()}.json`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+      
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(dataToExport, null, 2));
+      await Sharing.shareAsync(fileUri);
+    } catch (error) {
+      Alert.alert('Export Failed', error.message);
+    }
+  };
+
+  const importData = async (mergeOption) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true
+      });
+      
+      if (!result.canceled) {
+        const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+        const importedData = JSON.parse(fileContent);
+        
+        if (mergeOption === 'replace') {
+          // Clear existing data first
+          await AsyncStorage.clear();
+        }
+        
+        // Import data
+        for (const [key, value] of Object.entries(importedData)) {
+          if (mergeOption === 'merge' && key === 'favorites') {
+            const existing = await AsyncStorage.getItem(key);
+            const existingData = existing ? JSON.parse(existing) : [];
+            const merged = [...new Set([...existingData, ...value])];
+            await AsyncStorage.setItem(key, JSON.stringify(merged));
+          } else {
+            await AsyncStorage.setItem(key, JSON.stringify(value));
+          }
+        }
+        
+        Alert.alert('Import Successful', 'Data has been imported successfully');
+        setShowDataModal(false);
+      }
+    } catch (error) {
+      Alert.alert('Import Failed', error.message);
+    }
+  };
+
   const handleUserAgentSelect = (userAgent) => {
     if (onSelectUserAgent) {
       onSelectUserAgent(userAgent);
@@ -114,7 +191,7 @@ const BottomSheet = ({
     { icon: 'person', title: 'User Agent', onPress: () => setShowUserAgentModal(true) },
     { icon: 'history', title: 'History', onPress: openHistory },
     { icon: 'share', title: 'Share', onPress: () => shareUrl(currentUrl) },
-    { icon: 'delete', title: 'Clear Data', onPress: () => setShowClearDataModal(true) },
+    { icon: 'folder', title: 'Data Management', onPress: () => setShowDataModal(true) },
     { icon: 'info', title: 'About', onPress: openAboutModal },
   ];
 
@@ -216,6 +293,49 @@ const BottomSheet = ({
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.cancelButton} onPress={() => setShowUserAgentModal(false)}>
+                <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Data Management Modal */}
+      {showDataModal && (
+        <Modal visible={true} transparent animationType="fade">
+          <View style={styles.clearDataModalOverlay}>
+            <View style={[styles.clearDataModal, { backgroundColor }]}>
+              <Text style={[styles.clearDataTitle, { color: textColor }]}>Data Management</Text>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => exportData('all')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>📤 Export All Data</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => exportData('favorites')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>⭐ Export Favorites</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => exportData('history')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>📚 Export History</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => exportData('scripts')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>📜 Export Scripts</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => importData('merge')}>
+                <Text style={[styles.clearOptionText, { color: textColor }]}>📥 Import & Merge Data</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => importData('replace')}>
+                <Text style={[styles.clearOptionText, { color: '#FF8800' }]}>🔄 Import & Replace Data</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.clearOption} onPress={() => { setShowDataModal(false); setShowClearDataModal(true); }}>
+                <Text style={[styles.clearOptionText, { color: '#FF4444' }]}>🗑️ Clear Data</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowDataModal(false)}>
                 <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
               </TouchableOpacity>
             </View>

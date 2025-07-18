@@ -58,14 +58,25 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
             This project is open source and available under the MIT License.
           </Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Legal</Text>
-          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/disclaimer.html')}>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/disclaimer')}>
             <Text style={[styles.link, { color: theme.colors.primary }]}>Disclaimer</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/terms.html')}>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/terms')}>
             <Text style={[styles.link, { color: theme.colors.primary }]}>Terms of Service</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/privacy.html')}>
+          <TouchableOpacity onPress={() => openLink('https://niabrowser.com/privacy')}>
             <Text style={[styles.link, { color: theme.colors.primary }]}>Privacy Policy</Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.subTitle, { color: textColor }]}>Open Source</Text>
+          <Text style={[styles.text, { color: textColor }]}>
+            This project is open source and welcomes contributions from the community.
+          </Text>
+          <TouchableOpacity onPress={() => openLink('https://github.com/zizwar/niabrowser/blob/main/LICENSE')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>View License</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openLink('https://github.com/zizwar/niabrowser/blob/main/CONTRIBUTING.md')}>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>Contributing Guidelines</Text>
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Important Notice</Text>
           <Text style={[styles.text, { color: textColor }]}>

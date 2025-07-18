@@ -47,9 +47,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
+    paddingVertical: 5,
     marginRight: 5,
     borderRadius: 5,
     maxWidth: 150,
+    minWidth: 80,
+    overflow: 'hidden',
   },
   activeTab: {
     borderBottomWidth: 2,
@@ -58,9 +61,14 @@ const styles = StyleSheet.create({
   tabText: {
     marginRight: 5,
     fontSize: 14,
+    flex: 1,
   },
   closeButton: {
     padding: 2,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addButton: {
     justifyContent: 'center',
