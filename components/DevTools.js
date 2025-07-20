@@ -26,7 +26,7 @@ const DevTools = ({
   updateTabInfo
 }) => {
   const [activeTab, setActiveTab] = useState('network');
-  const [injectionCode, setInjectionCode] = useState('');
+  const [executionCode, setExecutionCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const scrollViewRef = useRef(null);
   const [showSafeModeModal, setShowSafeModeModal] = useState(false);
@@ -324,21 +324,21 @@ const renderNetworkTab = () => (
     </>
   );
 
-  const renderInjectTab = () => (
-    <View style={styles.injectContainer}>
+  const renderExecuteTab = () => (
+    <View style={styles.executeContainer}>
       <TextInput
-        style={[styles.injectInput, { color: textColor, borderColor: textColor }]}
-        value={injectionCode}
-        onChangeText={setInjectionCode}
-        placeholder="Enter JavaScript to inject"
+        style={[styles.executeInput, { color: textColor, borderColor: textColor }]}
+        value={executionCode}
+        onChangeText={setExecutionCode}
+        placeholder="Enter JavaScript to execute"
         placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
         multiline
       />
       <TouchableOpacity
-        style={[styles.injectButton, { backgroundColor: isDarkMode ? '#444' : '#ddd' }]}
-        onPress={() => injectJavaScript(injectionCode)}
+        style={[styles.executeButton, { backgroundColor: isDarkMode ? '#444' : '#ddd' }]}
+        onPress={() => injectJavaScript(executionCode)}
       >
-        <Text style={{ color: textColor }}>Inject</Text>
+        <Text style={{ color: textColor }}>Execute</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.scriptManagerButton, { backgroundColor: isDarkMode ? '#444' : '#ddd' }]}
@@ -393,7 +393,7 @@ const renderNetworkTab = () => (
           <TabButton name="Network" icon="wifi" />
           <TabButton name="Console" icon="code" />
           <TabButton name="Storage" icon="storage" />
-          <TabButton name="Inject" icon="input" />
+          <TabButton name="Execute" icon="input" />
           <TabButton name="Performance" icon="speed" />
         </ScrollView>
         <TouchableOpacity onPress={onClose}>
@@ -407,7 +407,7 @@ const renderNetworkTab = () => (
         {activeTab === 'Network' && renderNetworkTab()}
         {activeTab === 'Console' && renderConsoleTab()}
         {activeTab === 'Storage' && renderStorageTab()}
-        {activeTab === 'Inject' && renderInjectTab()}
+        {activeTab === 'Execute' && renderExecuteTab()}
         {activeTab === 'Performance' && renderPerformanceTab()}
       </View>
 
@@ -540,10 +540,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 5,
   },
-  injectContainer: {
+  executeContainer: {
     marginBottom: 10,
   },
-  injectInput: {
+  executeInput: {
     borderWidth: 1,
     borderRadius: 5,
     padding: 10,
@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  injectButton: {
+  executeButton: {
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',

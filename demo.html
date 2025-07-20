@@ -312,18 +312,18 @@
                 </div>
             </div>
 
-            <!-- JavaScript Injection Demo -->
+            <!-- JavaScript Execution Demo -->
             <div class="demo-card">
-                <h3><span class="icon">💉</span>JavaScript Injection</h3>
-                <p>Test NIABrowser's powerful JavaScript injection capabilities with live examples.</p>
+                <h3><span class="icon">⚡</span>JavaScript Execution</h3>
+                <p>Test NIABrowser's powerful JavaScript execution capabilities with live examples.</p>
                 
-                <button class="btn" onclick="injectColorChanger()">🎨 Change Colors</button>
-                <button class="btn btn-success" onclick="injectAnimations()">✨ Add Animations</button>
-                <button class="btn btn-warning" onclick="injectDataExtractor()">📊 Extract Data</button>
+                <button class="btn" onclick="executeColorChanger()">🎨 Change Colors</button>
+                <button class="btn btn-success" onclick="executeAnimations()">✨ Add Animations</button>
+                <button class="btn btn-warning" onclick="executeDataExtractor()">📊 Extract Data</button>
                 
                 <div class="interactive-demo">
-                    <div id="injectionTarget" style="padding: 15px; background: #f0f0f0; border-radius: 8px; text-align: center;">
-                        🎯 Injection Target Area - Watch this space transform!
+                    <div id="executionTarget" style="padding: 15px; background: #f0f0f0; border-radius: 8px; text-align: center;">
+                        🎯 Execution Target Area - Watch this space transform!
                     </div>
                 </div>
             </div>
@@ -556,7 +556,7 @@
                 user: 'NIABrowser Demo User',
                 preferences: { theme: 'dark', language: 'en' },
                 sessionId: 'demo-' + Date.now(),
-                features: ['network-monitoring', 'console-logging', 'script-injection'],
+                features: ['network-monitoring', 'console-logging', 'script-execution'],
                 timestamp: new Date().toISOString()
             };
 
@@ -636,23 +636,23 @@
             updateCookieCount();
         }
 
-        // JavaScript Injection Demo
-        function injectColorChanger() {
+        // JavaScript Execution Demo
+        function executeColorChanger() {
             const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             
-            const target = document.getElementById('injectionTarget');
+            const target = document.getElementById('executionTarget');
             target.style.background = randomColor;
             target.style.color = 'white';
             target.style.transition = 'all 0.5s ease';
-            target.textContent = '🎨 Color injected successfully!';
+            target.textContent = '🎨 Color executed successfully!';
             
-            console.log('🎨 Color injection executed:', randomColor);
-            showToast('🎨 JavaScript injection successful!', 'success');
+            console.log('🎨 Color execution completed:', randomColor);
+            showToast('🎨 JavaScript execution successful!', 'success');
         }
 
-        function injectAnimations() {
-            const target = document.getElementById('injectionTarget');
+        function executeAnimations() {
+            const target = document.getElementById('executionTarget');
             target.style.animation = 'pulse 1s infinite alternate';
             target.innerHTML = '✨ <strong>Animated with JavaScript!</strong>';
             
@@ -666,11 +666,11 @@
             `;
             document.head.appendChild(style);
             
-            console.log('✨ Animation injection executed');
-            showToast('✨ Animation injected! See the effect above', 'success');
+            console.log('✨ Animation execution completed');
+            showToast('✨ Animation executed! See the effect above', 'success');
         }
 
-        function injectDataExtractor() {
+        function executeDataExtractor() {
             const pageData = {
                 title: document.title,
                 url: window.location.href,
@@ -681,7 +681,7 @@
                 timestamp: new Date().toISOString()
             };
 
-            const target = document.getElementById('injectionTarget');
+            const target = document.getElementById('executionTarget');
             target.innerHTML = `
                 📊 <strong>Page Data Extracted:</strong><br>
                 Elements: ${pageData.elements} | Scripts: ${pageData.scripts}<br>
@@ -1038,7 +1038,7 @@
         }, 2000);
 
         setTimeout(() => {
-            console.log('🚀 Try the JavaScript injection features above!');
+            console.log('🚀 Try the JavaScript execution features above!');
         }, 5000);
 
         setTimeout(() => {

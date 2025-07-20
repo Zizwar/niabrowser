@@ -4,7 +4,7 @@
     "slug": "niabrowser-smart-devtools",
     "version": "1.0.0",
     "orientation": "default",
-    "description": "AI-powered developer browser: Generate scripts, monitor networks, inject code",
+    "description": "AI-powered developer browser: Generate scripts, monitor networks, execute code",
     "privacy": "public",
     "primaryColor": "#000000",
     "icon": "./assets/icon.png",
