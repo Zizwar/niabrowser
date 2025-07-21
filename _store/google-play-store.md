@@ -1,7 +1,7 @@
 # Google Play Store Listing
 
 ## Short Description (80 characters)
-Advanced web browser with DevTools, JavaScript injection & developer utilities
+Advanced web browser with DevTools, JavaScript execution & developer utilities
 
 ## Full Description (4000 characters)
 
@@ -11,7 +11,7 @@ Transform your mobile device into a powerful web development workstation with We
 
 🔧 COMPREHENSIVE DEVELOPER TOOLS
 • Full Browser DevTools with console, network monitor, and element inspector
-• Live JavaScript injection and custom script execution
+• Live JavaScript execution and custom script generation
 • Advanced Greasemonkey support for userscript management
 • Real-time network monitoring with detailed request/response analysis
 • Performance metrics and Core Web Vitals monitoring
@@ -52,7 +52,7 @@ Transform your mobile device into a powerful web development workstation with We
 • Regular updates with new features
 • Optimized memory usage and battery life
 
-Whether you're debugging a website, testing APIs, injecting custom JavaScript, or just want the most powerful mobile browser available, WebZview delivers professional-grade tools in an intuitive interface.
+Whether you're debugging a website, testing APIs, executing custom JavaScript, or just want the most powerful mobile browser available, WebZview delivers professional-grade tools in an intuitive interface.
 
 Join thousands of developers who have made WebZview their go-to mobile development browser!
 

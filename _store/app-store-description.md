@@ -8,7 +8,7 @@ WebZview is a powerful mobile browser designed specifically for web developers a
 
 ### Developer Tools
 - **Live DevTools**: Full browser DevTools with console, network monitor, and element inspector
-- **JavaScript Injection**: Run custom scripts and snippets on any webpage  
+- **JavaScript Execution**: Run custom scripts and snippets on any webpage  
 - **Greasemonkey Support**: Install and manage userscripts with advanced compatibility
 - **Network Monitor**: Track all network requests with detailed headers and response data
 - **Performance Metrics**: Real-time performance monitoring and Core Web Vitals

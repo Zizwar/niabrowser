@@ -31,7 +31,7 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
           </View>
           <Text style={[styles.title, { color: textColor }]}>About NIABrowser</Text>
           <Text style={[styles.text, { color: textColor }]}>
-            NIABrowser - Smart Developer Browser is an advanced web browser application designed specifically for developers. It provides developer tools, JavaScript injection capabilities, and network monitoring features to assist in web development and debugging.
+            NIABrowser - Smart Developer Browser is an advanced web browser application designed specifically for developers. It provides developer tools, JavaScript execution capabilities, and network monitoring features to assist in web development and debugging.
           </Text>
           <Text style={[styles.subTitle, { color: textColor }]}>Developer</Text>
           <TouchableOpacity onPress={() => openLink('https://brah.im')}>
@@ -80,7 +80,7 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
           </TouchableOpacity>
           <Text style={[styles.subTitle, { color: textColor }]}>Important Notice</Text>
           <Text style={[styles.text, { color: textColor }]}>
-            This app is intended for developers who understand its capabilities and the potential risks associated with injecting code. Users should exercise caution when using the app's features.
+            This app is intended for developers who understand its capabilities and the potential risks associated with executing code. Users should exercise caution when using the app's features.
           </Text>
         </ScrollView>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>

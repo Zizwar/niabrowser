@@ -492,7 +492,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
             
             <Text style={[styles.infoSection, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>💡 What is Script Manager?</Text>
             <Text style={[styles.infoText, { color: isDarkMode ? '#CCCCCC' : '#333333' }]}>
-              Allows you to inject and run custom JavaScript code on any website.
+              Allows you to execute and run custom JavaScript code on any website.
             </Text>
             
             <Text style={[styles.infoSection, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>📝 Usage Examples:</Text>
