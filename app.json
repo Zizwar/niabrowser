@@ -2,7 +2,7 @@
   "expo": {
     "name": "NIABrowser - AI-Powered DevTools",
     "slug": "niabrowser-smart-devtools",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "default",
     "description": "AI-powered developer browser: Generate scripts, monitor networks, execute code",
     "privacy": "public",
