@@ -3,27 +3,32 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimens
 import { Icon, Button } from 'react-native-elements';
 import * as Clipboard from 'expo-clipboard';
 import { theme } from '../constants/theme';
+import AINetworkAnalyzer from './AINetworkAnalyzer';
+import AICookieInspector from './AICookieInspector';
+import AICodeDebugger from './AICodeDebugger';
+import AIPerformanceAnalyzer from './AIPerformanceAnalyzer';
 //import { LineChart } from 'react-native-chart-kit';
 
 const { width } = Dimensions.get('window');
 
-const DevTools = ({ 
-  visible, 
-  onClose, 
-  networkLogs, 
-  consoleOutput, 
-  storage, 
-  injectJavaScript, 
-  isDarkMode, 
-  onNetworkLogPress, 
-  onNetworkLogLongPress, 
-  performanceMetrics, 
+const DevTools = ({
+  visible,
+  onClose,
+  networkLogs,
+  consoleOutput,
+  storage,
+  injectJavaScript,
+  isDarkMode,
+  onNetworkLogPress,
+  onNetworkLogLongPress,
+  performanceMetrics,
   onOpenScriptManager,
   updateStorageData,
   isSafeMode,
   toggleSafeMode,
   activeTabIndex,
-  updateTabInfo
+  updateTabInfo,
+  webViewRef
 }) => {
   const [activeTab, setActiveTab] = useState('network');
   const [executionCode, setExecutionCode] = useState('');
@@ -365,9 +370,39 @@ const renderNetworkTab = () => (
             </Text>
           </View>
         ))}
-        
+
       </View>
     )
+  );
+
+  const renderAINetworkTab = () => (
+    <AINetworkAnalyzer
+      networkLogs={networkLogs}
+      isDarkMode={isDarkMode}
+    />
+  );
+
+  const renderAICookieTab = () => (
+    <AICookieInspector
+      storageData={storage}
+      isDarkMode={isDarkMode}
+    />
+  );
+
+  const renderAIDebuggerTab = () => (
+    <AICodeDebugger
+      consoleLogs={consoleOutput}
+      isDarkMode={isDarkMode}
+      webViewRef={webViewRef}
+    />
+  );
+
+  const renderAIPerformanceTab = () => (
+    <AIPerformanceAnalyzer
+      performanceData={performanceMetrics}
+      isDarkMode={isDarkMode}
+      webViewRef={webViewRef}
+    />
   );
 
   const renderSafeModeToggle = () => {
@@ -395,20 +430,28 @@ const renderNetworkTab = () => (
           <TabButton name="Storage" icon="storage" />
           <TabButton name="Execute" icon="input" />
           <TabButton name="Performance" icon="speed" />
+          <TabButton name="AI Network" icon="psychology" />
+          <TabButton name="AI Cookie" icon="security" />
+          <TabButton name="AI Debugger" icon="bug-report" />
+          <TabButton name="AI Performance" icon="analytics" />
         </ScrollView>
         <TouchableOpacity onPress={onClose}>
           <Icon name="close" type="material" color={textColor} />
         </TouchableOpacity>
       </View>
-      
+
       {renderSafeModeToggle()}
-      
+
       <View style={styles.content}>
         {activeTab === 'Network' && renderNetworkTab()}
         {activeTab === 'Console' && renderConsoleTab()}
         {activeTab === 'Storage' && renderStorageTab()}
         {activeTab === 'Execute' && renderExecuteTab()}
         {activeTab === 'Performance' && renderPerformanceTab()}
+        {activeTab === 'AI Network' && renderAINetworkTab()}
+        {activeTab === 'AI Cookie' && renderAICookieTab()}
+        {activeTab === 'AI Debugger' && renderAIDebuggerTab()}
+        {activeTab === 'AI Performance' && renderAIPerformanceTab()}
       </View>
 
       {renderSafeModeModal()}
