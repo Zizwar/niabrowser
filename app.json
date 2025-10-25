@@ -5,7 +5,6 @@
     "version": "1.0.0",
     "orientation": "default",
     "description": "AI-powered developer browser: Generate scripts, monitor networks, execute code",
-    "privacy": "public",
     "primaryColor": "#000000",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -39,16 +38,9 @@
     "owner": "zizwar",
     "plugins": [
       "expo-web-browser",
-      "expo-media-library"
-    ],
-    "keywords": [
-      "developer",
-      "browser",
-      "devtools",
-      "javascript",
-      "webview",
-      "smart",
-      "ai-power"
+      "expo-media-library",
+      "expo-secure-store",
+      "expo-font"
     ],
     "githubUrl": "https://github.com/zizwar/niabrowser",
     "extra": {

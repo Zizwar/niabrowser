@@ -22,6 +22,8 @@ import ScriptManager from './components/ScriptManager';
 import UserAgentSelector from './components/UserAgentSelector';
 
 import HistoryFavoritesModal from './components/HistoryFavoritesModal';
+import AICommandInterface from './components/AICommandInterface';
+import { Icon } from 'react-native-elements';
 
 import { useWebViewRefs, useHistory, useTabs, useScripts, useSettings, useFavorites } from './hooks';
 import { AppProvider, useAppContext } from './state/context';
@@ -48,6 +50,7 @@ const AppContent = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customHomePage, setCustomHomePage] = useState('https://www.google.com');
   const [showHomePageModal, setShowHomePageModal] = useState(false);
+  const [isAICommandVisible, setIsAICommandVisible] = useState(false);
 
   const webViewRefs = useWebViewRefs();
   const { history, addToHistory, clearHistory, setHistory } = useHistory();
@@ -483,6 +486,7 @@ const goHomeOld = useCallback(async () => {
             updateStorageData={updateStorageData}
             activeTabIndex={activeTabIndex}
             updateTabInfo={updateTabInfo}
+            webViewRef={webViewRefs.current[activeTabIndex]}
           />
           <NetworkLogModal
             visible={tabs[activeTabIndex].isNetworkLogModalVisible}
@@ -579,6 +583,31 @@ const goHomeOld = useCallback(async () => {
           </View>
         </Modal>
       )}
+
+      {/* AI Command Interface */}
+      <Modal visible={isAICommandVisible} animationType="slide">
+        <AICommandInterface
+          visible={isAICommandVisible}
+          onClose={() => setIsAICommandVisible(false)}
+          isDarkMode={isDarkMode}
+          currentUrl={tabs[activeTabIndex]?.url || ''}
+          consoleLogs={tabs[activeTabIndex]?.consoleOutput || []}
+          networkLogs={tabs[activeTabIndex]?.networkLogs || []}
+          storageData={tabs[activeTabIndex]?.storage || {}}
+          performanceData={tabs[activeTabIndex]?.performanceMetrics || null}
+          webViewRef={webViewRefs.current[activeTabIndex]}
+        />
+      </Modal>
+
+      {/* Floating AI Button */}
+      {!isAICommandVisible && !isFullscreen && (
+        <TouchableOpacity
+          style={[styles.aiFloatingButton, isDarkMode && styles.aiFloatingButtonDark]}
+          onPress={() => setIsAICommandVisible(true)}
+        >
+          <Icon name="psychology" type="material" size={28} color="#fff" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 };
@@ -625,6 +654,26 @@ const styles = StyleSheet.create({
   homeModalButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  aiFloatingButton: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    zIndex: 1000,
+  },
+  aiFloatingButtonDark: {
+    backgroundColor: '#0A84FF',
   },
 });
 
