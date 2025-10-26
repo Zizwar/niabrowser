@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Icon } from 'react-native-elements';
-import * as SecureStore from 'expo-secure-store';
+import { SettingsManager } from '../utils/SettingsManager';
 
 const AICodeDebugger = ({
   consoleLogs,
@@ -31,7 +31,7 @@ const AICodeDebugger = ({
     setIsFinding(true);
 
     try {
-      const apiKey = await SecureStore.getItemAsync('openRouterApiKey');
+      const apiKey = await SettingsManager.getApiKey();
       if (!apiKey) {
         throw new Error('API Key غير موجود');
       }
@@ -94,7 +94,7 @@ const AICodeDebugger = ({
     setIsFinding(true);
 
     try {
-      const apiKey = await SecureStore.getItemAsync('openRouterApiKey');
+      const apiKey = await SettingsManager.getApiKey();
       if (!apiKey) {
         throw new Error('API Key غير موجود');
       }
