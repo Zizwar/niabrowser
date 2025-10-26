@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Icon } from 'react-native-elements';
-import * as SecureStore from 'expo-secure-store';
+import { SettingsManager } from '../utils/SettingsManager';
 
 const { width, height } = Dimensions.get('window');
 
@@ -59,7 +59,7 @@ const AICommandInterface = ({
     setIsLoading(true);
 
     try {
-      const apiKey = await SecureStore.getItemAsync('openRouterApiKey');
+      const apiKey = await SettingsManager.getApiKey();
       if (!apiKey) {
         throw new Error('API Key غير موجود. يرجى إضافته من الإعدادات.');
       }

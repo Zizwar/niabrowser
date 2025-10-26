@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Icon } from 'react-native-elements';
-import * as SecureStore from 'expo-secure-store';
+import { SettingsManager } from '../utils/SettingsManager';
 
 const AIPerformanceAnalyzer = ({
   performanceData,
@@ -76,7 +76,7 @@ const AIPerformanceAnalyzer = ({
     setIsAnalyzing(true);
 
     try {
-      const apiKey = await SecureStore.getItemAsync('openRouterApiKey');
+      const apiKey = await SettingsManager.getApiKey();
       if (!apiKey) {
         throw new Error('API Key غير موجود');
       }
