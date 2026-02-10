@@ -35,8 +35,11 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [showEditOverlay, setShowEditOverlay] = useState(false);
-  const [isAdvancedUrlInput, setIsAdvancedUrlInput] = useState(false);
+  const [isSimpleUrlInput, setIsSimpleUrlInput] = useState(false); // Default to advanced (patterns)
   const [simpleUrl, setSimpleUrl] = useState('');
+  const [showUrlHelp, setShowUrlHelp] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalScript, setOriginalScript] = useState(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [aiTaskDescription, setAiTaskDescription] = useState('');
@@ -257,6 +260,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
       setIsEditMode(false);
       setShowEditOverlay(false);
+      setHasUnsavedChanges(false);
     }
   };
 
@@ -409,10 +413,33 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     "Extract all email addresses from the page"
   ];
 
+  const handleCloseEditOverlay = () => {
+    if (hasUnsavedChanges) {
+      Alert.alert(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to close?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => {
+              setShowEditOverlay(false);
+              setHasUnsavedChanges(false);
+              setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
+            }
+          }
+        ]
+      );
+    } else {
+      setShowEditOverlay(false);
+    }
+  };
+
   const renderEditOverlay = () => (
     <Overlay
       isVisible={showEditOverlay}
-      onBackdropPress={() => setShowEditOverlay(false)}
+      onBackdropPress={handleCloseEditOverlay}
       overlayStyle={[styles.overlay, { backgroundColor: cardBackground }]}
     >
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -420,7 +447,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           <Text style={[styles.overlayTitle, { color: textColor }]}>
             {isEditMode ? 'Edit Script' : 'New Script'}
           </Text>
-          <TouchableOpacity onPress={() => setShowEditOverlay(false)}>
+          <TouchableOpacity onPress={handleCloseEditOverlay}>
             <MaterialIcons name="close" size={24} color={textColor} />
           </TouchableOpacity>
         </View>
@@ -431,7 +458,10 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           placeholder="Enter script name"
           placeholderTextColor={secondaryTextColor}
           value={currentScript.name}
-          onChangeText={(text) => setCurrentScript({ ...currentScript, name: text })}
+          onChangeText={(text) => {
+            setCurrentScript({ ...currentScript, name: text });
+            setHasUnsavedChanges(true);
+          }}
         />
 
         <Text style={[styles.inputLabel, { color: textColor }]}>Script Code</Text>
@@ -440,20 +470,20 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           placeholder="Enter JavaScript code"
           placeholderTextColor={secondaryTextColor}
           value={currentScript.code}
-          onChangeText={(text) => setCurrentScript({ ...currentScript, code: text })}
+          onChangeText={(text) => {
+            setCurrentScript({ ...currentScript, code: text });
+            setHasUnsavedChanges(true);
+          }}
           multiline
         />
 
-        <Text style={[styles.inputLabel, { color: textColor }]}>URL Pattern</Text>
-        {isAdvancedUrlInput ? (
-          <TextInput
-            style={[styles.input, { color: textColor, backgroundColor: inputBackground }]}
-            placeholder="URLs (comma-separated, use * as wildcard)"
-            placeholderTextColor={secondaryTextColor}
-            value={currentScript.urls}
-            onChangeText={(text) => setCurrentScript({ ...currentScript, urls: text })}
-          />
-        ) : (
+        <View style={styles.urlLabelRow}>
+          <Text style={[styles.inputLabel, { color: textColor }]}>URL Pattern</Text>
+          <TouchableOpacity onPress={() => setShowUrlHelp(true)} style={styles.helpButton}>
+            <MaterialIcons name="help-outline" size={18} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
+        {isSimpleUrlInput ? (
           <View style={styles.simpleUrlContainer}>
             <TextInput
               style={[styles.input, { flex: 1, color: textColor, backgroundColor: inputBackground }]}
@@ -469,13 +499,24 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               <Text style={styles.setUrlButtonText}>Set</Text>
             </TouchableOpacity>
           </View>
+        ) : (
+          <TextInput
+            style={[styles.input, { color: textColor, backgroundColor: inputBackground }]}
+            placeholder="URLs (comma-separated, use * as wildcard)"
+            placeholderTextColor={secondaryTextColor}
+            value={currentScript.urls}
+            onChangeText={(text) => {
+              setCurrentScript({ ...currentScript, urls: text });
+              setHasUnsavedChanges(true);
+            }}
+          />
         )}
         <TouchableOpacity
-          onPress={() => setIsAdvancedUrlInput(!isAdvancedUrlInput)}
+          onPress={() => setIsSimpleUrlInput(!isSimpleUrlInput)}
           style={styles.toggleUrlInputButton}
         >
           <Text style={[styles.toggleUrlInputText, { color: '#007AFF' }]}>
-            {isAdvancedUrlInput ? 'Simple Input' : 'Advanced Input'}
+            {isSimpleUrlInput ? 'Advanced Input (Patterns)' : 'Simple Input (URL)'}
           </Text>
         </TouchableOpacity>
 
@@ -812,9 +853,63 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         {renderInfoModal()}
         {renderAIGenerator()}
         {renderPromptEditor()}
+        {renderUrlHelpModal()}
       </View>
     </BaseModal>
   );
+
+  function renderUrlHelpModal() {
+    return (
+      <BaseModal
+        visible={showUrlHelp}
+        onClose={() => setShowUrlHelp(false)}
+        title="URL Pattern Help"
+        isDarkMode={isDarkMode}
+      >
+        <ScrollView style={styles.infoContent} showsVerticalScrollIndicator={false}>
+          <View style={[styles.infoCard, { backgroundColor: cardBackground }]}>
+            <MaterialIcons name="star" size={24} color="#FFC107" />
+            <Text style={[styles.infoTitle, { color: textColor }]}>Wildcard (*)</Text>
+            <Text style={[styles.infoText, { color: secondaryTextColor }]}>
+              Use * to match any characters.{'\n'}
+              {'\u2022'} * = All websites{'\n'}
+              {'\u2022'} https://example.com/* = All pages on example.com{'\n'}
+              {'\u2022'} https://*.example.com/* = All subdomains
+            </Text>
+          </View>
+
+          <View style={[styles.infoCard, { backgroundColor: cardBackground }]}>
+            <MaterialIcons name="format-list-bulleted" size={24} color="#2196F3" />
+            <Text style={[styles.infoTitle, { color: textColor }]}>Multiple URLs</Text>
+            <Text style={[styles.infoText, { color: secondaryTextColor }]}>
+              Separate multiple patterns with commas:{'\n'}
+              https://google.com/*, https://bing.com/*
+            </Text>
+          </View>
+
+          <View style={[styles.infoCard, { backgroundColor: cardBackground }]}>
+            <MaterialIcons name="code" size={24} color="#9C27B0" />
+            <Text style={[styles.infoTitle, { color: textColor }]}>Regex Patterns</Text>
+            <Text style={[styles.infoText, { color: secondaryTextColor }]}>
+              Wrap regex in slashes:{'\n'}
+              /https?:\/\/.*\.google\.com\/.*/
+            </Text>
+          </View>
+
+          <View style={[styles.infoCard, { backgroundColor: '#E3F2FD' }]}>
+            <MaterialIcons name="lightbulb" size={24} color="#1976D2" />
+            <Text style={[styles.infoTitle, { color: '#0D47A1' }]}>Examples</Text>
+            <Text style={[styles.infoText, { color: '#1565C0' }]}>
+              {'\u2022'} https://youtube.com/watch* - YouTube videos{'\n'}
+              {'\u2022'} https://*.twitter.com/* - Twitter & subdomains{'\n'}
+              {'\u2022'} https://github.com/*/pull/* - GitHub PRs{'\n'}
+              {'\u2022'} * - Run on all websites
+            </Text>
+          </View>
+        </ScrollView>
+      </BaseModal>
+    );
+  }
 };
 
 
@@ -952,6 +1047,16 @@ const styles = StyleSheet.create({
   },
   toggleUrlInputText: {
     fontSize: 13,
+  },
+  urlLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  helpButton: {
+    padding: 4,
   },
   runAtContainer: {
     flexDirection: 'row',

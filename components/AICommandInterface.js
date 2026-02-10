@@ -10,7 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  BackHandler,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import ModelSelector from './ui/ModelSelector';
 import { SettingsManager } from '../utils/SettingsManager';
@@ -43,6 +46,29 @@ const AICommandInterface = ({
   const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
   const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
   const inputBackground = isDarkMode ? '#3C3C3E' : '#F0F0F0';
+
+  // Get safe area insets
+  let insets = { top: 0, bottom: 0 };
+  try {
+    insets = useSafeAreaInsets();
+  } catch {
+    // Fallback if not in SafeAreaProvider
+  }
+
+  // Handle back button on Android
+  useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (visible) {
+        onClose();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [visible, onClose]);
 
   useEffect(() => {
     loadSelectedModel();
@@ -280,9 +306,12 @@ Use comments to explain the code.`
 
   if (!visible) return null;
 
+  // Calculate safe padding for status bar
+  const statusBarHeight = Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 24) : insets.top;
+
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor }]}
+      style={[styles.container, { backgroundColor, paddingTop: statusBarHeight }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >

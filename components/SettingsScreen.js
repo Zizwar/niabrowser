@@ -51,6 +51,11 @@ const SettingsScreen = ({
   const [activeProviderId, setActiveProviderId] = useState('openrouter');
   const [testingConnection, setTestingConnection] = useState(false);
 
+  // Model Management
+  const [showAddModel, setShowAddModel] = useState(false);
+  const [newModel, setNewModel] = useState({ id: '', name: '', provider: '', description: '' });
+  const [allModels, setAllModels] = useState([]);
+
   // Browser Settings
   const [homePage, setHomePage] = useState('https://www.google.com');
   const [userAgent, setUserAgent] = useState('');
@@ -99,6 +104,10 @@ const SettingsScreen = ({
       setThemeMode(savedTheme);
       setProviders(loadedProviders);
       setActiveProviderId(savedActiveProvider);
+
+      // Load all models
+      const models = await AIProviderManager.getAllModels();
+      setAllModels(models);
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -313,7 +322,7 @@ const SettingsScreen = ({
           <Text style={[styles.cardTitle, { color: textColor }]}>Provider</Text>
         </View>
         <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
-          Currently using OpenRouter. Custom providers coming soon.
+          Currently using OpenRouter. Get your API key from OpenRouter.
         </Text>
         <TouchableOpacity
           style={styles.linkButton}
@@ -401,8 +410,164 @@ const SettingsScreen = ({
           showProvider={true}
         />
       </View>
+
+      {/* Model Management */}
+      <View style={[styles.card, { backgroundColor: cardBackground }]}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="tune" size={20} color="#FF9800" />
+          <Text style={[styles.cardTitle, { color: textColor }]}>Model Management</Text>
+        </View>
+        <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
+          Add custom models or remove existing ones. {allModels.length} models available.
+        </Text>
+
+        {/* Add Model Button */}
+        <TouchableOpacity
+          style={[styles.button, styles.secondaryButton, { borderColor, marginBottom: 10 }]}
+          onPress={() => setShowAddModel(true)}
+        >
+          <MaterialIcons name="add" size={18} color="#007AFF" />
+          <Text style={[styles.buttonTextSecondary, { color: '#007AFF' }]}>Add Custom Model</Text>
+        </TouchableOpacity>
+
+        {/* Model List (show custom models only) */}
+        {allModels.filter(m => m.isCustom).length > 0 && (
+          <View style={styles.modelList}>
+            <Text style={[styles.modelListTitle, { color: secondaryTextColor }]}>Custom Models:</Text>
+            {allModels.filter(m => m.isCustom).map((model, index) => (
+              <View key={model.id || index} style={[styles.modelItem, { backgroundColor: inputBackground }]}>
+                <View style={styles.modelItemInfo}>
+                  <Text style={[styles.modelItemName, { color: textColor }]}>{model.name}</Text>
+                  <Text style={[styles.modelItemId, { color: secondaryTextColor }]}>{model.id}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleDeleteModel(model.id)}
+                  style={styles.modelDeleteButton}
+                >
+                  <MaterialIcons name="delete" size={20} color="#F44336" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Add Model Modal */}
+      {showAddModel && (
+        <View style={[styles.addModelOverlay]}>
+          <View style={[styles.addModelCard, { backgroundColor: cardBackground }]}>
+            <View style={styles.addModelHeader}>
+              <Text style={[styles.addModelTitle, { color: textColor }]}>Add Custom Model</Text>
+              <TouchableOpacity onPress={() => setShowAddModel(false)}>
+                <MaterialIcons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Model ID *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.id}
+              onChangeText={(text) => setNewModel({...newModel, id: text})}
+              placeholder="e.g., openai/gpt-5-turbo"
+              placeholderTextColor={secondaryTextColor}
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Display Name *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.name}
+              onChangeText={(text) => setNewModel({...newModel, name: text})}
+              placeholder="e.g., GPT-5 Turbo"
+              placeholderTextColor={secondaryTextColor}
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Provider</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.provider}
+              onChangeText={(text) => setNewModel({...newModel, provider: text})}
+              placeholder="e.g., OpenAI"
+              placeholderTextColor={secondaryTextColor}
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Description</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.description}
+              onChangeText={(text) => setNewModel({...newModel, description: text})}
+              placeholder="Short description..."
+              placeholderTextColor={secondaryTextColor}
+            />
+
+            <View style={styles.addModelButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.secondaryButton, { borderColor, flex: 1 }]}
+                onPress={() => setShowAddModel(false)}
+              >
+                <Text style={[styles.buttonTextSecondary, { color: textColor }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.primaryButton, { flex: 1 }]}
+                onPress={handleAddModel}
+              >
+                <MaterialIcons name="add" size={18} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
+
+  const handleAddModel = async () => {
+    if (!newModel.id || !newModel.name) {
+      Alert.alert('Error', 'Model ID and Name are required');
+      return;
+    }
+
+    const success = await AIProviderManager.addModel(activeProviderId, {
+      id: newModel.id,
+      name: newModel.name,
+      provider: newModel.provider || 'Custom',
+      description: newModel.description || '',
+      cost: 'Custom',
+      inputCost: 0,
+      outputCost: 0,
+      maxTokens: 4096,
+    });
+
+    if (success) {
+      Alert.alert('Success', 'Model added successfully');
+      setShowAddModel(false);
+      setNewModel({ id: '', name: '', provider: '', description: '' });
+      loadSettings();
+    } else {
+      Alert.alert('Error', 'Failed to add model');
+    }
+  };
+
+  const handleDeleteModel = async (modelId) => {
+    Alert.alert(
+      'Delete Model',
+      'Are you sure you want to delete this custom model?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await AIProviderManager.removeModel(activeProviderId, modelId);
+            if (success) {
+              loadSettings();
+            } else {
+              Alert.alert('Error', 'Failed to delete model');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const renderAppearanceSettings = () => (
     <View style={styles.section}>
@@ -776,6 +941,79 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
+  },
+  // Model Management Styles
+  modelList: {
+    marginTop: 10,
+  },
+  modelListTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  modelItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  modelItemInfo: {
+    flex: 1,
+  },
+  modelItemName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modelItemId: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modelDeleteButton: {
+    padding: 4,
+  },
+  addModelOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    zIndex: 100,
+  },
+  addModelCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  addModelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  addModelTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  inputLabel: {
+    fontSize: 13,
+    marginBottom: 4,
+    marginTop: 10,
+  },
+  addModelButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
   },
 });
 

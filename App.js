@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity } from 'react-native';
+import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -136,6 +137,13 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
 
   useEffect(() => {
     const backAction = () => {
+      // Check if any modal is open first - modals handle their own back
+      if (isAICommandVisible || isSettingsVisible || isBottomSheetVisible ||
+          isHistoryModalVisible || isAboutModalVisible || isScriptManagerVisible ||
+          showHomePageModal) {
+        return false; // Let modal handle it
+      }
+
       const activeTab = tabs[activeTabIndex];
       if (activeTab && activeTab.canGoBack) {
         webViewRefs.current[activeTabIndex].goBack();
@@ -147,7 +155,9 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
     return () => backHandler.remove();
-  }, [activeTabIndex, tabs, webViewRefs]);
+  }, [activeTabIndex, tabs, webViewRefs, isAICommandVisible, isSettingsVisible,
+      isBottomSheetVisible, isHistoryModalVisible, isAboutModalVisible,
+      isScriptManagerVisible, showHomePageModal]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -362,8 +372,24 @@ const goHomeOld = useCallback(async () => {
     }} />;
   }
 
+  // Handle desktop mode toggle with page reload
+  const handleDesktopModeToggle = useCallback(() => {
+    toggleDesktopMode();
+    // Reload the current page after a short delay to apply new user agent
+    setTimeout(() => {
+      const webViewRef = webViewRefs.current[activeTabIndex];
+      if (webViewRef && webViewRef.reload) {
+        webViewRef.reload();
+      }
+    }, 100);
+  }, [toggleDesktopMode, activeTabIndex, webViewRefs]);
+
+  // Get safe area insets for status bar
+  const insets = useSafeAreaInsets();
+  const statusBarPadding = Platform.OS === 'android' ? Math.max(insets.top, RNStatusBar.currentHeight || 24) : insets.top;
+
    return (
-    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF', paddingTop: statusBarPadding }]}>
       {isFullscreen ? (
         <StatusBar hidden={true} />
       ) : (
@@ -457,7 +483,7 @@ const goHomeOld = useCallback(async () => {
         onClose={() => setBottomSheetVisible(false)}
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
-        toggleDesktopMode={toggleDesktopMode}
+        toggleDesktopMode={handleDesktopModeToggle}
         isDesktopMode={isDesktopMode}
         shareUrl={() => shareUrl(tabs[activeTabIndex]?.url)}
         clearData={clearData}
@@ -602,7 +628,12 @@ const goHomeOld = useCallback(async () => {
       )}
 
       {/* AI Command Interface */}
-      <Modal visible={isAICommandVisible} animationType="slide">
+      <Modal
+        visible={isAICommandVisible}
+        animationType="slide"
+        onRequestClose={() => setIsAICommandVisible(false)}
+        statusBarTranslucent={Platform.OS === 'android'}
+      >
         <AICommandInterface
           visible={isAICommandVisible}
           onClose={() => setIsAICommandVisible(false)}
@@ -667,9 +698,11 @@ const styles = StyleSheet.create({
 
 const App = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <SafeAreaProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </SafeAreaProvider>
   );
 };
 
