@@ -8,25 +8,14 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
+  BackHandler,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * BaseModal - Unified modal component with consistent styling
- *
- * Props:
- * - visible: boolean - Controls modal visibility
- * - onClose: function - Called when close button is pressed
- * - title: string - Modal header title
- * - showCloseButton: boolean (default: true) - Show/hide close button
- * - animationType: 'slide' | 'fade' | 'none' (default: 'slide')
- * - fullScreen: boolean (default: false) - Full screen modal
- * - headerActions: React.ReactNode - Additional header action buttons
- * - isDarkMode: boolean - Dark mode styling
- * - children: React.ReactNode - Modal content
- * - showHeader: boolean (default: true) - Show/hide header
- * - headerStyle: object - Custom header styles
- * - contentStyle: object - Custom content container styles
+ * Fixed: Proper safe area handling to avoid status bar overlap
  */
 const BaseModal = ({
   visible,
@@ -47,19 +36,66 @@ const BaseModal = ({
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
 
+  // Handle back button on Android
+  React.useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (visible) {
+        onClose();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [visible, onClose]);
+
+  // Get safe area insets for proper padding
+  const SafeContent = ({ children: safeChildren }) => {
+    try {
+      const insets = useSafeAreaInsets();
+      return (
+        <View style={[
+          styles.fullScreenContainer,
+          {
+            backgroundColor,
+            paddingTop: Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 24) : insets.top,
+          }
+        ]}>
+          {safeChildren}
+        </View>
+      );
+    } catch {
+      // Fallback if SafeAreaContext not available
+      return (
+        <View style={[
+          styles.fullScreenContainer,
+          {
+            backgroundColor,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0,
+          }
+        ]}>
+          {safeChildren}
+        </View>
+      );
+    }
+  };
+
   return (
     <Modal
       visible={visible}
       animationType={animationType}
       transparent={!fullScreen}
       onRequestClose={onClose}
-      statusBarTranslucent
+      statusBarTranslucent={Platform.OS === 'android'}
     >
       {fullScreen ? (
-        <SafeAreaView style={[styles.fullScreenContainer, { backgroundColor }]}>
+        <SafeContent>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor={headerBg}
+            backgroundColor="transparent"
+            translucent
           />
           {showHeader && (
             <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }, headerStyle]}>
@@ -72,7 +108,7 @@ const BaseModal = ({
                   <TouchableOpacity
                     onPress={onClose}
                     style={styles.closeButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   >
                     <MaterialIcons name="close" size={24} color={textColor} />
                   </TouchableOpacity>
@@ -83,7 +119,7 @@ const BaseModal = ({
           <View style={[styles.content, { backgroundColor }, contentStyle]}>
             {children}
           </View>
-        </SafeAreaView>
+        </SafeContent>
       ) : (
         <View style={styles.overlay}>
           <TouchableOpacity
@@ -103,7 +139,7 @@ const BaseModal = ({
                     <TouchableOpacity
                       onPress={onClose}
                       style={styles.closeButton}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                     >
                       <MaterialIcons name="close" size={24} color={textColor} />
                     </TouchableOpacity>
@@ -133,7 +169,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: '90%',
+    maxHeight: '85%',
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -171,8 +207,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   closeButton: {
-    padding: 4,
+    padding: 6,
     borderRadius: 20,
+    backgroundColor: 'rgba(128,128,128,0.1)',
   },
   content: {
     flex: 1,

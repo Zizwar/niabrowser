@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Modal, Alert } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Modal, Alert, BackHandler, Platform, StatusBar } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -35,6 +35,33 @@ const BottomSheet = ({
   const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
   const cardBackground = isDarkMode ? '#2C2C2E' : '#F5F5F5';
   const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
+
+  // Handle Android back button
+  useEffect(() => {
+    if (!visible) return;
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (showDataModal) {
+        setShowDataModal(false);
+        return true;
+      }
+      if (showUserAgentModal) {
+        setShowUserAgentModal(false);
+        return true;
+      }
+      if (showClearDataModal) {
+        setShowClearDataModal(false);
+        return true;
+      }
+      if (visible) {
+        onClose();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [visible, showDataModal, showUserAgentModal, showClearDataModal, onClose]);
 
   const clearBrowserData = async () => {
     if (webViewRef && webViewRef.current) {
@@ -139,10 +166,10 @@ const BottomSheet = ({
         }
 
         for (const [key, value] of Object.entries(importedData)) {
-          if (mergeOption === 'merge' && key === 'favorites') {
+          if (mergeOption === 'merge' && (key === 'favorites' || key === 'browserHistory')) {
             const existing = await AsyncStorage.getItem(key);
             const existingData = existing ? JSON.parse(existing) : [];
-            const merged = [...new Set([...existingData, ...value])];
+            const merged = [...new Set([...existingData, ...(Array.isArray(value) ? value : [])])];
             await AsyncStorage.setItem(key, JSON.stringify(merged));
           } else {
             await AsyncStorage.setItem(key, JSON.stringify(value));
@@ -174,7 +201,6 @@ const BottomSheet = ({
   ];
 
   const settingsData = [
-    { icon: 'brightness-6', title: 'Dark Mode', onPress: toggleDarkMode, value: isDarkMode },
     { icon: 'computer', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
     { icon: 'security', title: 'Safe Mode', onPress: toggleSafeMode, value: isSafeMode },
     { icon: 'person', title: 'User Agent', onPress: () => setShowUserAgentModal(true) },
@@ -185,29 +211,38 @@ const BottomSheet = ({
     { icon: 'info', title: 'About', onPress: openAboutModal },
   ];
 
-  const renderItem = useCallback(({ item }) => (
+  const renderSettingItem = (item, index) => (
     <TouchableOpacity
-      style={[styles.settingItem, { borderBottomColor: borderColor }]}
+      key={item.title}
+      style={[
+        styles.settingItem,
+        { borderBottomColor: borderColor },
+        index === settingsData.length - 1 && { borderBottomWidth: 0 }
+      ]}
       onPress={item.onPress}
+      disabled={item.value !== undefined}
     >
       <MaterialIcons name={item.icon} size={22} color="#007AFF" />
       <Text style={[styles.settingText, { color: textColor }]}>{item.title}</Text>
-      {item.value !== undefined && (
+      {item.value !== undefined ? (
         <Switch
           value={item.value}
           onValueChange={item.onPress}
           trackColor={{ false: "#767577", true: "#81b0ff" }}
           thumbColor={item.value ? "#007AFF" : "#f4f3f4"}
         />
-      )}
-      {item.value === undefined && (
+      ) : (
         <MaterialIcons name="chevron-right" size={20} color={secondaryTextColor} />
       )}
     </TouchableOpacity>
-  ), [textColor, borderColor, secondaryTextColor]);
+  );
 
   const renderModalOption = (icon, text, onPress, isDestructive = false, isSelected = false) => (
-    <TouchableOpacity style={[styles.modalOption, { borderBottomColor: borderColor }]} onPress={onPress}>
+    <TouchableOpacity
+      key={text}
+      style={[styles.modalOption, { borderBottomColor: borderColor }]}
+      onPress={onPress}
+    >
       <MaterialIcons name={icon} size={20} color={isDestructive ? '#F44336' : '#007AFF'} />
       <Text style={[styles.modalOptionText, { color: isDestructive ? '#F44336' : textColor }]}>
         {text}
@@ -216,24 +251,60 @@ const BottomSheet = ({
     </TouchableOpacity>
   );
 
+  if (!visible) return null;
+
   return (
-    <View style={[styles.container, { backgroundColor, display: visible ? 'flex' : 'none' }]}>
-      <FlatList
-        data={settingsData}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.title}
-        showsVerticalScrollIndicator={false}
-      />
-      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-        <MaterialIcons name="close" size={24} color={textColor} />
-      </TouchableOpacity>
+    <View style={styles.overlay}>
+      <TouchableOpacity style={styles.overlayBackground} activeOpacity={1} onPress={onClose} />
+
+      <View style={[styles.container, { backgroundColor }]}>
+        {/* Header with title and close button */}
+        <View style={[styles.header, { borderBottomColor: borderColor }]}>
+          <Text style={[styles.headerTitle, { color: textColor }]}>Menu</Text>
+
+          {/* Dark Mode Toggle in header */}
+          <View style={styles.headerRight}>
+            <View style={styles.darkModeToggle}>
+              <MaterialIcons
+                name={isDarkMode ? 'dark-mode' : 'light-mode'}
+                size={20}
+                color={isDarkMode ? '#FFC107' : '#FF9800'}
+              />
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleDarkMode}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={isDarkMode ? "#007AFF" : "#f4f3f4"}
+                style={styles.darkModeSwitch}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialIcons name="close" size={24} color={textColor} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Settings List */}
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {settingsData.map((item, index) => renderSettingItem(item, index))}
+        </ScrollView>
+      </View>
 
       {/* Clear Data Modal */}
       {showClearDataModal && (
-        <Modal visible={true} transparent animationType="fade">
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowClearDataModal(false)}>
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContainer, { backgroundColor }]}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Clear Data</Text>
+              <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
+                <Text style={[styles.modalTitle, { color: textColor }]}>Clear Data</Text>
+                <TouchableOpacity onPress={() => setShowClearDataModal(false)}>
+                  <MaterialIcons name="close" size={24} color={textColor} />
+                </TouchableOpacity>
+              </View>
 
               {renderModalOption('language', 'Clear Browser Data', clearBrowserData)}
               {renderModalOption('delete-forever', 'Clear All Data', clearAllData, true)}
@@ -248,24 +319,31 @@ const BottomSheet = ({
 
       {/* User Agent Modal */}
       {showUserAgentModal && (
-        <Modal transparent visible={true} animationType="slide">
+        <Modal transparent visible={true} animationType="fade" onRequestClose={() => setShowUserAgentModal(false)}>
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContainer, { backgroundColor }]}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select User Agent</Text>
-
-              {userAgents.map((ua, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[styles.modalOption, { borderBottomColor: borderColor }]}
-                  onPress={() => handleUserAgentSelect(ua.value)}
-                >
-                  <MaterialIcons name={ua.icon} size={20} color="#007AFF" />
-                  <Text style={[styles.modalOptionText, { color: textColor }]}>{ua.label}</Text>
-                  {currentUserAgent === ua.value && (
-                    <MaterialIcons name="check" size={20} color="#4CAF50" />
-                  )}
+              <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
+                <Text style={[styles.modalTitle, { color: textColor }]}>Select User Agent</Text>
+                <TouchableOpacity onPress={() => setShowUserAgentModal(false)}>
+                  <MaterialIcons name="close" size={24} color={textColor} />
                 </TouchableOpacity>
-              ))}
+              </View>
+
+              <ScrollView style={styles.modalScroll}>
+                {userAgents.map((ua, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.modalOption, { borderBottomColor: borderColor }]}
+                    onPress={() => handleUserAgentSelect(ua.value)}
+                  >
+                    <MaterialIcons name={ua.icon} size={20} color="#007AFF" />
+                    <Text style={[styles.modalOptionText, { color: textColor }]}>{ua.label}</Text>
+                    {currentUserAgent === ua.value && (
+                      <MaterialIcons name="check" size={20} color="#4CAF50" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
               <TouchableOpacity style={[styles.cancelButton, { borderColor }]} onPress={() => setShowUserAgentModal(false)}>
                 <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
@@ -277,18 +355,25 @@ const BottomSheet = ({
 
       {/* Data Management Modal */}
       {showDataModal && (
-        <Modal visible={true} transparent animationType="fade">
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowDataModal(false)}>
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContainer, { backgroundColor }]}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Data Management</Text>
+              <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
+                <Text style={[styles.modalTitle, { color: textColor }]}>Data Management</Text>
+                <TouchableOpacity onPress={() => setShowDataModal(false)}>
+                  <MaterialIcons name="close" size={24} color={textColor} />
+                </TouchableOpacity>
+              </View>
 
-              {renderModalOption('upload', 'Export All Data', () => exportData('all'))}
-              {renderModalOption('star', 'Export Favorites', () => exportData('favorites'))}
-              {renderModalOption('history', 'Export History', () => exportData('history'))}
-              {renderModalOption('code', 'Export Scripts', () => exportData('scripts'))}
-              {renderModalOption('download', 'Import & Merge', () => importData('merge'))}
-              {renderModalOption('sync', 'Import & Replace', () => importData('replace'))}
-              {renderModalOption('delete', 'Clear Data', () => { setShowDataModal(false); setShowClearDataModal(true); }, true)}
+              <ScrollView style={styles.modalScroll}>
+                {renderModalOption('upload', 'Export All Data', () => exportData('all'))}
+                {renderModalOption('star', 'Export Favorites', () => exportData('favorites'))}
+                {renderModalOption('history', 'Export History', () => exportData('history'))}
+                {renderModalOption('code', 'Export Scripts', () => exportData('scripts'))}
+                {renderModalOption('download', 'Import & Merge', () => importData('merge'))}
+                {renderModalOption('sync', 'Import & Replace', () => importData('replace'))}
+                {renderModalOption('delete', 'Clear Data', () => { setShowDataModal(false); setShowClearDataModal(true); }, true)}
+              </ScrollView>
 
               <TouchableOpacity style={[styles.cancelButton, { borderColor }]} onPress={() => setShowDataModal(false)}>
                 <Text style={[styles.cancelButtonText, { color: textColor }]}>Cancel</Text>
@@ -302,20 +387,60 @@ const BottomSheet = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 16,
-    maxHeight: '80%',
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  overlayBackground: {
+    flex: 1,
+  },
+  container: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '75%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 16,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  darkModeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  darkModeSwitch: {
+    transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
+  },
+  closeButton: {
+    padding: 4,
+    borderRadius: 20,
+    backgroundColor: 'rgba(128,128,128,0.1)',
+  },
+  scrollView: {
+    paddingHorizontal: 16,
   },
   settingItem: {
     flexDirection: 'row',
@@ -328,28 +453,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
   },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    padding: 4,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalContainer: {
-    width: '85%',
-    borderRadius: 16,
     padding: 20,
   },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 16,
+  },
+  modalScroll: {
+    maxHeight: 300,
   },
   modalOption: {
     flexDirection: 'row',
@@ -363,7 +493,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cancelButton: {
-    marginTop: 12,
+    margin: 16,
     padding: 14,
     alignItems: 'center',
     borderRadius: 10,

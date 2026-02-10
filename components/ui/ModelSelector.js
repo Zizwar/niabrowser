@@ -4,23 +4,17 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AIProviderManager } from '../../utils/AIProviderManager';
 
 /**
  * ModelSelector - Compact dropdown for AI model selection
- *
- * Props:
- * - selectedModelId: string - Currently selected model ID
- * - onModelSelect: function(modelId, model) - Called when a model is selected
- * - isDarkMode: boolean - Dark mode styling
- * - disabled: boolean - Disable the selector
- * - compact: boolean - Use compact mode (smaller UI)
- * - showCost: boolean - Show cost indicator (default: true)
- * - showProvider: boolean - Show provider name (default: true)
+ * Fixed: Uses Modal instead of absolute positioning to avoid VirtualizedList nesting issues
  */
 const ModelSelector = ({
   selectedModelId,
@@ -30,6 +24,7 @@ const ModelSelector = ({
   compact = false,
   showCost = true,
   showProvider = true,
+  label = 'AI Model',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [models, setModels] = useState([]);
@@ -84,6 +79,7 @@ const ModelSelector = ({
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color="#007AFF" />
+          <Text style={[styles.loadingText, { color: secondaryTextColor }]}>Loading...</Text>
         </View>
       );
     }
@@ -106,7 +102,7 @@ const ModelSelector = ({
             {selectedModel.name}
           </Text>
           {showProvider && !compact && (
-            <Text style={[styles.selectedProvider, { color: secondaryTextColor }]}>
+            <Text style={[styles.selectedProvider, { color: secondaryTextColor }]} numberOfLines={1}>
               {selectedModel.providerName || selectedModel.provider}
             </Text>
           )}
@@ -122,16 +118,18 @@ const ModelSelector = ({
     );
   };
 
-  const renderModelItem = ({ item }) => {
+  const renderModelItem = (item, index) => {
     const isSelected = item.id === selectedModelId;
 
     return (
       <TouchableOpacity
+        key={item.id}
         style={[
           styles.modelItem,
           { borderBottomColor: borderColor },
           isSelected && styles.selectedItem,
           isSelected && { backgroundColor: isDarkMode ? '#3C3C3E' : '#E8E8E8' },
+          index === models.length - 1 && { borderBottomWidth: 0 },
         ]}
         onPress={() => handleSelect(item)}
       >
@@ -142,7 +140,7 @@ const ModelSelector = ({
           >
             {item.name}
           </Text>
-          <Text style={[styles.modelProvider, { color: secondaryTextColor }]}>
+          <Text style={[styles.modelProvider, { color: secondaryTextColor }]} numberOfLines={1}>
             {item.providerName || item.provider}
             {item.description && ` - ${item.description}`}
           </Text>
@@ -165,6 +163,9 @@ const ModelSelector = ({
 
   return (
     <View style={styles.container}>
+      {label && (
+        <Text style={[styles.label, { color: secondaryTextColor }]}>{label}</Text>
+      )}
       <TouchableOpacity
         style={[
           styles.selector,
@@ -172,58 +173,81 @@ const ModelSelector = ({
           compact && styles.compactSelector,
           disabled && styles.disabledSelector,
         ]}
-        onPress={() => !disabled && setIsOpen(!isOpen)}
+        onPress={() => !disabled && setIsOpen(true)}
         disabled={disabled}
       >
         {renderSelectedModel()}
         <MaterialIcons
-          name={isOpen ? 'expand-less' : 'expand-more'}
+          name="expand-more"
           size={compact ? 20 : 24}
           color={disabled ? secondaryTextColor : textColor}
         />
       </TouchableOpacity>
 
-      {isOpen && (
-        <View style={[styles.dropdown, { backgroundColor: dropdownBg, borderColor }]}>
-          <FlatList
-            data={models}
-            renderItem={renderModelItem}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled={true}
-            style={styles.modelList}
-          />
-        </View>
-      )}
+      {/* Model Selection Modal - Avoids VirtualizedList nesting issues */}
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsOpen(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setIsOpen(false)}>
+          <Pressable style={[styles.modalContent, { backgroundColor: dropdownBg }]} onPress={e => e.stopPropagation()}>
+            <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.modalTitle, { color: textColor }]}>Select AI Model</Text>
+              <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.modalCloseButton}>
+                <MaterialIcons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={styles.modelList}
+              showsVerticalScrollIndicator={true}
+              bounces={false}
+            >
+              {models.map((model, index) => renderModelItem(model, index))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    zIndex: 1000,
+    marginBottom: 12,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+    marginLeft: 2,
   },
   selector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   compactSelector: {
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   disabledSelector: {
     opacity: 0.6,
   },
   loadingContainer: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
   },
   placeholderText: {
     fontSize: 14,
@@ -239,7 +263,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectedName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   compactText: {
@@ -249,30 +273,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  dropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    marginTop: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    maxHeight: 300,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    padding: 4,
   },
   modelList: {
-    maxHeight: 290,
+    maxHeight: 400,
   },
   modelItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
   selectedItem: {
@@ -284,12 +322,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   modelName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
   },
   modelProvider: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 3,
   },
   modelRight: {
     flexDirection: 'row',
@@ -297,8 +335,8 @@ const styles = StyleSheet.create({
   },
   costBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   costText: {
     fontSize: 11,

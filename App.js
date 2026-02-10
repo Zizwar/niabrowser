@@ -449,6 +449,7 @@ const goHomeOld = useCallback(async () => {
           onToggleErudaPress={toggleEruda}
           onFullscreenToggle={() => setIsFullscreen(!isFullscreen)}
           isFullscreen={isFullscreen}
+          onAIPress={() => setIsAICommandVisible(true)}
         />
       )}
       <BottomSheet
@@ -615,15 +616,6 @@ const goHomeOld = useCallback(async () => {
         />
       </Modal>
 
-      {/* Floating AI Button */}
-      {!isAICommandVisible && !isFullscreen && (
-        <TouchableOpacity
-          style={[styles.aiFloatingButton, isDarkMode && styles.aiFloatingButtonDark]}
-          onPress={() => setIsAICommandVisible(true)}
-        >
-          <Icon name="psychology" type="material" size={28} color="#fff" />
-        </TouchableOpacity>
-      )}
     </SafeAreaView>
   );
 };
@@ -670,26 +662,6 @@ const styles = StyleSheet.create({
   homeModalButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  aiFloatingButton: {
-    position: 'absolute',
-    bottom: 80,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    zIndex: 1000,
-  },
-  aiFloatingButtonDark: {
-    backgroundColor: '#0A84FF',
   },
 });
 

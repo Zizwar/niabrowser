@@ -229,21 +229,22 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     try {
       const savedScripts = await AsyncStorage.getItem('userScripts');
       if (savedScripts) {
-        setScripts(JSON.parse(savedScripts));
+        const parsedScripts = JSON.parse(savedScripts);
+        setScripts(parsedScripts);
       }
     } catch (error) {
       console.error('Error loading scripts:', error);
     }
   };
 
-  const saveScripts = async (updatedScripts) => {
+  const saveScripts = useCallback(async (updatedScripts) => {
     try {
       await AsyncStorage.setItem('userScripts', JSON.stringify(updatedScripts));
       setScripts(updatedScripts);
     } catch (error) {
       console.error('Error saving scripts:', error);
     }
-  };
+  }, [setScripts]);
 
   const addOrUpdateScript = () => {
     if (currentScript.name && currentScript.code) {
@@ -309,12 +310,19 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     });
   };
 
-  const handleToggleScript = useCallback((scriptName) => {
+  const handleToggleScript = useCallback(async (scriptName) => {
     const updatedScripts = scripts.map(s =>
       s.name === scriptName ? { ...s, isEnabled: !s.isEnabled } : s
     );
-    saveScripts(updatedScripts);
-  }, [scripts, saveScripts]);
+    // Save to AsyncStorage and update state
+    try {
+      await AsyncStorage.setItem('userScripts', JSON.stringify(updatedScripts));
+      setScripts(updatedScripts);
+    } catch (error) {
+      console.error('Error toggling script:', error);
+      Alert.alert('Error', 'Failed to save script state');
+    }
+  }, [scripts, setScripts]);
 
   const handleModelSelect = async (modelId) => {
     setSelectedModel(modelId);
