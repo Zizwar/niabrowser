@@ -433,13 +433,13 @@ const goHomeOld = useCallback(async () => {
       )}
       <View style={{ flex: 1 }}>
         {tabs.map((tab, index) => (
-          <View key={tab.id} style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            display: index === activeTabIndex ? 'flex' : 'none' 
+          <View key={tab.id} style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: tabs[activeTabIndex]?.isDevToolsVisible ? '45%' : 0,
+            display: index === activeTabIndex ? 'flex' : 'none'
           }}>
             <WebViewContainer
               ref={el => (webViewRefs.current[index] = el)}
@@ -504,8 +504,9 @@ const goHomeOld = useCallback(async () => {
       {tabs[activeTabIndex] && (
         <>
           <DevTools
-           isSafeMode={isSafeMode}
-      toggleSafeMode={toggleSafeMode} visible={tabs[activeTabIndex].isDevToolsVisible}
+            isSafeMode={isSafeMode}
+            toggleSafeMode={toggleSafeMode}
+            visible={tabs[activeTabIndex].isDevToolsVisible}
             onClose={() => updateTabInfo(activeTabIndex, { isDevToolsVisible: false })}
             networkLogs={tabs[activeTabIndex].networkLogs}
             consoleOutput={tabs[activeTabIndex].consoleOutput}

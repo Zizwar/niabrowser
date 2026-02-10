@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
 import { Icon } from 'react-native-elements';
 
-const ToolBar = ({ 
-  url, 
-  setUrl, 
-  isDarkMode, 
-  textColor, 
-  addToHistory, 
+const ToolBar = ({
+  url,
+  setUrl,
+  isDarkMode,
+  textColor,
+  addToHistory,
   onMenuPress,
   goBack,
   goForward,
@@ -15,10 +15,20 @@ const ToolBar = ({
   canGoBack,
   canGoForward,
   onFavoritesPress,
-  favicon,
   isFavorite,
   onToggleFavorite
 }) => {
+  // Get favicon URL from website
+  const getFaviconUrl = (siteUrl) => {
+    try {
+      const urlObj = new URL(siteUrl);
+      return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=32`;
+    } catch {
+      return null;
+    }
+  };
+
+  const faviconUrl = getFaviconUrl(url);
   const [inputUrl, setInputUrl] = useState(url);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef(null);
@@ -77,8 +87,8 @@ const ToolBar = ({
         <Icon name="refresh" type="material" color={textColor} />
       </TouchableOpacity>
       <View style={styles.urlContainer}>
-        {favicon && (
-          <Image source={{ uri: favicon }} style={styles.favicon} />
+        {faviconUrl && (
+          <Image source={{ uri: faviconUrl }} style={styles.favicon} />
         )}
         <Animated.View style={[
           styles.urlInfo,
@@ -105,14 +115,11 @@ const ToolBar = ({
           placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
         />
       </View>
-      <TouchableOpacity onPress={onToggleFavorite}>
-        <Icon name={isFavorite ? "star" : "star-border"} type="material" color={isFavorite ? "#FFD700" : textColor} />
+      <TouchableOpacity onPress={onToggleFavorite} style={styles.iconButton}>
+        <Icon name={isFavorite ? "star" : "star-border"} type="material" color={isFavorite ? "#FFD700" : textColor} size={22} />
       </TouchableOpacity>
-      <TouchableOpacity onPress={onFavoritesPress}>
-        <Icon name="history" type="material" color={textColor} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onMenuPress}>
-        <Icon name="menu" type="material" color={textColor} />
+      <TouchableOpacity onPress={onMenuPress} style={styles.iconButton}>
+        <Icon name="more-vert" type="material" color={textColor} size={22} />
       </TouchableOpacity>
     </View>
   );
@@ -136,9 +143,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   favicon: {
-    width: 16,
-    height: 16,
-    marginRight: 5,
+    width: 18,
+    height: 18,
+    marginLeft: 8,
+    marginRight: 4,
+    borderRadius: 2,
+  },
+  iconButton: {
+    padding: 6,
   },
   urlInfo: {
     flexDirection: 'row',

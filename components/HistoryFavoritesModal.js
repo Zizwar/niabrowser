@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, TextInput, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, TextInput, Share, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import BaseModal from './ui/BaseModal';
+
+// Get favicon URL from website
+const getFaviconUrl = (siteUrl) => {
+  try {
+    const urlObj = new URL(siteUrl);
+    return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=32`;
+  } catch {
+    return null;
+  }
+};
 
 const HistoryFavoritesModal = ({
   visible,
@@ -100,6 +110,7 @@ const HistoryFavoritesModal = ({
     const url = typeof item === 'string' ? item : item.url;
     const title = typeof item === 'string' ? item : item.title;
     const displayUrl = url.length > 50 ? url.substring(0, 47) + '...' : url;
+    const faviconUrl = getFaviconUrl(url);
 
     return (
       <TouchableOpacity
@@ -108,11 +119,15 @@ const HistoryFavoritesModal = ({
         onLongPress={() => handleLongPress(url)}
       >
         <View style={styles.itemIcon}>
-          <MaterialIcons
-            name={activeTab === 'history' ? 'history' : 'star'}
-            size={20}
-            color={activeTab === 'history' ? secondaryTextColor : '#FFC107'}
-          />
+          {faviconUrl ? (
+            <Image source={{ uri: faviconUrl }} style={styles.favicon} />
+          ) : (
+            <MaterialIcons
+              name={activeTab === 'history' ? 'history' : 'star'}
+              size={20}
+              color={activeTab === 'history' ? secondaryTextColor : '#FFC107'}
+            />
+          )}
         </View>
         <View style={styles.itemContent}>
           {activeTab === 'history' && title && title !== url ? (
@@ -297,6 +312,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  favicon: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
   },
   itemContent: {
     flex: 1,

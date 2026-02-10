@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '50%',
+    height: '45%',
     borderTopWidth: 1,
     borderTopColor: '#CCCCCC',
   },
