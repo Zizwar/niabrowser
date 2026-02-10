@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, View, TouchableOpacity, StyleSheet, Text, ScrollView, FlatList, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, Text, Alert, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import BaseModal from './ui/BaseModal';
 
 const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
-  const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
+  const backgroundColor = isDarkMode ? '#1C1C1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const borderColor = isDarkMode ? '#444444' : '#CCCCCC';
-  const [useVirtualized, setUseVirtualized] = useState(false);
+  const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
   const [isLoading, setIsLoading] = useState(false);
   const [displayCode, setDisplayCode] = useState('');
 
@@ -25,74 +26,87 @@ const SourceCodeModal = ({ visible, onClose, sourceCode, isDarkMode }) => {
     Alert.alert('Copied', 'Source code copied to clipboard');
   };
 
-  // Split source code into lines for virtualization
-  const sourceLines = useMemo(() => {
-    if (!displayCode) return [];
-    const lines = displayCode.split('\n');
-    
-    // If more than 1000 lines, use virtualization
-    if (lines.length > 1000) {
-      setUseVirtualized(true);
-      return lines.map((line, index) => ({ id: index, text: line }));
-    }
-    
-    setUseVirtualized(false);
-    return lines;
-  }, [displayCode]);
-
-  const renderLine = ({ item }) => (
-    <Text style={[styles.codeText, { color: textColor }]}>
-      {item.text}
-    </Text>
-  );
+  const headerActions = displayCode ? (
+    <TouchableOpacity onPress={copyToClipboard} style={styles.copyButton}>
+      <MaterialIcons name="content-copy" size={22} color={textColor} />
+    </TouchableOpacity>
+  ) : null;
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Source Code"
+      isDarkMode={isDarkMode}
+      fullScreen={true}
+      headerActions={headerActions}
     >
       <View style={[styles.container, { backgroundColor }]}>
-        <View style={[styles.header, { borderBottomColor: borderColor }]}>
-          <Text style={[styles.headerText, { color: textColor }]}>Source Code</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={[styles.closeButtonText, { color: textColor }]}>✕</Text>
-          </TouchableOpacity>
-        </View>
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={isDarkMode ? '#FFFFFF' : '#000000'} />
-            <Text style={[styles.loadingText, { color: textColor }]}>Loading source code...</Text>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={[styles.loadingText, { color: secondaryTextColor }]}>
+              Loading source code...
+            </Text>
           </View>
         ) : (
-          <WebView 
-            source={{ html: `
+          <WebView
+            source={{
+              html: `
               <!DOCTYPE html>
               <html>
               <head>
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${isDarkMode ? 'dark' : 'default'}.min.css">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${isDarkMode ? 'atom-one-dark' : 'atom-one-light'}.min.css">
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+                <style>
+                  body {
+                    margin: 0;
+                    padding: 12px;
+                    background: ${isDarkMode ? '#1C1C1E' : '#FFFFFF'};
+                    font-family: 'Monaco', 'Menlo', monospace;
+                    font-size: 12px;
+                    line-height: 1.5;
+                  }
+                  pre {
+                    margin: 0;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                  }
+                  code {
+                    font-family: 'Monaco', 'Menlo', monospace;
+                  }
+                  .hljs {
+                    background: transparent !important;
+                    padding: 0 !important;
+                  }
+                </style>
               </head>
-              <body style="margin:0;padding:10px;background:${isDarkMode ? '#1e1e1e' : '#ffffff'};">
-                <pre><code class="language-html">${displayCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+              <body>
+                <pre><code class="language-html">${displayCode
+                  .replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                }</code></pre>
                 <script>hljs.highlightAll();</script>
               </body>
               </html>
-            ` }}
-            style={{ flex: 1 }}
+            `
+            }}
+            style={{ flex: 1, backgroundColor }}
+            showsVerticalScrollIndicator={true}
           />
         )}
+
         {displayCode && (
-          <TouchableOpacity 
-            style={[styles.copyButton, { borderTopColor: borderColor }]} 
-            onPress={copyToClipboard}
-          >
-            <Text style={[styles.copyButtonText, { color: textColor }]}>Copy to Clipboard</Text>
+          <TouchableOpacity style={styles.bottomCopyButton} onPress={copyToClipboard}>
+            <MaterialIcons name="content-copy" size={18} color="#FFFFFF" />
+            <Text style={styles.bottomCopyButtonText}>Copy to Clipboard</Text>
           </TouchableOpacity>
         )}
       </View>
-    </Modal>
+    </BaseModal>
   );
 };
 
@@ -100,51 +114,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    padding: 5,
-  },
-  closeButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  codeContainer: {
-    flex: 1,
-    padding: 10,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    gap: 12,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-  },
-  codeText: {
-    fontFamily: 'monospace',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 14,
   },
   copyButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  bottomCopyButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
-    borderTopWidth: 1,
+    backgroundColor: '#007AFF',
+    padding: 14,
+    margin: 16,
+    borderRadius: 12,
+    gap: 8,
   },
-  copyButtonText: {
-    fontSize: 16,
+  bottomCopyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

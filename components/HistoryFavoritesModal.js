@@ -1,17 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, FlatList, Alert, TextInput } from 'react-native';
-import { Icon } from 'react-native-elements';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, TextInput, Share } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
-import { Share } from 'react-native';
+import BaseModal from './ui/BaseModal';
 
-const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHistory, isDarkMode, favorites, addToFavorites, removeFromFavorites, onHistoryUpdate }) => {
+const HistoryFavoritesModal = ({
+  visible,
+  onClose,
+  history,
+  onSelectUrl,
+  clearHistory,
+  isDarkMode,
+  favorites,
+  addToFavorites,
+  removeFromFavorites,
+  onHistoryUpdate
+}) => {
   const [activeTab, setActiveTab] = useState('history');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
+  const backgroundColor = isDarkMode ? '#1C1C1E' : '#FFFFFF';
+  const cardBackground = isDarkMode ? '#2C2C2E' : '#F5F5F5';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
-
+  const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
+  const inputBackground = isDarkMode ? '#3C3C3E' : '#F0F0F0';
+  const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
 
   const handleLongPress = (item) => {
     Alert.alert(
@@ -33,36 +47,36 @@ const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHi
       'Are you sure you want to delete this item?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: async () => {
-          try {
-            const savedHistory = await AsyncStorage.getItem('browserHistory');
-            if (savedHistory) {
-              const historyArray = JSON.parse(savedHistory);
-              const updatedHistory = historyArray.filter(item => {
-                const itemUrl = typeof item === 'string' ? item : item.url;
-                return itemUrl !== urlToRemove;
-              });
-              await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));
-              
-              // Call the parent callback to update the history state
-              if (onHistoryUpdate) {
-                onHistoryUpdate(updatedHistory);
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const savedHistory = await AsyncStorage.getItem('browserHistory');
+              if (savedHistory) {
+                const historyArray = JSON.parse(savedHistory);
+                const updatedHistory = historyArray.filter(item => {
+                  const itemUrl = typeof item === 'string' ? item : item.url;
+                  return itemUrl !== urlToRemove;
+                });
+                await AsyncStorage.setItem('browserHistory', JSON.stringify(updatedHistory));
+
+                if (onHistoryUpdate) {
+                  onHistoryUpdate(updatedHistory);
+                }
               }
-              
-              Alert.alert('Deleted', 'Item has been deleted from history');
+            } catch (error) {
+              console.error('Error removing from history:', error);
             }
-          } catch (error) {
-            console.error('Error removing from history:', error);
-            Alert.alert('Error', 'Failed to delete item from history');
           }
-        }}
+        }
       ]
     );
   };
 
   const copyToClipboard = async (url) => {
     await Clipboard.setStringAsync(url);
-    Alert.alert("Copied to clipboard", url);
+    Alert.alert("Copied", "URL copied to clipboard");
   };
 
   const shareUrl = async (url) => {
@@ -73,194 +87,256 @@ const HistoryFavoritesModal = ({ visible, onClose, history, onSelectUrl, clearHi
     }
   };
 
-  const filteredData = activeTab === 'history' 
+  const filteredData = activeTab === 'history'
     ? history.filter(item => {
         const url = typeof item === 'string' ? item : item.url;
         const title = typeof item === 'string' ? item : item.title;
-        return url.toLowerCase().includes(searchQuery.toLowerCase()) || 
-               title.toLowerCase().includes(searchQuery.toLowerCase());
+        return url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               title?.toLowerCase().includes(searchQuery.toLowerCase());
       })
     : favorites.filter(item => item.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const renderItem = ({ item, index }) => {
     const url = typeof item === 'string' ? item : item.url;
     const title = typeof item === 'string' ? item : item.title;
-    const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
-    
+    const displayUrl = url.length > 50 ? url.substring(0, 47) + '...' : url;
+
     return (
-      <TouchableOpacity 
-        style={[
-          styles.item, 
-          { backgroundColor: index % 2 === 0 ? backgroundColor : isDarkMode ? '#2C2C2C' : '#F0F0F0' }
-        ]} 
+      <TouchableOpacity
+        style={[styles.item, { backgroundColor: index % 2 === 0 ? cardBackground : backgroundColor }]}
         onPress={() => onSelectUrl(url)}
         onLongPress={() => handleLongPress(url)}
       >
+        <View style={styles.itemIcon}>
+          <MaterialIcons
+            name={activeTab === 'history' ? 'history' : 'star'}
+            size={20}
+            color={activeTab === 'history' ? secondaryTextColor : '#FFC107'}
+          />
+        </View>
         <View style={styles.itemContent}>
-          {activeTab === 'history' && title !== url ? (
+          {activeTab === 'history' && title && title !== url ? (
             <>
               <Text style={[styles.itemTitle, { color: textColor }]} numberOfLines={1}>{title}</Text>
-              <Text style={[styles.itemUrl, { color: isDarkMode ? '#AAAAAA' : '#666666' }]} numberOfLines={1}>{displayUrl}</Text>
+              <Text style={[styles.itemUrl, { color: secondaryTextColor }]} numberOfLines={1}>{displayUrl}</Text>
             </>
           ) : (
             <Text style={[styles.itemText, { color: textColor }]} numberOfLines={2}>{displayUrl}</Text>
           )}
         </View>
-        <TouchableOpacity onPress={() => {
-          if (activeTab === 'favorites') {
-            removeFromFavorites(url);
-          } else {
-            removeFromHistory(url);
-          }
-        }}>
-          <Icon name="delete" type="material" color="#FF5252" />
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => activeTab === 'favorites' ? removeFromFavorites(url) : removeFromHistory(url)}
+        >
+          <MaterialIcons name="delete-outline" size={20} color="#F44336" />
         </TouchableOpacity>
       </TouchableOpacity>
     );
   };
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="History & Favorites"
+      isDarkMode={isDarkMode}
+      fullScreen={true}
     >
       <View style={[styles.container, { backgroundColor }]}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>History & Favorites</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Icon name="close" type="material" color={textColor} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.tabContainer}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'history' && styles.activeTab]} 
+        {/* Tabs */}
+        <View style={[styles.tabContainer, { borderBottomColor: borderColor }]}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'history' && styles.activeTab]}
             onPress={() => setActiveTab('history')}
           >
-            <Text style={[styles.tabText, { color: textColor }]}>History</Text>
+            <MaterialIcons
+              name="history"
+              size={20}
+              color={activeTab === 'history' ? '#007AFF' : secondaryTextColor}
+            />
+            <Text style={[
+              styles.tabText,
+              { color: activeTab === 'history' ? '#007AFF' : textColor }
+            ]}>History</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'favorites' && styles.activeTab]} 
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
             onPress={() => setActiveTab('favorites')}
           >
-            <Text style={[styles.tabText, { color: textColor }]}>Favorites</Text>
+            <MaterialIcons
+              name="star"
+              size={20}
+              color={activeTab === 'favorites' ? '#007AFF' : secondaryTextColor}
+            />
+            <Text style={[
+              styles.tabText,
+              { color: activeTab === 'favorites' ? '#007AFF' : textColor }
+            ]}>Favorites</Text>
           </TouchableOpacity>
         </View>
-        <TextInput
-          style={[styles.searchInput, { color: textColor, backgroundColor: isDarkMode ? '#2C2C2C' : '#F0F0F0' }]}
-          placeholder="Search..."
-          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+
+        {/* Search */}
+        <View style={[styles.searchContainer, { backgroundColor: inputBackground }]}>
+          <MaterialIcons name="search" size={20} color={secondaryTextColor} />
+          <TextInput
+            style={[styles.searchInput, { color: textColor }]}
+            placeholder="Search..."
+            placeholderTextColor={secondaryTextColor}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <MaterialIcons name="close" size={18} color={secondaryTextColor} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* List */}
         <FlatList
           data={filteredData}
           renderItem={renderItem}
           keyExtractor={(item, index) => index.toString()}
+          style={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialIcons
+                name={activeTab === 'history' ? 'history' : 'star-border'}
+                size={48}
+                color={secondaryTextColor}
+              />
+              <Text style={[styles.emptyText, { color: secondaryTextColor }]}>
+                {activeTab === 'history' ? 'No history yet' : 'No favorites yet'}
+              </Text>
+            </View>
+          }
         />
-        {activeTab === 'history' && (
-          <TouchableOpacity style={styles.clearButton} onPress={clearHistory}>
-            <Icon name="delete" type="material" color={textColor} />
-            <Text style={[styles.clearButtonText, { color: textColor }]}>Clear History</Text>
-          </TouchableOpacity>
-        )}
-        {activeTab === 'favorites' && (
-          <TouchableOpacity style={styles.clearButton} onPress={() => {
-            Alert.alert(
-              "Clear All Favorites",
-              "Are you sure you want to clear all favorites?",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Clear", onPress: () => {
-                  favorites.forEach(fav => removeFromFavorites(fav));
-                }}
-              ]
-            );
-          }}>
-            <Icon name="delete" type="material" color={textColor} />
-            <Text style={[styles.clearButtonText, { color: textColor }]}>Clear All Favorites</Text>
-          </TouchableOpacity>
-        )}
+
+        {/* Clear Button */}
+        <TouchableOpacity
+          style={[styles.clearButton, { borderTopColor: borderColor }]}
+          onPress={() => {
+            if (activeTab === 'history') {
+              clearHistory();
+            } else {
+              Alert.alert(
+                "Clear All Favorites",
+                "Are you sure you want to clear all favorites?",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Clear",
+                    style: "destructive",
+                    onPress: () => favorites.forEach(fav => removeFromFavorites(fav))
+                  }
+                ]
+              );
+            }
+          }}
+        >
+          <MaterialIcons name="delete-sweep" size={20} color="#F44336" />
+          <Text style={styles.clearButtonText}>
+            Clear All {activeTab === 'history' ? 'History' : 'Favorites'}
+          </Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 22,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   tabContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
   },
   tab: {
     flex: 1,
-    padding: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
   },
   activeTab: {
     borderBottomWidth: 2,
     borderBottomColor: '#007AFF',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 8,
   },
   searchInput: {
-    margin: 10,
-    padding: 10,
-    borderRadius: 5,
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 4,
+  },
+  list: {
+    flex: 1,
   },
   item: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  itemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemContent: {
     flex: 1,
-    marginRight: 10,
+    marginHorizontal: 12,
   },
   itemText: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   itemUrl: {
-    fontSize: 14,
-    fontStyle: 'italic',
+    fontSize: 12,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 16,
   },
   clearButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
+    padding: 14,
     borderTopWidth: 1,
-    borderTopColor: '#CCCCCC',
+    gap: 8,
   },
   clearButtonText: {
-    marginLeft: 10,
-    fontSize: 16,
+    color: '#F44336',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
 

@@ -11,8 +11,10 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { Icon } from 'react-native-elements';
+import { MaterialIcons } from '@expo/vector-icons';
+import ModelSelector from './ui/ModelSelector';
 import { SettingsManager } from '../utils/SettingsManager';
+import { AIProviderManager } from '../utils/AIProviderManager';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,23 +34,40 @@ const AICommandInterface = ({
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('anthropic/claude-3.5-sonnet');
+  const [showModelSelector, setShowModelSelector] = useState(false);
   const scrollViewRef = useRef(null);
 
-  const models = [
-    { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', icon: '🧠' },
-    { id: 'openai/gpt-4o', name: 'GPT-4o', icon: '🤖' },
-    { id: 'google/gemini-pro-1.5', name: 'Gemini Pro 1.5', icon: '✨' },
-    { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', icon: '🔍' },
-  ];
+  const backgroundColor = isDarkMode ? '#1C1C1E' : '#F5F5F5';
+  const cardBackground = isDarkMode ? '#2C2C2E' : '#FFFFFF';
+  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
+  const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
+  const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
+  const inputBackground = isDarkMode ? '#3C3C3E' : '#F0F0F0';
+
+  useEffect(() => {
+    loadSelectedModel();
+  }, []);
 
   useEffect(() => {
     if (visible && messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: '🚀 مرحباً! أنا مساعدك الذكي في DevTools.\n\nيمكنني مساعدتك في:\n• فحص Console والأخطاء\n• تحليل طلبات Network\n• فحص Cookies والتخزين\n• تصحيح الأكواد\n• تحليل الأداء\n• كتابة وتنفيذ أكواد JavaScript\n\nجرب أمر مثل:\n"افحص الأخطاء في الكونسول"\n"حلل طلبات الشبكة"\n"اعرض الكوكيز"\n"اكتب كود لتغيير لون الخلفية"'
+        content: 'Welcome to AI DevTools!\n\nI can help you with:\n\n- Inspect Console and errors\n- Analyze Network requests\n- Inspect Cookies and storage\n- Debug code issues\n- Analyze performance\n- Write and execute JavaScript\n\nTry commands like:\n"Check for errors"\n"Analyze network requests"\n"Show cookies"\n"Write code to change background color"'
       }]);
     }
   }, [visible]);
+
+  const loadSelectedModel = async () => {
+    const model = await SettingsManager.getSelectedModel();
+    setSelectedModel(model);
+  };
+
+  const quickCommands = [
+    { id: 1, text: 'Check Errors', icon: 'bug-report', color: '#F44336' },
+    { id: 2, text: 'Analyze Network', icon: 'language', color: '#2196F3' },
+    { id: 3, text: 'Show Cookies', icon: 'cookie', color: '#FF9800' },
+    { id: 4, text: 'Check Performance', icon: 'speed', color: '#4CAF50' },
+  ];
 
   const executeAICommand = async () => {
     if (!command.trim()) return;
@@ -61,13 +80,13 @@ const AICommandInterface = ({
     try {
       const apiKey = await SettingsManager.getApiKey();
       if (!apiKey) {
-        throw new Error('API Key غير موجود. يرجى إضافته من الإعدادات.');
+        throw new Error('API Key not found. Please add it in Settings.');
       }
 
-      // جمع البيانات الحالية للسياق
       const context = buildContext();
+      const activeProvider = await AIProviderManager.getActiveProvider();
 
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch(`${activeProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,25 +99,25 @@ const AICommandInterface = ({
           messages: [
             {
               role: 'system',
-              content: `أنت مساعد ذكي في DevTools لمتصفح موبايل. مهمتك:
-1. تحليل البيانات (Console, Network, Cookies, Performance)
-2. كتابة أكواد JavaScript للتنفيذ في الصفحة
-3. تصحيح الأخطاء وحل المشاكل
-4. تقديم اقتراحات وتحسينات
+              content: `You are an intelligent DevTools assistant for a mobile browser. Your tasks:
+1. Analyze data (Console, Network, Cookies, Performance)
+2. Write JavaScript code for page execution
+3. Debug errors and solve problems
+4. Provide suggestions and improvements
 
-السياق الحالي:
-- URL: ${currentUrl || 'لا يوجد'}
-- Console Logs: ${consoleLogs?.length || 0} سجل
-- Network Requests: ${networkLogs?.length || 0} طلب
+Current context:
+- URL: ${currentUrl || 'None'}
+- Console Logs: ${consoleLogs?.length || 0} entries
+- Network Requests: ${networkLogs?.length || 0} requests
 - Cookies: ${storageData?.cookies?.length || 0}
-- Performance: ${performanceData ? 'متوفر' : 'غير متوفر'}
+- Performance: ${performanceData ? 'Available' : 'Not available'}
 
 ${context}
 
-عند كتابة كود JavaScript، اكتبه بصيغة نظيفة بدون markdown backticks.
-استخدم تعليقات عربية في الكود للشرح.`
+When writing JavaScript code, write it cleanly without markdown backticks.
+Use comments to explain the code.`
             },
-            ...messages,
+            ...messages.filter(m => m.role !== 'system'),
             userMessage
           ],
           temperature: 0.7,
@@ -109,12 +128,11 @@ ${context}
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(data.error.message || 'حدث خطأ في API');
+        throw new Error(data.error.message || 'API Error');
       }
 
       const aiResponse = data.choices[0].message.content;
 
-      // فحص إذا كان الرد يحتوي على كود قابل للتنفيذ
       const codeMatch = aiResponse.match(/```javascript\n([\s\S]*?)\n```/) ||
                         aiResponse.match(/```js\n([\s\S]*?)\n```/);
 
@@ -133,7 +151,7 @@ ${context}
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `❌ خطأ: ${error.message}`,
+        content: `Error: ${error.message}`,
         isError: true
       }]);
     } finally {
@@ -142,32 +160,28 @@ ${context}
   };
 
   const buildContext = () => {
-    let context = '\n\n--- بيانات السياق ---\n';
+    let context = '\n\n--- Context Data ---\n';
 
-    // Console Logs
     if (consoleLogs && consoleLogs.length > 0) {
-      context += '\n📋 آخر سجلات Console:\n';
+      context += '\nRecent Console Logs:\n';
       consoleLogs.slice(-10).forEach((log, i) => {
         context += `${i + 1}. [${log.type}] ${log.message}\n`;
       });
     }
 
-    // Network Logs
     if (networkLogs && networkLogs.length > 0) {
-      context += '\n🌐 آخر طلبات Network:\n';
+      context += '\nRecent Network Requests:\n';
       networkLogs.slice(-10).forEach((log, i) => {
         context += `${i + 1}. ${log.method || 'GET'} ${log.url} - ${log.status || 'pending'}\n`;
       });
     }
 
-    // Storage/Cookies
     if (storageData?.cookies) {
-      context += `\n🍪 عدد Cookies: ${storageData.cookies.length}\n`;
+      context += `\nCookies Count: ${storageData.cookies.length}\n`;
     }
 
-    // Performance
     if (performanceData) {
-      context += '\n⚡ Performance Metrics:\n';
+      context += '\nPerformance Metrics:\n';
       Object.entries(performanceData).forEach(([key, value]) => {
         context += `- ${key}: ${value}\n`;
       });
@@ -178,7 +192,7 @@ ${context}
 
   const executeCode = async (code) => {
     if (!webViewRef?.current) {
-      alert('WebView غير متاح');
+      alert('WebView not available');
       return;
     }
 
@@ -190,7 +204,7 @@ ${context}
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'aiCommandExecuted',
               success: true,
-              message: 'تم تنفيذ الكود بنجاح'
+              message: 'Code executed successfully'
             }));
           } catch (error) {
             window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -204,24 +218,23 @@ ${context}
 
       setMessages(prev => [...prev, {
         role: 'system',
-        content: '✅ تم تنفيذ الكود في الصفحة',
+        content: 'Code executed successfully',
         isSuccess: true
       }]);
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'system',
-        content: `❌ فشل تنفيذ الكود: ${error.message}`,
+        content: `Execution failed: ${error.message}`,
         isError: true
       }]);
     }
   };
 
-  const quickCommands = [
-    { id: 1, text: 'افحص الأخطاء', icon: '🐛' },
-    { id: 2, text: 'حلل الشبكة', icon: '🌐' },
-    { id: 3, text: 'اعرض الكوكيز', icon: '🍪' },
-    { id: 4, text: 'حلل الأداء', icon: '⚡' },
-  ];
+  const handleModelSelect = async (modelId) => {
+    setSelectedModel(modelId);
+    await SettingsManager.setSelectedModel(modelId);
+    setShowModelSelector(false);
+  };
 
   const renderMessage = (msg, index) => {
     const isUser = msg.role === 'user';
@@ -232,16 +245,22 @@ ${context}
         key={index}
         style={[
           styles.messageContainer,
+          { backgroundColor: isUser ? '#007AFF' : cardBackground },
           isUser && styles.userMessage,
           isSystem && styles.systemMessage,
           msg.isError && styles.errorMessage,
           msg.isSuccess && styles.successMessage,
         ]}
       >
+        {!isUser && !isSystem && (
+          <View style={styles.messageHeader}>
+            <MaterialIcons name="psychology" size={16} color="#007AFF" />
+            <Text style={[styles.messageRole, { color: '#007AFF' }]}>AI Assistant</Text>
+          </View>
+        )}
         <Text style={[
           styles.messageText,
-          isDarkMode && styles.messageTextDark,
-          isUser && styles.userMessageText,
+          { color: isUser || msg.isError || msg.isSuccess ? '#FFFFFF' : textColor },
         ]}>
           {msg.content}
         </Text>
@@ -251,8 +270,8 @@ ${context}
             style={styles.executeButton}
             onPress={() => executeCode(msg.code)}
           >
-            <Icon name="play-arrow" type="material" size={18} color="#fff" />
-            <Text style={styles.executeButtonText}>تنفيذ الكود</Text>
+            <MaterialIcons name="play-arrow" size={18} color="#FFFFFF" />
+            <Text style={styles.executeButtonText}>Execute Code</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -263,50 +282,51 @@ ${context}
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, isDarkMode && styles.containerDark]}
+      style={[styles.container, { backgroundColor }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Header */}
-      <View style={[styles.header, isDarkMode && styles.headerDark]}>
+      <View style={[styles.header, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
         <View style={styles.headerLeft}>
-          <Icon name="psychology" type="material" size={24} color="#007AFF" />
-          <Text style={[styles.headerTitle, isDarkMode && styles.headerTitleDark]}>
+          <MaterialIcons name="psychology" size={24} color="#007AFF" />
+          <Text style={[styles.headerTitle, { color: textColor }]}>
             AI DevTools
           </Text>
         </View>
-        <TouchableOpacity onPress={onClose}>
-          <Icon name="close" type="material" size={24} color={isDarkMode ? '#fff' : '#000'} />
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <MaterialIcons name="close" size={24} color={textColor} />
         </TouchableOpacity>
       </View>
 
-      {/* Model Selector */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.modelSelector}
+      {/* Model Selector Toggle */}
+      <TouchableOpacity
+        style={[styles.modelToggle, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}
+        onPress={() => setShowModelSelector(!showModelSelector)}
       >
-        {models.map(model => (
-          <TouchableOpacity
-            key={model.id}
-            style={[
-              styles.modelChip,
-              selectedModel === model.id && styles.modelChipSelected,
-              isDarkMode && styles.modelChipDark,
-            ]}
-            onPress={() => setSelectedModel(model.id)}
-          >
-            <Text style={styles.modelIcon}>{model.icon}</Text>
-            <Text style={[
-              styles.modelName,
-              selectedModel === model.id && styles.modelNameSelected,
-              isDarkMode && styles.modelNameDark,
-            ]}>
-              {model.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+        <View style={styles.modelToggleContent}>
+          <MaterialIcons name="smart-toy" size={18} color={secondaryTextColor} />
+          <Text style={[styles.modelToggleText, { color: textColor }]} numberOfLines={1}>
+            {selectedModel.split('/').pop()}
+          </Text>
+        </View>
+        <MaterialIcons
+          name={showModelSelector ? 'expand-less' : 'expand-more'}
+          size={20}
+          color={secondaryTextColor}
+        />
+      </TouchableOpacity>
+
+      {/* Model Selector Dropdown */}
+      {showModelSelector && (
+        <View style={[styles.modelSelectorContainer, { backgroundColor }]}>
+          <ModelSelector
+            selectedModelId={selectedModel}
+            onModelSelect={handleModelSelect}
+            isDarkMode={isDarkMode}
+          />
+        </View>
+      )}
 
       {/* Messages */}
       <ScrollView
@@ -318,10 +338,10 @@ ${context}
         {messages.map((msg, index) => renderMessage(msg, index))}
 
         {isLoading && (
-          <View style={styles.loadingContainer}>
+          <View style={[styles.loadingContainer, { backgroundColor: cardBackground }]}>
             <ActivityIndicator size="small" color="#007AFF" />
-            <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
-              جاري التفكير...
+            <Text style={[styles.loadingText, { color: secondaryTextColor }]}>
+              Thinking...
             </Text>
           </View>
         )}
@@ -331,16 +351,17 @@ ${context}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={[styles.quickCommands, isDarkMode && styles.quickCommandsDark]}
+        style={[styles.quickCommands, { backgroundColor: cardBackground, borderTopColor: borderColor }]}
+        contentContainerStyle={styles.quickCommandsContent}
       >
         {quickCommands.map(cmd => (
           <TouchableOpacity
             key={cmd.id}
-            style={[styles.quickCommandButton, isDarkMode && styles.quickCommandButtonDark]}
+            style={[styles.quickCommandButton, { backgroundColor: inputBackground }]}
             onPress={() => setCommand(cmd.text)}
           >
-            <Text style={styles.quickCommandIcon}>{cmd.icon}</Text>
-            <Text style={[styles.quickCommandText, isDarkMode && styles.quickCommandTextDark]}>
+            <MaterialIcons name={cmd.icon} size={16} color={cmd.color} />
+            <Text style={[styles.quickCommandText, { color: textColor }]}>
               {cmd.text}
             </Text>
           </TouchableOpacity>
@@ -348,27 +369,29 @@ ${context}
       </ScrollView>
 
       {/* Input */}
-      <View style={[styles.inputContainer, isDarkMode && styles.inputContainerDark]}>
+      <View style={[styles.inputContainer, { backgroundColor: cardBackground, borderTopColor: borderColor }]}>
         <TextInput
-          style={[styles.input, isDarkMode && styles.inputDark]}
+          style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
           value={command}
           onChangeText={setCommand}
-          placeholder="اكتب أمرك هنا... مثل: افحص الأخطاء، حلل الشبكة، اكتب كود..."
-          placeholderTextColor={isDarkMode ? '#666' : '#999'}
+          placeholder="Type your command... e.g., Check for errors, analyze network..."
+          placeholderTextColor={secondaryTextColor}
           multiline
           maxHeight={100}
           onSubmitEditing={executeAICommand}
         />
         <TouchableOpacity
-          style={[styles.sendButton, !command.trim() && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton,
+            { backgroundColor: command.trim() ? '#007AFF' : inputBackground },
+          ]}
           onPress={executeAICommand}
           disabled={!command.trim() || isLoading}
         >
-          <Icon
+          <MaterialIcons
             name="send"
-            type="material"
             size={22}
-            color={command.trim() ? '#007AFF' : '#ccc'}
+            color={command.trim() ? '#FFFFFF' : secondaryTextColor}
           />
         </TouchableOpacity>
       </View>
@@ -379,23 +402,14 @@ ${context}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  containerDark: {
-    backgroundColor: '#1C1C1E',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  headerDark: {
-    backgroundColor: '#2C2C2E',
-    borderBottomColor: '#3C3C3E',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -404,100 +418,86 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: '600',
   },
-  headerTitleDark: {
-    color: '#fff',
+  closeButton: {
+    padding: 4,
   },
-  modelSelector: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  modelChip: {
+  modelToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 20,
-    marginRight: 10,
-    gap: 5,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
   },
-  modelChipDark: {
-    backgroundColor: '#3C3C3E',
+  modelToggleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
   },
-  modelChipSelected: {
-    backgroundColor: '#007AFF',
+  modelToggleText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
-  modelIcon: {
-    fontSize: 16,
-  },
-  modelName: {
-    fontSize: 13,
-    color: '#333',
-  },
-  modelNameDark: {
-    color: '#E5E5E5',
-  },
-  modelNameSelected: {
-    color: '#fff',
-    fontWeight: '600',
+  modelSelectorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    zIndex: 1000,
   },
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
-    padding: 15,
+    padding: 16,
     paddingBottom: 20,
   },
   messageContainer: {
     marginBottom: 12,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#fff',
-    maxWidth: '85%',
+    maxWidth: '90%',
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#007AFF',
   },
   systemMessage: {
     alignSelf: 'center',
     backgroundColor: '#E5E5E5',
   },
   errorMessage: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#F44336',
   },
   successMessage: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#4CAF50',
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  messageRole: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   messageText: {
     fontSize: 15,
-    color: '#000',
     lineHeight: 22,
-  },
-  messageTextDark: {
-    color: '#E5E5E5',
-  },
-  userMessageText: {
-    color: '#fff',
   },
   executeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#34C759',
+    backgroundColor: '#4CAF50',
     borderRadius: 8,
     padding: 10,
     marginTop: 10,
-    gap: 5,
+    gap: 6,
   },
   executeButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -506,74 +506,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 12,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   loadingText: {
     fontSize: 14,
-    color: '#666',
-  },
-  loadingTextDark: {
-    color: '#999',
   },
   quickCommands: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
+    maxHeight: 56,
   },
-  quickCommandsDark: {
-    backgroundColor: '#2C2C2E',
-    borderTopColor: '#3C3C3E',
+  quickCommandsContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
   },
   quickCommandButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#F0F0F0',
     borderRadius: 20,
-    marginRight: 8,
-    gap: 5,
-  },
-  quickCommandButtonDark: {
-    backgroundColor: '#3C3C3E',
-  },
-  quickCommandIcon: {
-    fontSize: 14,
+    gap: 6,
   },
   quickCommandText: {
     fontSize: 13,
-    color: '#333',
-  },
-  quickCommandTextDark: {
-    color: '#E5E5E5',
+    fontWeight: '500',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 10,
-    backgroundColor: '#fff',
+    padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
     gap: 10,
-  },
-  inputContainerDark: {
-    backgroundColor: '#2C2C2E',
-    borderTopColor: '#3C3C3E',
   },
   input: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
     borderRadius: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#000',
     minHeight: 40,
-  },
-  inputDark: {
-    backgroundColor: '#3C3C3E',
-    color: '#fff',
   },
   sendButton: {
     width: 40,
@@ -581,10 +554,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F0F0',
-  },
-  sendButtonDisabled: {
-    opacity: 0.5,
   },
 });
 

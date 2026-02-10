@@ -1,133 +1,158 @@
 import React from 'react';
-import { Modal, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { Icon } from 'react-native-elements';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import BaseModal from './ui/BaseModal';
 
 const NetworkLogModal = ({ visible, onClose, log, isDarkMode, openInCrud }) => {
   if (!log) return null;
 
-  const backgroundColor = isDarkMode ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
-  const cardColor = isDarkMode ? '#2C2C2C' : '#F0F0F0';
+  const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
+  const cardColor = isDarkMode ? '#2C2C2E' : '#F0F0F0';
+  const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
 
   const copyToClipboard = async (text) => {
     await Clipboard.setStringAsync(text);
-    // You might want to show a toast or some feedback here
+  };
+
+  const getStatusColor = (status) => {
+    if (!status) return secondaryTextColor;
+    if (status >= 200 && status < 300) return '#4CAF50';
+    if (status >= 300 && status < 400) return '#FF9800';
+    if (status >= 400) return '#F44336';
+    return secondaryTextColor;
   };
 
   const renderSection = (title, content, icon) => (
     <View style={[styles.section, { backgroundColor: cardColor }]}>
       <View style={styles.sectionHeader}>
-        <Icon name={icon} type="material" color={textColor} size={24} />
+        <MaterialIcons name={icon} size={20} color="#007AFF" />
         <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
+        <TouchableOpacity
+          style={styles.copyIconButton}
+          onPress={() => copyToClipboard(typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content))}
+        >
+          <MaterialIcons name="content-copy" size={18} color={secondaryTextColor} />
+        </TouchableOpacity>
       </View>
-      <Text style={[styles.sectionContent, { color: textColor }]}>
-        {typeof content === 'object' ? JSON.stringify(content, null, 2) : content}
+      <Text style={[styles.sectionContent, { color: textColor }]} selectable>
+        {typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content || 'N/A')}
       </Text>
-      <TouchableOpacity 
-        style={styles.copyButton} 
-        onPress={() => copyToClipboard(typeof content === 'object' ? JSON.stringify(content, null, 2) : content)}
-      >
-        <Icon name="content-copy" type="material" color={textColor} size={20} />
-        <Text style={[styles.copyButtonText, { color: textColor }]}>Copy</Text>
-      </TouchableOpacity>
     </View>
   );
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Network Log Details"
+      isDarkMode={isDarkMode}
+      fullScreen={true}
     >
-      <View style={[styles.container, { backgroundColor }]}>
-        <View style={styles.header}>
-          <Text style={[styles.headerText, { color: textColor }]}>Network Log Details</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Icon name="close" type="material" color={textColor} size={24} />
-          </TouchableOpacity>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Status Overview */}
+        <View style={[styles.statusOverview, { backgroundColor: cardColor }]}>
+          <View style={styles.statusRow}>
+            <View style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: secondaryTextColor }]}>Method</Text>
+              <Text style={[styles.statusValue, { color: textColor }]}>{log.method || 'GET'}</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: secondaryTextColor }]}>Status</Text>
+              <Text style={[styles.statusValue, { color: getStatusColor(log.status) }]}>
+                {log.status || 'Pending'}
+              </Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: secondaryTextColor }]}>Duration</Text>
+              <Text style={[styles.statusValue, { color: textColor }]}>{log.duration || 0}ms</Text>
+            </View>
+          </View>
         </View>
-        <ScrollView style={styles.content}>
-          {renderSection('URL', log.url, 'link')}
-          {renderSection('Method', log.method, 'call')}
-          {renderSection('Status', log.status, 'info')}
-          {renderSection('Duration', `${log.duration}ms`, 'timer')}
-          {renderSection('Request Headers', log.requestHeaders, 'send')}
-          {renderSection('Request Body', log.requestBody, 'upload')}
-          {renderSection('Response Headers', log.responseHeaders, 'receipt')}
-          {renderSection('Response Body', log.responseBody, 'data-object')}
-        </ScrollView>
-        <TouchableOpacity 
-          style={[styles.crudButton, { backgroundColor: isDarkMode ? '#4A90E2' : '#2196F3' }]}
-          onPress={() => openInCrud(log)}
-        >
-          <Icon name="edit" type="material" color="#FFFFFF" size={24} />
-          <Text style={styles.crudButtonText}>Open in CRUD</Text>
-        </TouchableOpacity>
-      </View>
-    </Modal>
+
+        {renderSection('URL', log.url, 'link')}
+        {renderSection('Request Headers', log.requestHeaders, 'upload')}
+        {log.requestBody && renderSection('Request Body', log.requestBody, 'description')}
+        {renderSection('Response Headers', log.responseHeaders, 'download')}
+        {log.responseBody && renderSection('Response Body', log.responseBody, 'code')}
+      </ScrollView>
+
+      <TouchableOpacity
+        style={styles.crudButton}
+        onPress={() => openInCrud(log)}
+      >
+        <MaterialIcons name="edit" size={20} color="#FFFFFF" />
+        <Text style={styles.crudButtonText}>Open in CRUD</Text>
+      </TouchableOpacity>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   content: {
     flex: 1,
+    padding: 16,
+  },
+  statusOverview: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statusItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statusLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  statusValue: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   section: {
-    marginBottom: 20,
-    borderRadius: 10,
-    padding: 15,
+    marginBottom: 12,
+    borderRadius: 12,
+    padding: 14,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    gap: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  copyIconButton: {
+    padding: 4,
   },
   sectionContent: {
-    fontSize: 14,
-  },
-  copyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  copyButtonText: {
-    marginLeft: 5,
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: 'monospace',
+    lineHeight: 20,
   },
   crudButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
+    backgroundColor: '#007AFF',
+    padding: 14,
+    margin: 16,
+    borderRadius: 12,
+    gap: 8,
   },
   crudButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    fontWeight: '600',
   },
 });
 

@@ -23,6 +23,7 @@ import UserAgentSelector from './components/UserAgentSelector';
 
 import HistoryFavoritesModal from './components/HistoryFavoritesModal';
 import AICommandInterface from './components/AICommandInterface';
+import SettingsScreen from './components/SettingsScreen';
 import { Icon } from 'react-native-elements';
 
 import { useWebViewRefs, useHistory, useTabs, useScripts, useSettings, useFavorites } from './hooks';
@@ -51,6 +52,7 @@ const AppContent = () => {
   const [customHomePage, setCustomHomePage] = useState('https://www.google.com');
   const [showHomePageModal, setShowHomePageModal] = useState(false);
   const [isAICommandVisible, setIsAICommandVisible] = useState(false);
+  const [isSettingsVisible, setSettingsVisible] = useState(false);
 
   const webViewRefs = useWebViewRefs();
   const { history, addToHistory, clearHistory, setHistory } = useHistory();
@@ -467,6 +469,10 @@ const goHomeOld = useCallback(async () => {
         webViewRef={webViewRefs.current[activeTabIndex]}
         currentUserAgent={currentUserAgent}
         onSelectUserAgent={setCurrentUserAgent}
+        onOpenSettings={() => {
+          setBottomSheetVisible(false);
+          setSettingsVisible(true);
+        }}
       />
       {tabs[activeTabIndex] && (
         <>
@@ -546,7 +552,17 @@ const goHomeOld = useCallback(async () => {
         currentUserAgent={currentUserAgent}
         isDarkMode={isDarkMode}
       />
-      
+      <SettingsScreen
+        visible={isSettingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        isDarkMode={isDarkMode}
+        onThemeChange={(newDarkMode) => {
+          if (newDarkMode !== isDarkMode) {
+            toggleDarkMode();
+          }
+        }}
+      />
+
       {showHomePageModal && (
         <Modal visible={true} transparent animationType="slide">
           <View style={styles.homeModalOverlay}>
