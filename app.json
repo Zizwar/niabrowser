@@ -50,9 +50,7 @@
     ],
     "githubUrl": "https://github.com/zizwar/niabrowser",
     "extra": {
-      "eas": {
-        "projectId": "356c4c34-7f12-444c-921b-817101da5ce4"
-      }
+      "eas": {}
     }
   }
 }
