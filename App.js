@@ -361,17 +361,6 @@ const goHomeOld = useCallback(async () => {
     }
   }, []);
 
-  if (!hasCheckedOnboarding) {
-    return null;
-  }
-
-  if (!hasSeenOnboarding) {
-    return <OnboardingScreen onComplete={() => {
-      setHasSeenOnboarding(true);
-      AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    }} />;
-  }
-
   // Handle desktop mode toggle with page reload
   const handleDesktopModeToggle = useCallback(() => {
     toggleDesktopMode();
@@ -384,9 +373,20 @@ const goHomeOld = useCallback(async () => {
     }, 100);
   }, [toggleDesktopMode, activeTabIndex, webViewRefs]);
 
-  // Get safe area insets for status bar
+  // Get safe area insets for status bar - must be before any conditional returns
   const insets = useSafeAreaInsets();
   const statusBarPadding = Platform.OS === 'android' ? Math.max(insets.top, RNStatusBar.currentHeight || 24) : insets.top;
+
+  if (!hasCheckedOnboarding) {
+    return null;
+  }
+
+  if (!hasSeenOnboarding) {
+    return <OnboardingScreen onComplete={() => {
+      setHasSeenOnboarding(true);
+      AsyncStorage.setItem('hasSeenOnboarding', 'true');
+    }} />;
+  }
 
    return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF', paddingTop: statusBarPadding }]}>
