@@ -24,7 +24,12 @@ const BottomSheet = ({
   webViewRef,
   currentUserAgent,
   onSelectUserAgent,
-  onOpenSettings
+  onOpenSettings,
+  onRefreshPress,
+  onFullscreenToggle,
+  isFullscreen,
+  onGetSourcePress,
+  onToggleErudaPress,
 }) => {
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showUserAgentModal, setShowUserAgentModal] = useState(false);
@@ -201,11 +206,15 @@ const BottomSheet = ({
   ];
 
   const settingsData = [
+    { icon: 'refresh', title: 'Reload Page', onPress: () => { onRefreshPress?.(); onClose(); } },
+    { icon: isFullscreen ? 'fullscreen-exit' : 'fullscreen', title: isFullscreen ? 'Exit Fullscreen' : 'Fullscreen', onPress: () => { onFullscreenToggle?.(); onClose(); } },
+    { icon: 'code', title: 'View Source', onPress: () => { onGetSourcePress?.(); onClose(); } },
+    { icon: 'bug-report', title: 'Eruda Console', onPress: () => { onToggleErudaPress?.(); onClose(); } },
     { icon: 'computer', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
     { icon: 'security', title: 'Safe Mode', onPress: toggleSafeMode, value: isSafeMode },
     { icon: 'person', title: 'User Agent', onPress: () => setShowUserAgentModal(true) },
-    { icon: 'history', title: 'History', onPress: openHistory },
-    { icon: 'share', title: 'Share', onPress: () => shareUrl(currentUrl) },
+    { icon: 'history', title: 'History & Favorites', onPress: openHistory },
+    { icon: 'share', title: 'Share Page', onPress: () => shareUrl(currentUrl) },
     { icon: 'folder', title: 'Data Management', onPress: () => setShowDataModal(true) },
     { icon: 'settings', title: 'Settings', onPress: onOpenSettings },
     { icon: 'info', title: 'About', onPress: openAboutModal },

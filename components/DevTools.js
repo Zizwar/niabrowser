@@ -2,12 +2,13 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimensions, Switch, Alert, FlatList } from 'react-native';
 import { Icon, Button } from 'react-native-elements';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { theme } from '../constants/theme';
 import AINetworkAnalyzer from './AINetworkAnalyzer';
 import AICookieInspector from './AICookieInspector';
 import AICodeDebugger from './AICodeDebugger';
 import AIPerformanceAnalyzer from './AIPerformanceAnalyzer';
-//import { LineChart } from 'react-native-chart-kit';
 
 const { width } = Dimensions.get('window');
 
@@ -127,6 +128,41 @@ const DevTools = ({
     </TouchableOpacity>
   );
 
+  const exportAllAsPostman = async () => {
+    const items = filteredNetworkLogs.map(log => {
+      const headers = [];
+      if (log.requestHeaders && typeof log.requestHeaders === 'object') {
+        Object.entries(log.requestHeaders).forEach(([key, value]) => {
+          headers.push({ key, value: String(value), type: 'text' });
+        });
+      }
+      let urlParts = { raw: log.url };
+      try {
+        const u = new URL(log.url);
+        urlParts = { raw: log.url, protocol: u.protocol.replace(':', ''), host: u.hostname.split('.'), path: u.pathname.split('/').filter(Boolean) };
+      } catch {}
+      const item = { name: log.url.split('/').pop() || log.url, request: { method: log.method || 'GET', header: headers, url: urlParts } };
+      if (log.requestBody && log.method !== 'GET') {
+        item.request.body = { mode: 'raw', raw: typeof log.requestBody === 'object' ? JSON.stringify(log.requestBody) : log.requestBody };
+      }
+      return item;
+    });
+
+    const collection = {
+      info: { name: `NiaBrowser Network - ${new Date().toLocaleDateString()}`, schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json' },
+      item: items,
+    };
+
+    try {
+      const fileName = `niabrowser_network_${Date.now()}.json`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(collection, null, 2));
+      await Sharing.shareAsync(fileUri, { mimeType: 'application/json' });
+    } catch (e) {
+      Alert.alert('Export Failed', e.message);
+    }
+  };
+
 const renderNetworkTab = () => (
   <>
     <View style={styles.searchContainer}>
@@ -137,6 +173,9 @@ const renderNetworkTab = () => (
         placeholder="Search URLs"
         placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
       />
+      <TouchableOpacity onPress={exportAllAsPostman} style={styles.clearButton}>
+        <Icon name="file-download" type="material" color="#FF6C37" />
+      </TouchableOpacity>
       <TouchableOpacity onPress={clearNetworkLogs} style={styles.clearButton}>
         <Icon name="delete" type="material" color={textColor} />
       </TouchableOpacity>
@@ -294,39 +333,95 @@ const renderNetworkTab = () => (
     </View>
   );
 
+  const StorageSection = ({ title, data, type, icon }) => {
+    const [expanded, setExpanded] = useState(false);
+    const [parsedItems, setParsedItems] = useState(null);
+
+    const parseData = () => {
+      if (parsedItems) return parsedItems;
+      try {
+        if (type === 'cookies') {
+          const items = (data || '').split(';').filter(Boolean).map(c => {
+            const [key, ...vals] = c.trim().split('=');
+            return { key: key?.trim(), value: vals.join('=')?.trim() };
+          });
+          setParsedItems(items);
+          return items;
+        } else {
+          const parsed = typeof data === 'string' ? JSON.parse(data || '{}') : (data || {});
+          const items = Object.entries(parsed).map(([key, value]) => ({
+            key,
+            value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+          }));
+          setParsedItems(items);
+          return items;
+        }
+      } catch {
+        setParsedItems([]);
+        return [];
+      }
+    };
+
+    const handleExpand = () => {
+      if (!expanded) parseData();
+      setExpanded(!expanded);
+    };
+
+    const items = expanded ? (parsedItems || []) : [];
+    const count = type === 'cookies'
+      ? (data || '').split(';').filter(Boolean).length
+      : (() => { try { return Object.keys(typeof data === 'string' ? JSON.parse(data || '{}') : (data || {})).length; } catch { return 0; } })();
+
+    return (
+      <View style={[styles.storageCard, { backgroundColor: cardColor, borderColor: isDarkMode ? '#3C3C3E' : '#E5E5E5' }]}>
+        <TouchableOpacity style={styles.storageCardHeader} onPress={handleExpand}>
+          <Icon name={icon} type="material" size={20} color="#007AFF" />
+          <Text style={[styles.storageCardTitle, { color: textColor }]}>{title}</Text>
+          <View style={styles.storageBadge}>
+            <Text style={styles.storageBadgeText}>{count}</Text>
+          </View>
+          <TouchableOpacity onPress={() => copyToClipboard(data)} style={{ padding: 4 }}>
+            <Icon name="content-copy" type="material" size={18} color={isDarkMode ? '#888' : '#999'} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => clearStorage(type)} style={{ padding: 4 }}>
+            <Icon name="delete-outline" type="material" size={18} color="#F44336" />
+          </TouchableOpacity>
+          <Icon name={expanded ? 'expand-less' : 'expand-more'} type="material" size={20} color={textColor} />
+        </TouchableOpacity>
+
+        {expanded && (
+          <FlatList
+            data={items}
+            keyExtractor={(item, idx) => idx.toString()}
+            style={styles.storageItemsList}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity
+                style={[styles.storageItem, { backgroundColor: index % 2 === 0 ? (isDarkMode ? '#252525' : '#FAFAFA') : 'transparent' }]}
+                onLongPress={() => copyToClipboard(`${item.key}: ${item.value}`)}
+              >
+                <Text style={[styles.storageItemKey, { color: '#007AFF' }]} numberOfLines={1}>{item.key}</Text>
+                <Text style={[styles.storageItemValue, { color: textColor }]} numberOfLines={2}>{item.value}</Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={<Text style={{ color: textColor, padding: 12, textAlign: 'center' }}>No data</Text>}
+          />
+        )}
+      </View>
+    );
+  };
+
   const renderStorageTab = () => (
-    <>
-      <Button
-        title="Refresh Storage Data"
+    <ScrollView style={{ flex: 1 }}>
+      <TouchableOpacity
+        style={[styles.refreshStorageBtn, { backgroundColor: isDarkMode ? '#2C2C2E' : '#F0F0F0' }]}
         onPress={updateStorageData}
-        buttonStyle={[styles.button, { backgroundColor: isDarkMode ? '#444' : '#ddd' }]}
-        titleStyle={{ color: textColor }}
-      />
-      <View style={styles.storageSection}>
-        <Text style={[styles.storageTitle, { color: textColor }]}>Cookies:</Text>
-        <TouchableOpacity onPress={() => copyToClipboard(storage.cookies)}>
-          <Icon name="content-copy" type="material" color={textColor} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => clearStorage('cookies')}>
-          <Icon name="delete" type="material" color={textColor} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView style={styles.storageContent}>
-        <Text style={{ color: textColor }}>{storage.cookies}</Text>
-      </ScrollView>
-      <View style={styles.storageSection}>
-        <Text style={[styles.storageTitle, { color: textColor }]}>LocalStorage:</Text>
-        <TouchableOpacity onPress={() => copyToClipboard(storage.localStorage)}>
-          <Icon name="content-copy" type="material" color={textColor} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => clearStorage('localStorage')}>
-          <Icon name="delete" type="material" color={textColor} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView style={styles.storageContent}>
-        <Text style={{ color: textColor }}>{storage.localStorage}</Text>
-      </ScrollView>
-    </>
+      >
+        <Icon name="refresh" type="material" size={18} color="#007AFF" />
+        <Text style={{ color: '#007AFF', fontWeight: '600', marginLeft: 6 }}>Refresh Storage</Text>
+      </TouchableOpacity>
+      <StorageSection title="Cookies" data={storage.cookies} type="cookies" icon="cookie" />
+      <StorageSection title="LocalStorage" data={storage.localStorage} type="localStorage" icon="storage" />
+    </ScrollView>
   );
 
   const renderExecuteTab = () => (
@@ -565,23 +660,63 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 5,
   },
-  storageSection: {
+  storageCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  storageCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 5,
+    padding: 12,
+    gap: 8,
   },
-  storageTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 10,
+  storageCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
   },
-  storageContent: {
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 5,
-    padding: 5,
+  storageBadge: {
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  storageBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  storageItemsList: {
+    maxHeight: 200,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128,128,128,0.2)',
+  },
+  storageItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  storageItemKey: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  storageItemValue: {
+    fontSize: 11,
+    fontFamily: 'monospace',
+    marginTop: 2,
+    opacity: 0.8,
+  },
+  refreshStorageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   executeContainer: {
     marginBottom: 10,
