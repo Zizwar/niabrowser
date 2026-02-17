@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -51,6 +51,11 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
 
+  // Use refs for text input values to avoid re-rendering entire component on each keystroke
+  const scriptNameRef = useRef('');
+  const scriptCodeRef = useRef('');
+  const scriptUrlsRef = useRef('');
+
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
   const backgroundColor = isDarkMode ? '#1C1C1E' : '#F5F5F5';
@@ -75,6 +80,13 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     checkApiKey();
     setCustomPrompt(defaultSystemPrompt);
   }, []);
+
+  // Re-check API key when ScriptManager becomes visible
+  useEffect(() => {
+    if (visible) {
+      checkApiKey();
+    }
+  }, [visible]);
 
   const checkApiKey = async () => {
     const apiKey = await SettingsManager.getApiKey();
@@ -208,13 +220,17 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         );
 
         // Set the generated script
+        const genName = `AI: ${aiTaskDescription.substring(0, 30)}...`;
         setCurrentScript({
-          name: `AI: ${aiTaskDescription.substring(0, 30)}...`,
+          name: genName,
           code: generatedCode,
           urls: '*',
           isEnabled: true,
           runAt: 'document-idle'
         });
+        scriptNameRef.current = genName;
+        scriptCodeRef.current = generatedCode;
+        scriptUrlsRef.current = '*';
         setShowAIGenerator(false);
         setShowEditOverlay(true);
         setIsEditMode(false);
@@ -250,14 +266,24 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
   }, [setScripts]);
 
   const addOrUpdateScript = () => {
-    if (currentScript.name && currentScript.code) {
-      const metadata = parseMetadata(currentScript.code);
-      const updatedScript = { ...currentScript, metadata };
+    // Sync ref values before saving
+    const scriptToSave = {
+      ...currentScript,
+      name: scriptNameRef.current || currentScript.name,
+      code: scriptCodeRef.current || currentScript.code,
+      urls: scriptUrlsRef.current || currentScript.urls,
+    };
+    if (scriptToSave.name && scriptToSave.code) {
+      const metadata = parseMetadata(scriptToSave.code);
+      const updatedScript = { ...scriptToSave, metadata };
       const updatedScripts = isEditMode
-        ? scripts.map(s => s.name === currentScript.name ? updatedScript : s)
+        ? scripts.map(s => s.name === scriptToSave.name ? updatedScript : s)
         : [...scripts, updatedScript];
       saveScripts(updatedScripts);
       setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
+      scriptNameRef.current = '';
+      scriptCodeRef.current = '';
+      scriptUrlsRef.current = '';
       setIsEditMode(false);
       setShowEditOverlay(false);
       setHasUnsavedChanges(false);
@@ -266,6 +292,9 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
 
   const editScript = (script) => {
     setCurrentScript(script);
+    scriptNameRef.current = script.name;
+    scriptCodeRef.current = script.code;
+    scriptUrlsRef.current = script.urls;
     setIsEditMode(true);
     setShowEditOverlay(true);
   };
@@ -427,6 +456,9 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               setShowEditOverlay(false);
               setHasUnsavedChanges(false);
               setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
+              scriptNameRef.current = '';
+              scriptCodeRef.current = '';
+              scriptUrlsRef.current = '';
             }
           }
         ]
@@ -457,11 +489,12 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           style={[styles.input, { color: textColor, backgroundColor: inputBackground }]}
           placeholder="Enter script name"
           placeholderTextColor={secondaryTextColor}
-          value={currentScript.name}
+          defaultValue={currentScript.name}
           onChangeText={(text) => {
-            setCurrentScript({ ...currentScript, name: text });
-            setHasUnsavedChanges(true);
+            scriptNameRef.current = text;
+            if (!hasUnsavedChanges) setHasUnsavedChanges(true);
           }}
+          onEndEditing={() => setCurrentScript(prev => ({ ...prev, name: scriptNameRef.current }))}
         />
 
         <Text style={[styles.inputLabel, { color: textColor }]}>Script Code</Text>
@@ -469,11 +502,12 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           style={[styles.input, styles.codeInput, { color: textColor, backgroundColor: inputBackground }]}
           placeholder="Enter JavaScript code"
           placeholderTextColor={secondaryTextColor}
-          value={currentScript.code}
+          defaultValue={currentScript.code}
           onChangeText={(text) => {
-            setCurrentScript({ ...currentScript, code: text });
-            setHasUnsavedChanges(true);
+            scriptCodeRef.current = text;
+            if (!hasUnsavedChanges) setHasUnsavedChanges(true);
           }}
+          onEndEditing={() => setCurrentScript(prev => ({ ...prev, code: scriptCodeRef.current }))}
           multiline
         />
 
@@ -504,11 +538,12 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
             style={[styles.input, { color: textColor, backgroundColor: inputBackground }]}
             placeholder="URLs (comma-separated, use * as wildcard)"
             placeholderTextColor={secondaryTextColor}
-            value={currentScript.urls}
+            defaultValue={currentScript.urls}
             onChangeText={(text) => {
-              setCurrentScript({ ...currentScript, urls: text });
-              setHasUnsavedChanges(true);
+              scriptUrlsRef.current = text;
+              if (!hasUnsavedChanges) setHasUnsavedChanges(true);
             }}
+            onEndEditing={() => setCurrentScript(prev => ({ ...prev, urls: scriptUrlsRef.current }))}
           />
         )}
         <TouchableOpacity
@@ -816,6 +851,9 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'Manual Creation', onPress: () => {
                   setCurrentScript({ name: '', code: '', urls: '*', isEnabled: true, runAt: 'document-idle' });
+                  scriptNameRef.current = '';
+                  scriptCodeRef.current = '';
+                  scriptUrlsRef.current = '*';
                   setIsEditMode(false);
                   setShowEditOverlay(true);
                 }},
