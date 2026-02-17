@@ -28,7 +28,8 @@ const DevTools = ({
   toggleSafeMode,
   activeTabIndex,
   updateTabInfo,
-  webViewRef
+  webViewRef,
+  onOpenAIWithContext
 }) => {
   const [activeTab, setActiveTab] = useState('network');
   const [executionCode, setExecutionCode] = useState('');
@@ -293,14 +294,24 @@ const renderNetworkTab = () => (
     };
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.consoleLogItem, { backgroundColor: index % 2 === 0 ? (isDarkMode ? '#2A2A2A' : '#F8F8F8') : 'transparent' }]}
         onPress={() => setExpanded(!expanded)}
         onLongPress={copyMessage}
       >
-        <Text style={[styles.consoleLog, getConsoleLogStyle(item.type, isDarkMode)]}>
-          {expanded ? item.message : truncatedMessage}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <Text style={[styles.consoleLog, getConsoleLogStyle(item.type, isDarkMode), { flex: 1 }]}>
+            {expanded ? item.message : truncatedMessage}
+          </Text>
+          {(item.type === 'error' || item.type === 'warn') && onOpenAIWithContext && (
+            <TouchableOpacity
+              onPress={() => openAIWithData('console')}
+              style={{ padding: 4, marginLeft: 4 }}
+            >
+              <Icon name="psychology" type="material" size={16} color="#007AFF" />
+            </TouchableOpacity>
+          )}
+        </View>
         <View style={[styles.consoleSeparator, { backgroundColor: isDarkMode ? '#444' : '#E0E0E0' }]} />
       </TouchableOpacity>
     );
@@ -470,25 +481,59 @@ const renderNetworkTab = () => (
     )
   );
 
+  const openAIWithData = (type) => {
+    if (onOpenAIWithContext) {
+      onOpenAIWithContext(type);
+    }
+  };
+
+  const AIRedirectCard = ({ icon, title, description, color, onPress }) => (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <TouchableOpacity
+        style={{
+          backgroundColor: color || '#007AFF',
+          borderRadius: 16,
+          padding: 24,
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: 280,
+        }}
+        onPress={onPress}
+      >
+        <Icon name={icon} type="material" size={40} color="#FFFFFF" />
+        <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700', marginTop: 12 }}>{title}</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, textAlign: 'center', marginTop: 6 }}>{description}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderAINetworkTab = () => (
-    <AINetworkAnalyzer
-      networkLogs={networkLogs}
-      isDarkMode={isDarkMode}
+    <AIRedirectCard
+      icon="language"
+      title="Analyze Network"
+      description="Open NIA AI chat with network logs attached"
+      color="#2196F3"
+      onPress={() => openAIWithData('network')}
     />
   );
 
   const renderAICookieTab = () => (
-    <AICookieInspector
-      storageData={storage}
-      isDarkMode={isDarkMode}
+    <AIRedirectCard
+      icon="cookie"
+      title="Analyze Cookies & Storage"
+      description="Open NIA AI chat with cookies and storage data attached"
+      color="#FF9800"
+      onPress={() => openAIWithData('cookies')}
     />
   );
 
   const renderAIDebuggerTab = () => (
-    <AICodeDebugger
-      consoleLogs={consoleOutput}
-      isDarkMode={isDarkMode}
-      webViewRef={webViewRef}
+    <AIRedirectCard
+      icon="bug-report"
+      title="Debug Console Errors"
+      description="Open NIA AI chat with console logs attached"
+      color="#F44336"
+      onPress={() => openAIWithData('console')}
     />
   );
 

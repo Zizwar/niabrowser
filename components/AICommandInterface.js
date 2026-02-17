@@ -51,12 +51,13 @@ const AICommandInterface = ({
   webViewRef,
   onExecuteCommand,
   pageCacheData,
+  initialContext,
 }) => {
   // Messages & State
   const [command, setCommand] = useState('');
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('anthropic/claude-3.5-sonnet');
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-4.1-mini');
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -128,6 +129,15 @@ const AICommandInterface = ({
       }]);
     }
   }, [visible]);
+
+  // Handle initialContext from DevTools AI buttons
+  useEffect(() => {
+    if (initialContext && visible) {
+      const updated = { ...attachments, ...initialContext };
+      setAttachments(updated);
+      saveSettings(updated);
+    }
+  }, [initialContext, visible]);
 
   // Update page cache from WebView message
   useEffect(() => {
@@ -768,8 +778,8 @@ IMPORTANT RULES:
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor, paddingTop: statusBarHeight }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* Header */}
       <View style={[styles.header, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
@@ -876,7 +886,9 @@ IMPORTANT RULES:
               placeholder="Ask AI about this page..."
               placeholderTextColor={secondaryTextColor}
               multiline
-              maxHeight={100}
+              numberOfLines={1}
+              maxHeight={80}
+              blurOnSubmit={false}
               onSubmitEditing={executeAICommand}
             />
             <TouchableOpacity

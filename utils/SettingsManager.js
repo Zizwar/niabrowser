@@ -70,7 +70,7 @@ export const SettingsManager = {
   async getSelectedModel() {
     try {
       const model = await AsyncStorage.getItem(KEYS.SELECTED_MODEL);
-      return model || 'anthropic/claude-3.5-sonnet';
+      return model || 'openai/gpt-4.1-mini';
     } catch (error) {
       console.error('Error getting selected model:', error);
       return 'anthropic/claude-3.5-sonnet';

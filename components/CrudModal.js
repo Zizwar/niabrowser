@@ -1,8 +1,9 @@
 // components/CrudModal.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, FlatList, Alert } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, FlatList, Alert, Platform, StatusBar } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -31,6 +32,10 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
   const inputBg = isDarkMode ? '#2C2C2E' : '#F0F0F0';
   const borderColor = isDarkMode ? '#3C3C3E' : '#E0E0E0';
   const accentColor = '#007AFF';
+
+  let insets = { top: 0, bottom: 0 };
+  try { insets = useSafeAreaInsets(); } catch {}
+  const statusBarPadding = Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 24) : insets.top;
 
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
   const bodyTypes = ['raw', 'form-data', 'x-www-form-urlencoded'];
@@ -587,8 +592,8 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <View style={[styles.container, { backgroundColor }]}>
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose} statusBarTranslucent={Platform.OS === 'android'}>
+      <View style={[styles.container, { backgroundColor, paddingTop: statusBarPadding }]}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: borderColor }]}>
           <Text style={[styles.headerTitle, { color: textColor }]}>API Client</Text>
