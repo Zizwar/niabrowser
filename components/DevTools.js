@@ -2,13 +2,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimensions, Switch, Alert, FlatList } from 'react-native';
 import { Icon, Button } from 'react-native-elements';
 import * as Clipboard from 'expo-clipboard';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { theme } from '../constants/theme';
 import AINetworkAnalyzer from './AINetworkAnalyzer';
 import AICookieInspector from './AICookieInspector';
 import AICodeDebugger from './AICodeDebugger';
-import AIPerformanceAnalyzer from './AIPerformanceAnalyzer';
 
 const { width } = Dimensions.get('window');
 
@@ -390,21 +389,22 @@ const renderNetworkTab = () => (
         </TouchableOpacity>
 
         {expanded && (
-          <FlatList
-            data={items}
-            keyExtractor={(item, idx) => idx.toString()}
-            style={styles.storageItemsList}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity
-                style={[styles.storageItem, { backgroundColor: index % 2 === 0 ? (isDarkMode ? '#252525' : '#FAFAFA') : 'transparent' }]}
-                onLongPress={() => copyToClipboard(`${item.key}: ${item.value}`)}
-              >
-                <Text style={[styles.storageItemKey, { color: '#007AFF' }]} numberOfLines={1}>{item.key}</Text>
-                <Text style={[styles.storageItemValue, { color: textColor }]} numberOfLines={2}>{item.value}</Text>
-              </TouchableOpacity>
+          <View style={styles.storageItemsList}>
+            {items.length === 0 ? (
+              <Text style={{ color: textColor, padding: 12, textAlign: 'center' }}>No data</Text>
+            ) : (
+              items.map((item, index) => (
+                <TouchableOpacity
+                  key={index.toString()}
+                  style={[styles.storageItem, { backgroundColor: index % 2 === 0 ? (isDarkMode ? '#252525' : '#FAFAFA') : 'transparent' }]}
+                  onLongPress={() => copyToClipboard(`${item.key}: ${item.value}`)}
+                >
+                  <Text style={[styles.storageItemKey, { color: '#007AFF' }]} numberOfLines={1}>{item.key}</Text>
+                  <Text style={[styles.storageItemValue, { color: textColor }]} numberOfLines={2}>{item.value}</Text>
+                </TouchableOpacity>
+              ))
             )}
-            ListEmptyComponent={<Text style={{ color: textColor, padding: 12, textAlign: 'center' }}>No data</Text>}
-          />
+          </View>
         )}
       </View>
     );
@@ -492,13 +492,6 @@ const renderNetworkTab = () => (
     />
   );
 
-  const renderAIPerformanceTab = () => (
-    <AIPerformanceAnalyzer
-      performanceData={performanceMetrics}
-      isDarkMode={isDarkMode}
-      webViewRef={webViewRef}
-    />
-  );
 
   const renderSafeModeToggle = () => {
     return null; // Safe mode toggle removed
@@ -528,7 +521,6 @@ const renderNetworkTab = () => (
           <TabButton name="AI Network" icon="psychology" />
           <TabButton name="AI Cookie" icon="security" />
           <TabButton name="AI Debugger" icon="bug-report" />
-          <TabButton name="AI Performance" icon="analytics" />
         </ScrollView>
         <TouchableOpacity onPress={onClose}>
           <Icon name="close" type="material" color={textColor} />
@@ -546,7 +538,6 @@ const renderNetworkTab = () => (
         {activeTab === 'AI Network' && renderAINetworkTab()}
         {activeTab === 'AI Cookie' && renderAICookieTab()}
         {activeTab === 'AI Debugger' && renderAIDebuggerTab()}
-        {activeTab === 'AI Performance' && renderAIPerformanceTab()}
       </View>
 
       {renderSafeModeModal()}

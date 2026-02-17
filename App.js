@@ -47,6 +47,7 @@ const AppContent = () => {
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [isSafeMode, setIsSafeMode] = useState(false);
+  const [pageCacheData, setPageCacheData] = useState(null);
   const [currentUserAgent, setCurrentUserAgent] = useState(null);
   const [isUserAgentSelectorVisible, setUserAgentSelectorVisible] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -222,11 +223,14 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
         break;
         /*
         case 'cookieUpdate':
-  updateTabInfo(activeTabIndex, { 
-    cookies: data.cookie 
+  updateTabInfo(activeTabIndex, {
+    cookies: data.cookie
   });
   break;
   */
+      case 'pageCache':
+        setPageCacheData(data.content);
+        break;
     }
     } catch (error) {
       console.error('Error handling message:', error);
@@ -650,6 +654,7 @@ const goHomeOld = useCallback(async () => {
           storageData={tabs[activeTabIndex]?.storage || {}}
           performanceData={tabs[activeTabIndex]?.performanceMetrics || null}
           webViewRef={webViewRefs.current[activeTabIndex]}
+          pageCacheData={pageCacheData}
         />
       </Modal>
 
