@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 const BottomNavigation = ({
   isDarkMode,
+  isSafeMode,
   onHomePress,
   onHomeLongPress,
   onRefreshPress,
@@ -43,13 +44,25 @@ const BottomNavigation = ({
 
   return (
     <View style={[styles.container, { backgroundColor: bg, borderTopColor: borderColor }]}>
-      {/* Primary Actions - Always visible */}
       <NavItem icon="home" label="Home" onPress={onHomePress} onLongPress={onHomeLongPress} />
-      <NavItem icon="psychology" label="AI" onPress={onAIPress} isAI />
-      <NavItem icon="build" label="API" onPress={onCRUDPress} />
-      <NavItem icon="developer-mode" label="DevTools" onPress={onDevToolsPress} />
-      <NavItem icon="extension" label="Scripts" onPress={onScriptManagerPress} />
-      <NavItem icon="more-horiz" label="More" onPress={onSettingsPress} />
+      {isSafeMode ? (
+        <>
+          <NavItem icon="refresh" label="Reload" onPress={onRefreshPress} />
+          <View style={[styles.safeBadge, { backgroundColor: isDarkMode ? '#3C2800' : '#FFF3E0' }]}>
+            <MaterialIcons name="shield" size={18} color="#FF9500" />
+            <Text style={{ color: '#FF9500', fontSize: 10, fontWeight: '600' }}>Safe Mode</Text>
+          </View>
+          <NavItem icon="more-horiz" label="More" onPress={onSettingsPress} />
+        </>
+      ) : (
+        <>
+          <NavItem icon="psychology" label="AI" onPress={onAIPress} isAI />
+          <NavItem icon="build" label="API" onPress={onCRUDPress} />
+          <NavItem icon="developer-mode" label="DevTools" onPress={onDevToolsPress} />
+          <NavItem icon="extension" label="Scripts" onPress={onScriptManagerPress} />
+          <NavItem icon="more-horiz" label="More" onPress={onSettingsPress} />
+        </>
+      )}
     </View>
   );
 };
@@ -94,6 +107,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '500',
     marginTop: 1,
+  },
+  safeBadge: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    gap: 2,
+    borderRadius: 8,
+    marginHorizontal: 4,
   },
 });
 

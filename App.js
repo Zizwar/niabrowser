@@ -56,6 +56,7 @@ const AppContent = () => {
   const [customHomePage, setCustomHomePage] = useState('https://www.google.com');
   const [showHomePageModal, setShowHomePageModal] = useState(false);
   const [isAICommandVisible, setIsAICommandVisible] = useState(false);
+  const [aiInitialContext, setAiInitialContext] = useState(null);
   const [isSettingsVisible, setSettingsVisible] = useState(false);
 
   const webViewRefs = useWebViewRefs();
@@ -471,27 +472,26 @@ const goHomeOld = useCallback(async () => {
           </View>
         ))}
       </View>
-      {!isSafeMode && (
-        <BottomNavigation
-          isDarkMode={isDarkMode}
-          onHomePress={goHome}
-          onHomeLongPress={() => setShowHomePageModal(true)}
-          onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
-          onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
-          onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
-          onSettingsPress={() => setBottomSheetVisible(true)}
-          onDevToolsPress={toggleDevTools}
-          onCRUDPress={() => openCrudModal()}
-          onScriptManagerPress={() => setScriptManagerVisible(true)}
-          canGoBack={tabs[activeTabIndex]?.canGoBack || false}
-          canGoForward={tabs[activeTabIndex]?.canGoForward || false}
-          onGetSourcePress={getSourceHtml}
-          onToggleErudaPress={toggleEruda}
-          onFullscreenToggle={() => setIsFullscreen(!isFullscreen)}
-          isFullscreen={isFullscreen}
-          onAIPress={() => setIsAICommandVisible(true)}
-        />
-      )}
+      <BottomNavigation
+        isDarkMode={isDarkMode}
+        isSafeMode={isSafeMode}
+        onHomePress={goHome}
+        onHomeLongPress={() => setShowHomePageModal(true)}
+        onBackPress={() => webViewRefs.current[activeTabIndex]?.goBack()}
+        onForwardPress={() => webViewRefs.current[activeTabIndex]?.goForward()}
+        onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
+        onSettingsPress={() => setBottomSheetVisible(true)}
+        onDevToolsPress={toggleDevTools}
+        onCRUDPress={() => openCrudModal()}
+        onScriptManagerPress={() => setScriptManagerVisible(true)}
+        canGoBack={tabs[activeTabIndex]?.canGoBack || false}
+        canGoForward={tabs[activeTabIndex]?.canGoForward || false}
+        onGetSourcePress={getSourceHtml}
+        onToggleErudaPress={toggleEruda}
+        onFullscreenToggle={() => setIsFullscreen(!isFullscreen)}
+        isFullscreen={isFullscreen}
+        onAIPress={() => setIsAICommandVisible(true)}
+      />
       <BottomSheet
         visible={isBottomSheetVisible}
         onClose={() => setBottomSheetVisible(false)}
@@ -540,6 +540,15 @@ const goHomeOld = useCallback(async () => {
             activeTabIndex={activeTabIndex}
             updateTabInfo={updateTabInfo}
             webViewRef={webViewRefs.current[activeTabIndex]}
+            onOpenAIWithContext={(contextType) => {
+              const contextMap = {
+                network: { network: true, networkFull: true },
+                cookies: { cookies: true, localStorage: true },
+                console: { console: true },
+              };
+              setAiInitialContext(contextMap[contextType] || {});
+              setIsAICommandVisible(true);
+            }}
           />
           <NetworkLogModal
             visible={tabs[activeTabIndex].isNetworkLogModalVisible}
@@ -668,7 +677,7 @@ const goHomeOld = useCallback(async () => {
       >
         <AICommandInterface
           visible={isAICommandVisible}
-          onClose={() => setIsAICommandVisible(false)}
+          onClose={() => { setIsAICommandVisible(false); setAiInitialContext(null); }}
           isDarkMode={isDarkMode}
           currentUrl={tabs[activeTabIndex]?.url || ''}
           consoleLogs={tabs[activeTabIndex]?.consoleOutput || []}
@@ -677,6 +686,7 @@ const goHomeOld = useCallback(async () => {
           performanceData={tabs[activeTabIndex]?.performanceMetrics || null}
           webViewRef={webViewRefs.current[activeTabIndex]}
           pageCacheData={pageCacheData}
+          initialContext={aiInitialContext}
         />
       </Modal>
 

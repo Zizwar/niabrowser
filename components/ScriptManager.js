@@ -55,6 +55,8 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const scriptNameRef = useRef('');
   const scriptCodeRef = useRef('');
   const scriptUrlsRef = useRef('');
+  const aiTaskRef = useRef('');
+  const customPromptRef = useRef('');
 
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
@@ -79,6 +81,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     loadSelectedModel();
     checkApiKey();
     setCustomPrompt(defaultSystemPrompt);
+    customPromptRef.current = defaultSystemPrompt;
   }, []);
 
   // Re-check API key when ScriptManager becomes visible
@@ -134,7 +137,8 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
   };
 
   const generateScriptWithAI = async () => {
-    if (!aiTaskDescription.trim()) {
+    const taskDesc = aiTaskRef.current || aiTaskDescription;
+    if (!taskDesc.trim()) {
       Alert.alert('Error', 'Please enter a task description');
       return;
     }
@@ -170,8 +174,8 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         body: JSON.stringify({
           model: selectedModel,
           messages: [
-            { role: 'system', content: customPrompt },
-            { role: 'user', content: `Create a JavaScript script for the following task: ${aiTaskDescription}` }
+            { role: 'system', content: customPromptRef.current || customPrompt },
+            { role: 'user', content: `Create a JavaScript script for the following task: ${taskDesc}` }
           ],
           temperature: 0.7,
           max_tokens: 2000
@@ -220,7 +224,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         );
 
         // Set the generated script
-        const genName = `AI: ${aiTaskDescription.substring(0, 30)}...`;
+        const genName = `AI: ${taskDesc.substring(0, 30)}...`;
         setCurrentScript({
           name: genName,
           code: generatedCode,
@@ -679,8 +683,9 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
             style={[styles.taskInput, { color: textColor, backgroundColor: inputBackground }]}
             placeholder="Describe what the script should do..."
             placeholderTextColor={secondaryTextColor}
-            value={aiTaskDescription}
-            onChangeText={setAiTaskDescription}
+            defaultValue={aiTaskDescription}
+            onChangeText={(text) => { aiTaskRef.current = text; }}
+            onEndEditing={(e) => setAiTaskDescription(e.nativeEvent.text)}
             multiline
             numberOfLines={3}
           />
@@ -694,7 +699,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               <TouchableOpacity
                 key={index}
                 style={[styles.exampleButton, { backgroundColor: inputBackground }]}
-                onPress={() => setAiTaskDescription(example)}
+                onPress={() => { setAiTaskDescription(example); aiTaskRef.current = example; }}
               >
                 <Text style={[styles.exampleText, { color: textColor }]} numberOfLines={2}>
                   {example}
@@ -802,14 +807,15 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           }]}
           placeholder="Enter custom system prompt..."
           placeholderTextColor={secondaryTextColor}
-          value={customPrompt}
-          onChangeText={setCustomPrompt}
+          defaultValue={customPrompt}
+          onChangeText={(text) => { customPromptRef.current = text; }}
+          onEndEditing={(e) => setCustomPrompt(e.nativeEvent.text)}
           multiline
           textAlignVertical="top"
         />
         <View style={styles.promptButtonContainer}>
           <TouchableOpacity
-            onPress={() => setCustomPrompt(defaultSystemPrompt)}
+            onPress={() => { setCustomPrompt(defaultSystemPrompt); customPromptRef.current = defaultSystemPrompt; }}
             style={[styles.resetPromptButton, { backgroundColor: '#FF5252' }]}
           >
             <MaterialIcons name="refresh" size={18} color="#FFFFFF" />
