@@ -56,23 +56,21 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>CONTACT</Text>
         <View style={styles.linkSection}>
-          {renderLinkItem('language', 'Website', () => openLink('https://niabrowser.com'))}
-          {renderLinkItem('email', 'Contact Us', () => openLink('mailto:contact@niabrowser.com'))}
-          {renderLinkItem('feedback', 'Send Feedback', () => openLink('mailto:feedback@niabrowser.com'))}
+          {renderLinkItem('language', 'Website', () => openLink('https://browser.niascript.com'))}
+          {renderLinkItem('email', 'Contact Us', () => openLink('mailto:contact_browser@niascript.com'))}
+          {renderLinkItem('feedback', 'Send Feedback', () => openLink('mailto:feedback_browser@niascript.com'))}
         </View>
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>SOURCE CODE</Text>
         <View style={styles.linkSection}>
           {renderLinkItem('code', 'GitHub Repository', () => openLink('https://github.com/zizwar/niabrowser'))}
           {renderLinkItem('description', 'View License', () => openLink('https://github.com/zizwar/niabrowser/blob/main/LICENSE'))}
-          {renderLinkItem('group-add', 'Contributing', () => openLink('https://github.com/zizwar/niabrowser/blob/main/CONTRIBUTING.md'))}
         </View>
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>LEGAL</Text>
         <View style={styles.linkSection}>
-          {renderLinkItem('gavel', 'Terms of Service', () => openLink('https://niabrowser.com/terms'))}
-          {renderLinkItem('privacy-tip', 'Privacy Policy', () => openLink('https://niabrowser.com/privacy'))}
-          {renderLinkItem('warning', 'Disclaimer', () => openLink('https://niabrowser.com/disclaimer'))}
+          {renderLinkItem('gavel', 'Terms of Service', () => openLink('https://browser.niascript.com/term'))}
+          {renderLinkItem('privacy-tip', 'Privacy Policy', () => openLink('https://browser.niascript.com/privacy'))}
         </View>
 
         {/* Notice */}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
@@ -47,6 +47,8 @@ const AppContent = () => {
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [isSafeMode, setIsSafeMode] = useState(false);
+  const [safeModeToast, setSafeModeToast] = useState(null);
+  const safeModeToastAnim = useRef(new Animated.Value(0)).current;
   const [pageCacheData, setPageCacheData] = useState(null);
   const [currentUserAgent, setCurrentUserAgent] = useState(null);
   const [isUserAgentSelectorVisible, setUserAgentSelectorVisible] = useState(false);
@@ -89,7 +91,15 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       }
     }
     setIsSafeMode(value);
-  }, [scripts, setScripts, toggleAllScripts]);
+    // Show toast notification
+    setSafeModeToast(value ? 'Safe Mode ON — Scripts disabled' : 'Safe Mode OFF — Scripts restored');
+    safeModeToastAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(safeModeToastAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(2000),
+      Animated.timing(safeModeToastAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setSafeModeToast(null));
+  }, [scripts, setScripts, toggleAllScripts, safeModeToastAnim]);
 
   const toggleEruda = useCallback(() => { 
   const activeWebViewRef = webViewRefs.current[activeTabIndex];
@@ -637,6 +647,18 @@ const goHomeOld = useCallback(async () => {
         </Modal>
       )}
 
+      {/* Safe Mode Toast */}
+      {safeModeToast && (
+        <Animated.View style={[styles.safeModeToast, {
+          backgroundColor: isSafeMode ? '#FF9500' : '#34C759',
+          opacity: safeModeToastAnim,
+          transform: [{ translateY: safeModeToastAnim.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }],
+        }]}>
+          <Text style={styles.safeModeToastIcon}>{isSafeMode ? '🛡️' : '✅'}</Text>
+          <Text style={styles.safeModeToastText}>{safeModeToast}</Text>
+        </Animated.View>
+      )}
+
       {/* AI Command Interface */}
       <Modal
         visible={isAICommandVisible}
@@ -704,6 +726,33 @@ const styles = StyleSheet.create({
   homeModalButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  safeModeToast: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    zIndex: 9999,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    gap: 10,
+  },
+  safeModeToastIcon: {
+    fontSize: 18,
+  },
+  safeModeToastText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
   },
 });
 

@@ -215,7 +215,8 @@ const AICommandInterface = ({
 
   // Cache page content
   const cachePage = async (mode) => {
-    if (!webViewRef?.current) {
+    const ref = webViewRef?.current || webViewRef;
+    if (!ref || !ref.injectJavaScript) {
       Alert.alert('Error', 'WebView not available');
       return;
     }
@@ -223,7 +224,7 @@ const AICommandInterface = ({
       const js = mode === 'html'
         ? 'window.ReactNativeWebView.postMessage(JSON.stringify({type:"pageCache",mode:"html",content:document.documentElement.innerHTML.substring(0,50000)}));true;'
         : 'window.ReactNativeWebView.postMessage(JSON.stringify({type:"pageCache",mode:"text",content:document.body.innerText.substring(0,30000)}));true;';
-      webViewRef.current.injectJavaScript(js);
+      ref.injectJavaScript(js);
       setPageCacheUrl(currentUrl);
       Alert.alert('Cached', `Page ${mode === 'html' ? 'HTML' : 'text'} cached for AI context`);
     } catch (e) {
@@ -489,12 +490,13 @@ IMPORTANT RULES:
   };
 
   const executeCode = async (code) => {
-    if (!webViewRef?.current) {
+    const ref = webViewRef?.current || webViewRef;
+    if (!ref || !ref.injectJavaScript) {
       Alert.alert('Error', 'WebView not available');
       return;
     }
     try {
-      webViewRef.current.injectJavaScript(`
+      ref.injectJavaScript(`
         (function() {
           try {
             ${code}
