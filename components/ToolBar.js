@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Animated, Image } from 'react-native';
-import { Icon } from 'react-native-elements';
+import { View, TextInput, StyleSheet, TouchableOpacity, Animated, Image, Text } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const ToolBar = ({
   url,
@@ -18,7 +18,6 @@ const ToolBar = ({
   isFavorite,
   onToggleFavorite
 }) => {
-  // Get favicon URL from website
   const getFaviconUrl = (siteUrl) => {
     try {
       const urlObj = new URL(siteUrl);
@@ -28,27 +27,24 @@ const ToolBar = ({
     }
   };
 
+  const getDisplayUrl = (fullUrl) => {
+    try {
+      const urlObj = new URL(fullUrl);
+      return urlObj.hostname.replace('www.', '');
+    } catch {
+      return fullUrl;
+    }
+  };
+
+  const isSecure = url?.startsWith('https://');
   const faviconUrl = getFaviconUrl(url);
   const [inputUrl, setInputUrl] = useState(url);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    setInputUrl(url);
-  }, [url]);
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: isEditing ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [isEditing, fadeAnim]);
-
-  const handleUrlChange = (text) => {
-    setInputUrl(text);
-  };
+    if (!isEditing) setInputUrl(url);
+  }, [url, isEditing]);
 
   const handleUrlSubmit = () => {
     let processedUrl = inputUrl.trim();
@@ -64,113 +60,130 @@ const ToolBar = ({
     setIsEditing(false);
   };
 
-  const handleFocus = () => {
-    setIsEditing(true);
-    inputRef.current.setNativeProps({
-      selection: { start: 0, end: inputUrl.length }
-    });
-  };
-
-  const handleBlur = () => {
-    setIsEditing(false);
-  };
+  const bg = isDarkMode ? '#1A1A1A' : '#FFFFFF';
+  const urlBarBg = isDarkMode ? '#2C2C2E' : '#F2F2F7';
+  const iconColor = isDarkMode ? '#AAAAAA' : '#8E8E93';
+  const activeIconColor = isDarkMode ? '#FFFFFF' : '#000000';
 
   return (
-    <View style={[styles.container, { backgroundColor: isDarkMode ? '#1E1E1E' : '#F1F3F4' }]}>
-      <TouchableOpacity onPress={goBack} disabled={!canGoBack}>
-        <Icon name="arrow-back" type="material" color={canGoBack ? textColor : '#888888'} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={goForward} disabled={!canGoForward}>
-        <Icon name="arrow-forward" type="material" color={canGoForward ? textColor : '#888888'} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={reload}>
-        <Icon name="refresh" type="material" color={textColor} />
-      </TouchableOpacity>
-      <View style={styles.urlContainer}>
-        {faviconUrl && (
-          <Image source={{ uri: faviconUrl }} style={styles.favicon} />
-        )}
-        <Animated.View style={[
-          styles.urlInfo,
-          { opacity: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }
-        ]}>
-          <Icon name="lock" type="material" size={16} color={textColor} />
-          <Animated.Text style={[styles.urlText, { color: textColor }]} numberOfLines={1}>
-            {url}
-          </Animated.Text>
-        </Animated.View>
-        <TextInput
-          ref={inputRef}
-          style={[
-            styles.urlInput,
-            { color: textColor, backgroundColor: isDarkMode ? '#333333' : '#FFFFFF' }
-          ]}
-          value={inputUrl}
-          onChangeText={handleUrlChange}
-          onSubmitEditing={handleUrlSubmit}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          selectTextOnFocus={true}
-          placeholder="Enter URL or search"
-          placeholderTextColor={isDarkMode ? '#888888' : '#CCCCCC'}
-        />
+    <View style={[styles.container, { backgroundColor: bg, borderBottomColor: isDarkMode ? '#2C2C2E' : '#E5E5E5' }]}>
+      {/* Navigation Row */}
+      <View style={styles.navRow}>
+        <TouchableOpacity onPress={goBack} disabled={!canGoBack} style={styles.navBtn}>
+          <MaterialIcons name="arrow-back-ios" size={18} color={canGoBack ? activeIconColor : iconColor} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={goForward} disabled={!canGoForward} style={styles.navBtn}>
+          <MaterialIcons name="arrow-forward-ios" size={18} color={canGoForward ? activeIconColor : iconColor} />
+        </TouchableOpacity>
+
+        {/* URL Bar */}
+        <TouchableOpacity
+          style={[styles.urlBar, { backgroundColor: urlBarBg }]}
+          onPress={() => {
+            setIsEditing(true);
+            setTimeout(() => inputRef.current?.focus(), 100);
+          }}
+          activeOpacity={0.7}
+        >
+          {isEditing ? (
+            <TextInput
+              ref={inputRef}
+              style={[styles.urlInput, { color: textColor }]}
+              value={inputUrl}
+              onChangeText={setInputUrl}
+              onSubmitEditing={handleUrlSubmit}
+              onBlur={() => setIsEditing(false)}
+              selectTextOnFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              placeholder="Search or enter URL"
+              placeholderTextColor={iconColor}
+              returnKeyType="go"
+            />
+          ) : (
+            <View style={styles.urlDisplay}>
+              {faviconUrl && (
+                <Image source={{ uri: faviconUrl }} style={styles.favicon} />
+              )}
+              <MaterialIcons
+                name={isSecure ? 'lock' : 'lock-open'}
+                size={14}
+                color={isSecure ? '#4CAF50' : '#FF9800'}
+                style={styles.lockIcon}
+              />
+              <Text style={[styles.urlText, { color: textColor }]} numberOfLines={1}>
+                {getDisplayUrl(url)}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={reload} style={styles.navBtn}>
+          <MaterialIcons name="refresh" size={20} color={activeIconColor} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onToggleFavorite} style={styles.navBtn}>
+          <MaterialIcons
+            name={isFavorite ? 'star' : 'star-outline'}
+            size={20}
+            color={isFavorite ? '#FFD700' : iconColor}
+          />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity onPress={onToggleFavorite} style={styles.iconButton}>
-        <Icon name={isFavorite ? "star" : "star-border"} type="material" color={isFavorite ? "#FFD700" : textColor} size={22} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onMenuPress} style={styles.iconButton}>
-        <Icon name="more-vert" type="material" color={textColor} size={22} />
-      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
   },
-  urlContainer: {
-    flex: 1,
+  navRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
+    gap: 2,
+  },
+  navBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  urlBar: {
+    flex: 1,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    marginHorizontal: 4,
+  },
+  urlDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   favicon: {
-    width: 18,
-    height: 18,
-    marginLeft: 8,
+    width: 16,
+    height: 16,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  lockIcon: {
     marginRight: 4,
-    borderRadius: 2,
-  },
-  iconButton: {
-    padding: 6,
-  },
-  urlInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'absolute',
-    left: 10,
-    right: 10,
-    top: 0,
-    bottom: 0,
-    paddingHorizontal: 10,
   },
   urlText: {
-    marginLeft: 5,
     fontSize: 14,
+    fontWeight: '400',
+    maxWidth: '80%',
   },
   urlInput: {
-    flex: 1,
-    height: '100%',
-    paddingHorizontal: 10,
     fontSize: 14,
+    height: '100%',
+    paddingVertical: 0,
   },
 });
 

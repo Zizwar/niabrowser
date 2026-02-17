@@ -1,25 +1,30 @@
 export const theme = {
   colors: {
-    primary: '#4A90E2',
-    secondary: '#50C878', 
+    primary: '#007AFF',
+    secondary: '#34C759',
     accent: '#FF6B6B',
-    warning: '#FFC107',
-    success: '#28A745',
-    error: '#DC3545',
-    neutral: '#6C757D',
+    warning: '#FF9500',
+    success: '#34C759',
+    error: '#FF3B30',
+    neutral: '#8E8E93',
+    ai: '#007AFF',
   },
   dark: {
-    background: '#1E1E1E',
-    surface: '#2C2C2C',
-    text: '#ECEDEE',
-    textSecondary: '#CCCCCC',
-    border: '#444444'
+    background: '#121212',
+    surface: '#1E1E1E',
+    card: '#2C2C2E',
+    text: '#FFFFFF',
+    textSecondary: '#A0A0A0',
+    border: '#3C3C3E',
+    inputBg: '#2C2C2E',
   },
   light: {
-    background: '#F8F9FA',
-    surface: '#FFFFFF', 
-    text: '#2C3E50',
-    textSecondary: '#666666',
-    border: '#CCCCCC'
+    background: '#F2F2F7',
+    surface: '#FFFFFF',
+    card: '#FFFFFF',
+    text: '#000000',
+    textSecondary: '#8E8E93',
+    border: '#E5E5E5',
+    inputBg: '#F2F2F7',
   }
 };

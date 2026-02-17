@@ -2,17 +2,18 @@ import React, { forwardRef, useImperativeHandle ,useState} from 'react';
 import { StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const WebViewContainer = forwardRef(({ 
-  url, 
-  onMessage, 
-  isDarkMode, 
-  isDesktopMode, 
-  onNavigationStateChange, 
-  onLoadStart, 
+const WebViewContainer = forwardRef(({
+  url,
+  onMessage,
+  isDarkMode,
+  isDesktopMode,
+  onNavigationStateChange,
+  onLoadStart,
   onLoad,
   addNewTab,
-  userAgent: customUserAgent
-}, ref) => { 
+  userAgent: customUserAgent,
+  isSafeMode
+}, ref) => {
 
 
   const defaultUserAgent = isDesktopMode
@@ -52,21 +53,59 @@ const [isErudaVisible, setIsErudaVisible] = useState(false);
 
   const injectedJavaScript = `
     (function() {
-          /*
-          var originalCookie = document.cookie;
-  Object.defineProperty(document, 'cookie', {
-    get: function() {
-      return originalCookie;
-    },
-    set: function(value) {
-      originalCookie = value;
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'cookieUpdate',
-        cookie: value
-      }));
-    }
-  });
-  */
+      // Signal dark mode preference to websites via prefers-color-scheme
+      ${isDarkMode ? `
+      try {
+        // Override matchMedia to signal dark mode preference
+        var originalMatchMedia = window.matchMedia;
+        window.matchMedia = function(query) {
+          if (query === '(prefers-color-scheme: dark)') {
+            return {
+              matches: true,
+              media: query,
+              onchange: null,
+              addListener: function(cb) {},
+              removeListener: function(cb) {},
+              addEventListener: function(type, cb) {},
+              removeEventListener: function(type, cb) {},
+              dispatchEvent: function() { return true; }
+            };
+          }
+          if (query === '(prefers-color-scheme: light)') {
+            return {
+              matches: false,
+              media: query,
+              onchange: null,
+              addListener: function(cb) {},
+              removeListener: function(cb) {},
+              addEventListener: function(type, cb) {},
+              removeEventListener: function(type, cb) {},
+              dispatchEvent: function() { return true; }
+            };
+          }
+          return originalMatchMedia.call(window, query);
+        };
+        // Add meta tag for color-scheme
+        var metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+        if (!metaColorScheme) {
+          metaColorScheme = document.createElement('meta');
+          metaColorScheme.name = 'color-scheme';
+          document.head.appendChild(metaColorScheme);
+        }
+        metaColorScheme.content = 'dark';
+      } catch(e) {}
+      ` : `
+      try {
+        var metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+        if (!metaColorScheme) {
+          metaColorScheme = document.createElement('meta');
+          metaColorScheme.name = 'color-scheme';
+          document.head.appendChild(metaColorScheme);
+        }
+        metaColorScheme.content = 'light';
+      } catch(e) {}
+      `}
+
       // Intercept and log network requests
       var originalFetch = window.fetch;
       // In WebViewContainer.js, inside the injectedJavaScript

@@ -500,6 +500,11 @@ const goHomeOld = useCallback(async () => {
           setBottomSheetVisible(false);
           setSettingsVisible(true);
         }}
+        onRefreshPress={() => webViewRefs.current[activeTabIndex]?.reload()}
+        onFullscreenToggle={() => setIsFullscreen(!isFullscreen)}
+        isFullscreen={isFullscreen}
+        onGetSourcePress={getSourceHtml}
+        onToggleErudaPress={toggleEruda}
       />
       {tabs[activeTabIndex] && (
         <>
