@@ -84,12 +84,12 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     customPromptRef.current = defaultSystemPrompt;
   }, []);
 
-  // Re-check API key when ScriptManager becomes visible
+  // Re-check API key when ScriptManager becomes visible (but not during sub-modals)
   useEffect(() => {
-    if (visible) {
+    if (visible && !showAIGenerator && !showEditOverlay) {
       checkApiKey();
     }
-  }, [visible]);
+  }, [visible, showAIGenerator, showEditOverlay]);
 
   const checkApiKey = async () => {
     const apiKey = await SettingsManager.getApiKey();
@@ -270,21 +270,22 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
   }, [setScripts]);
 
   const addOrUpdateScript = () => {
-    // Sync ref values before saving
+    // Sync ref values before saving - refs are source of truth for uncontrolled inputs
     const scriptToSave = {
       ...currentScript,
-      name: scriptNameRef.current || currentScript.name,
-      code: scriptCodeRef.current || currentScript.code,
-      urls: scriptUrlsRef.current || currentScript.urls,
+      name: scriptNameRef.current,
+      code: scriptCodeRef.current,
+      urls: scriptUrlsRef.current,
     };
     if (scriptToSave.name && scriptToSave.code) {
       const metadata = parseMetadata(scriptToSave.code);
       const updatedScript = { ...scriptToSave, metadata };
       const updatedScripts = isEditMode
-        ? scripts.map(s => s.name === scriptToSave.name ? updatedScript : s)
+        ? scripts.map(s => s.name === originalScript?.name ? updatedScript : s)
         : [...scripts, updatedScript];
       saveScripts(updatedScripts);
       setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
+      setOriginalScript(null);
       scriptNameRef.current = '';
       scriptCodeRef.current = '';
       scriptUrlsRef.current = '';
@@ -296,6 +297,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
 
   const editScript = (script) => {
     setCurrentScript(script);
+    setOriginalScript(script); // Track original for edit matching
     scriptNameRef.current = script.name;
     scriptCodeRef.current = script.code;
     scriptUrlsRef.current = script.urls;
@@ -600,6 +602,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       onClose={() => setShowInfoModal(false)}
       title="Script Manager Guide"
       isDarkMode={isDarkMode}
+      fullScreen={true}
     >
       <ScrollView style={styles.infoContent} showsVerticalScrollIndicator={false}>
         <View style={[styles.infoCard, { backgroundColor: cardBackground }]}>
@@ -651,7 +654,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       isDarkMode={isDarkMode}
       fullScreen={true}
     >
-      <ScrollView style={[styles.aiContent, { backgroundColor }]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.aiContent, { backgroundColor }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Warning */}
         <View style={[styles.warningCard, { backgroundColor: '#FFF8E1' }]}>
           <MaterialIcons name="warning" size={20} color="#FF8F00" />

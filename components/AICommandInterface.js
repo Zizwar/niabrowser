@@ -75,12 +75,17 @@ const AICommandInterface = ({
     performance: false,
     pageHTML: false,
     pageText: false,
+    apiRequests: false,
   });
+
+  // API collections for AI context
+  const [apiCollections, setApiCollections] = useState([]);
 
   // Cache & Settings
   const [enableCache, setEnableCache] = useState(false);
   const [pageCache, setPageCache] = useState(null);
   const [pageCacheUrl, setPageCacheUrl] = useState(null);
+  const [pageCacheMode, setPageCacheMode] = useState(null); // 'html' or 'text'
 
   // Conversation history
   const [conversations, setConversations] = useState([]);
@@ -130,6 +135,15 @@ const AICommandInterface = ({
     }
   }, [visible]);
 
+  // Load API collections when visible
+  useEffect(() => {
+    if (visible) {
+      AsyncStorage.getItem('apiCollections').then(saved => {
+        if (saved) setApiCollections(JSON.parse(saved));
+      }).catch(() => {});
+    }
+  }, [visible]);
+
   // Handle initialContext from DevTools AI buttons
   useEffect(() => {
     if (initialContext && visible) {
@@ -159,6 +173,7 @@ const AICommandInterface = ({
         const parsed = JSON.parse(settings);
         if (parsed.enableCache !== undefined) setEnableCache(parsed.enableCache);
         if (parsed.attachments) setAttachments(prev => ({ ...prev, ...parsed.attachments }));
+        if (parsed.totalTokens) setTotalTokens(parsed.totalTokens);
       }
       await loadConversations();
     } catch (e) {
@@ -172,7 +187,9 @@ const AICommandInterface = ({
         enableCache: newCache !== undefined ? newCache : enableCache,
         attachments: newAttachments || attachments,
       }));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to save AI settings:', e);
+    }
   };
 
   // Conversation management
@@ -180,7 +197,9 @@ const AICommandInterface = ({
     try {
       const saved = await AsyncStorage.getItem(CONVERSATIONS_KEY);
       if (saved) setConversations(JSON.parse(saved));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to load conversations:', e);
+    }
   };
 
   const saveConversation = async (msgs, id) => {
@@ -194,7 +213,9 @@ const AICommandInterface = ({
       ].slice(0, 30);
       setConversations(updated);
       await AsyncStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(updated));
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to save conversation:', e);
+    }
   };
 
   const loadConversation = (conv) => {
@@ -232,10 +253,11 @@ const AICommandInterface = ({
     }
     try {
       const js = mode === 'html'
-        ? 'window.ReactNativeWebView.postMessage(JSON.stringify({type:"pageCache",mode:"html",content:document.documentElement.innerHTML.substring(0,50000)}));true;'
+        ? 'window.ReactNativeWebView.postMessage(JSON.stringify({type:"pageCache",mode:"html",content:document.documentElement.outerHTML.substring(0,50000)}));true;'
         : 'window.ReactNativeWebView.postMessage(JSON.stringify({type:"pageCache",mode:"text",content:document.body.innerText.substring(0,30000)}));true;';
       ref.injectJavaScript(js);
       setPageCacheUrl(currentUrl);
+      setPageCacheMode(mode);
       Alert.alert('Cached', `Page ${mode === 'html' ? 'HTML' : 'text'} cached for AI context`);
     } catch (e) {
       Alert.alert('Error', e.message);
@@ -289,6 +311,13 @@ const AICommandInterface = ({
     if ((attachments.pageHTML || attachments.pageText) && pageCache) {
       total += estimateTokens(pageCache);
     }
+    if (attachments.apiRequests && apiCollections.length > 0) {
+      apiCollections.forEach(col => {
+        col.items?.forEach(item => {
+          total += estimateTokens(`${item.method} ${item.url}`) + estimateTokens(item.headers) + estimateTokens(item.body);
+        });
+      });
+    }
 
     messages.forEach(m => { total += estimateTokens(m.content); });
 
@@ -302,7 +331,9 @@ const AICommandInterface = ({
       const d = storageData?.localStorage;
       const p = typeof d === 'string' ? JSON.parse(d || '{}') : (d || {});
       lsCount = Object.keys(p).length;
-    } catch {}
+    } catch (e) {
+      console.error('Failed to parse localStorage for system prompt:', e);
+    }
 
     return `You are NIA AI, an intelligent DevTools assistant built into a mobile browser.
 
@@ -321,6 +352,7 @@ AVAILABLE CONTEXT (the user controls what data is attached):
 - Console: ${attachments.console ? 'LOGS ATTACHED' : 'NOT ATTACHED - ask user to enable if needed'}
 - Performance: ${attachments.performance ? 'METRICS ATTACHED' : 'NOT ATTACHED - ask user to enable if needed'}
 - Page content: ${attachments.pageHTML ? 'HTML CACHED & ATTACHED' : attachments.pageText ? 'TEXT CACHED & ATTACHED' : 'NOT CACHED - user can cache via clip icon panel'}
+- API Requests: ${attachments.apiRequests ? `ATTACHED (${apiCollections.reduce((n, c) => n + (c.items?.length || 0), 0)} requests)` : 'NOT ATTACHED'}
 
 PAGE STATE SUMMARY:
 - Console entries: ${consoleLogs?.length || 0}
@@ -364,7 +396,9 @@ IMPORTANT RULES:
           return `${k}: ${val.substring(0, 30)}${val.length > 30 ? '...' : ''}`;
         });
         context += '\n\n--- LOCAL STORAGE (PREVIEW) ---\n' + preview.join('\n');
-      } catch {}
+      } catch (e) {
+        console.error('Failed to parse localStorage for preview:', e);
+      }
     }
 
     if (attachments.network && networkLogs) {
@@ -412,6 +446,22 @@ IMPORTANT RULES:
     if ((attachments.pageHTML || attachments.pageText) && pageCache) {
       const label = attachments.pageHTML ? 'HTML' : 'TEXT';
       context += `\n\n--- PAGE CONTENT (${label}) ---\n${pageCache}`;
+    }
+
+    if (attachments.apiRequests && apiCollections.length > 0) {
+      context += '\n\n--- API CLIENT REQUESTS ---\n';
+      apiCollections.forEach(col => {
+        context += `\nCollection: ${col.name}\n`;
+        col.items?.forEach((item, i) => {
+          context += `  ${i + 1}. ${item.method || 'GET'} ${item.url}\n`;
+          if (item.headers) {
+            try { context += `     Headers: ${item.headers}\n`; } catch {}
+          }
+          if (item.body) {
+            context += `     Body: ${item.body.substring(0, 500)}${item.body.length > 500 ? '...' : ''}\n`;
+          }
+        });
+      });
     }
 
     return context;
@@ -471,7 +521,13 @@ IMPORTANT RULES:
 
       const promptTokens = usage.prompt_tokens || estimateTokens(fullSystem + chatMessages.map(m => m.content).join(''));
       const completionTokens = usage.completion_tokens || estimateTokens(aiContent);
-      setTotalTokens(prev => prev + promptTokens + completionTokens);
+      setTotalTokens(prev => {
+        const newTotal = prev + promptTokens + completionTokens;
+        AsyncStorage.setItem(AI_SETTINGS_KEY, JSON.stringify({
+          enableCache, attachments, totalTokens: newTotal,
+        })).catch(() => {});
+        return newTotal;
+      });
 
       const codeMatch = aiContent.match(/```javascript\n([\s\S]*?)\n```/) ||
                         aiContent.match(/```js\n([\s\S]*?)\n```/);
@@ -580,7 +636,9 @@ IMPORTANT RULES:
       lsCount = Object.keys(p).length;
       const raw = typeof d === 'string' ? d : JSON.stringify(d);
       lsSize = formatBytes(raw?.length || 0);
-    } catch {}
+    } catch (e) {
+      console.error('Failed to parse localStorage for context panel:', e);
+    }
 
     return (
       <View style={[styles.contextPanel, { backgroundColor: cardBackground, borderColor }]}>
@@ -612,12 +670,22 @@ IMPORTANT RULES:
           <AttachChip label="Performance" icon="speed" stateKey="performance" color="#9C27B0" />
         </View>
 
+        <Text style={[styles.contextSectionLabel, { color: secondaryTextColor }]}>API CLIENT</Text>
+        <View style={styles.attachRow}>
+          <AttachChip
+            label={`API Requests (${apiCollections.reduce((n, c) => n + (c.items?.length || 0), 0)})`}
+            icon="http"
+            stateKey="apiRequests"
+            color="#009688"
+          />
+        </View>
+
         <Text style={[styles.contextSectionLabel, { color: secondaryTextColor }]}>PAGE CONTENT</Text>
         <View style={styles.attachRow}>
           <TouchableOpacity
             style={[styles.attachChip, { backgroundColor: attachments.pageHTML ? '#E91E63' : chipBg }]}
             onPress={() => {
-              if (!pageCache || pageCacheUrl !== currentUrl) cachePage('html');
+              if (!pageCache || pageCacheUrl !== currentUrl || pageCacheMode !== 'html') cachePage('html');
               const upd = { ...attachments, pageHTML: !attachments.pageHTML, pageText: false };
               setAttachments(upd);
               saveSettings(upd);
@@ -629,7 +697,7 @@ IMPORTANT RULES:
           <TouchableOpacity
             style={[styles.attachChip, { backgroundColor: attachments.pageText ? '#E91E63' : chipBg }]}
             onPress={() => {
-              if (!pageCache || pageCacheUrl !== currentUrl) cachePage('text');
+              if (!pageCache || pageCacheUrl !== currentUrl || pageCacheMode !== 'text') cachePage('text');
               const upd = { ...attachments, pageText: !attachments.pageText, pageHTML: false };
               setAttachments(upd);
               saveSettings(upd);
@@ -775,11 +843,15 @@ IMPORTANT RULES:
   const statusBarHeight = Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 24) : insets.top;
   const activeAttachCount = Object.values(attachments).filter(Boolean).length;
 
+  const ContainerView = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
+  const containerProps = Platform.OS === 'ios'
+    ? { behavior: 'padding', keyboardVerticalOffset: 0 }
+    : {};
+
   return (
-    <KeyboardAvoidingView
+    <ContainerView
       style={[styles.container, { backgroundColor, paddingTop: statusBarHeight }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      {...containerProps}
     >
       {/* Header */}
       <View style={[styles.header, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
@@ -901,7 +973,7 @@ IMPORTANT RULES:
           </View>
         </>
       )}
-    </KeyboardAvoidingView>
+    </ContainerView>
   );
 };
 

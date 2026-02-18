@@ -569,6 +569,11 @@ const goHomeOld = useCallback(async () => {
             isDarkMode={isDarkMode}
             webViewRef={webViewRefs.current[activeTabIndex]}
             initialData={tabs[activeTabIndex].crudInitialData}
+            onOpenAIWithRequest={(reqData) => {
+              setAiInitialContext({ apiRequests: true, _apiRequestData: reqData });
+              closeCrudModal();
+              setIsAICommandVisible(true);
+            }}
           />
         </>
       )}
@@ -674,6 +679,7 @@ const goHomeOld = useCallback(async () => {
         animationType="slide"
         onRequestClose={() => setIsAICommandVisible(false)}
         statusBarTranslucent={Platform.OS === 'android'}
+        supportedOrientations={['portrait']}
       >
         <AICommandInterface
           visible={isAICommandVisible}

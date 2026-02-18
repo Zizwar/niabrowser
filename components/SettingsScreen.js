@@ -761,6 +761,7 @@ const SettingsScreen = ({
         {/* Content */}
         <ScrollView
           style={styles.contentScroll}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >

@@ -10,7 +10,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) => {
+const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData, onOpenAIWithRequest }) => {
   const [url, setUrl] = useState('');
   const [method, setMethod] = useState('GET');
   const [headers, setHeaders] = useState('');
@@ -598,6 +598,11 @@ const CrudModal = ({ visible, onClose, isDarkMode, webViewRef, initialData }) =>
         <View style={[styles.header, { borderBottomColor: borderColor }]}>
           <Text style={[styles.headerTitle, { color: textColor }]}>API Client</Text>
           <View style={styles.headerActions}>
+            {onOpenAIWithRequest && (
+              <TouchableOpacity onPress={() => onOpenAIWithRequest({ url, method, headers, body })} style={styles.headerBtn}>
+                <MaterialIcons name="psychology" size={22} color="#007AFF" />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={importPostmanCollection} style={styles.headerBtn}>
               <MaterialIcons name="file-upload" size={22} color={accentColor} />
             </TouchableOpacity>
