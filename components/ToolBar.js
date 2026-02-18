@@ -123,7 +123,7 @@ const ToolBar = ({
           <MaterialIcons name="refresh" size={20} color={activeIconColor} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={onToggleFavorite} style={styles.navBtn}>
+        <TouchableOpacity onPress={onToggleFavorite} onLongPress={onFavoritesPress} style={styles.navBtn}>
           <MaterialIcons
             name={isFavorite ? 'star' : 'star-outline'}
             size={20}

@@ -12,7 +12,18 @@ const DEFAULT_PROVIDERS = [
   {
     id: 'openrouter',
     name: 'OpenRouter',
+    icon: 'cloud',
+    color: '#6366F1',
+    description: 'Access 100+ AI models through a single API. Supports all major providers.',
     baseUrl: 'https://openrouter.ai/api/v1',
+    docsUrl: 'https://openrouter.ai/docs',
+    keyPlaceholder: 'sk-or-...',
+    keyHelp: 'Get your API key from openrouter.ai/keys',
+    extraHeaders: {
+      'HTTP-Referer': 'https://niabrowser.app',
+      'X-Title': 'NIA Browser AI',
+    },
+    freeQuota: false,
     isDefault: true,
     isBuiltIn: true,
     models: [
@@ -55,6 +66,16 @@ const DEFAULT_PROVIDERS = [
         outputCost: 0.0006,
         maxTokens: 4096,
         description: 'Fast and affordable GPT model',
+      },
+      {
+        id: 'openai/gpt-4o-mini',
+        name: 'GPT-4o Mini',
+        provider: 'OpenAI',
+        cost: 'Low',
+        inputCost: 0.00015,
+        outputCost: 0.0006,
+        maxTokens: 4096,
+        description: 'Fast and affordable GPT-4o',
       },
       {
         id: 'google/gemini-1.5-pro',
@@ -157,19 +178,109 @@ const DEFAULT_PROVIDERS = [
         maxTokens: 8192,
         description: 'Grok optimized for code generation',
       },
-      // OpenAI GPT-5 Models
+    ],
+  },
+  {
+    id: 'google',
+    name: 'Google Gemini',
+    icon: 'auto-awesome',
+    color: '#4285F4',
+    description: 'Direct access to Google Gemini models. Includes free daily quota!',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    docsUrl: 'https://ai.google.dev',
+    keyPlaceholder: 'AIza...',
+    keyHelp: 'Free API key from ai.google.dev/aistudio. Generous free daily quota included!',
+    freeQuota: true,
+    extraHeaders: {},
+    isBuiltIn: true,
+    models: [
       {
-        id: 'openai/gpt-5.1-codex-mini',
-        name: 'GPT-5.1 Codex Mini',
-        provider: 'OpenAI',
-        cost: 'Medium',
-        inputCost: 0.001,
-        outputCost: 0.004,
+        id: 'gemini-2.0-flash',
+        name: 'Gemini 2.0 Flash',
+        provider: 'Google',
+        cost: 'Free*',
+        inputCost: 0,
+        outputCost: 0,
         maxTokens: 8192,
-        description: 'GPT-5.1 optimized for code',
+        description: 'Fast and capable Gemini 2.0 model',
       },
       {
-        id: 'openai/gpt-4o-mini',
+        id: 'gemini-2.0-flash-lite',
+        name: 'Gemini 2.0 Flash Lite',
+        provider: 'Google',
+        cost: 'Free*',
+        inputCost: 0,
+        outputCost: 0,
+        maxTokens: 8192,
+        description: 'Lightweight Gemini 2.0 for quick tasks',
+      },
+      {
+        id: 'gemini-1.5-pro',
+        name: 'Gemini 1.5 Pro',
+        provider: 'Google',
+        cost: 'Free*',
+        inputCost: 0,
+        outputCost: 0,
+        maxTokens: 8192,
+        description: 'Google\'s most capable model',
+      },
+      {
+        id: 'gemini-1.5-flash',
+        name: 'Gemini 1.5 Flash',
+        provider: 'Google',
+        cost: 'Free*',
+        inputCost: 0,
+        outputCost: 0,
+        maxTokens: 8192,
+        description: 'Fast and efficient',
+      },
+    ],
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    icon: 'smart-toy',
+    color: '#10A37F',
+    description: 'Direct access to OpenAI GPT models.',
+    baseUrl: 'https://api.openai.com/v1',
+    docsUrl: 'https://platform.openai.com/docs',
+    keyPlaceholder: 'sk-...',
+    keyHelp: 'Get your API key from platform.openai.com/api-keys',
+    extraHeaders: {},
+    isBuiltIn: true,
+    models: [
+      {
+        id: 'gpt-4.1-mini',
+        name: 'GPT-4.1 Mini',
+        provider: 'OpenAI',
+        cost: 'Low',
+        inputCost: 0.00015,
+        outputCost: 0.0006,
+        maxTokens: 4096,
+        description: 'Fast and affordable GPT model',
+      },
+      {
+        id: 'gpt-4.1-nano',
+        name: 'GPT-4.1 Nano',
+        provider: 'OpenAI',
+        cost: 'Low',
+        inputCost: 0.0001,
+        outputCost: 0.0004,
+        maxTokens: 4096,
+        description: 'Ultra-fast GPT for simple tasks',
+      },
+      {
+        id: 'gpt-4o',
+        name: 'GPT-4o',
+        provider: 'OpenAI',
+        cost: 'Medium',
+        inputCost: 0.005,
+        outputCost: 0.015,
+        maxTokens: 4096,
+        description: 'Most capable GPT model',
+      },
+      {
+        id: 'gpt-4o-mini',
         name: 'GPT-4o Mini',
         provider: 'OpenAI',
         cost: 'Low',
@@ -179,24 +290,14 @@ const DEFAULT_PROVIDERS = [
         description: 'Fast and affordable GPT-4o',
       },
       {
-        id: 'openai/gpt-5-mini',
-        name: 'GPT-5 Mini',
+        id: 'o4-mini',
+        name: 'o4 Mini',
         provider: 'OpenAI',
         cost: 'Medium',
-        inputCost: 0.002,
-        outputCost: 0.008,
+        inputCost: 0.001,
+        outputCost: 0.004,
         maxTokens: 8192,
-        description: 'Balanced GPT-5 for general use',
-      },
-      {
-        id: 'openai/gpt-5-nano',
-        name: 'GPT-5 Nano',
-        provider: 'OpenAI',
-        cost: 'Low',
-        inputCost: 0.0003,
-        outputCost: 0.0012,
-        maxTokens: 4096,
-        description: 'Ultra-fast GPT-5 for simple tasks',
+        description: 'OpenAI reasoning model',
       },
     ],
   },
@@ -396,10 +497,9 @@ export const AIProviderManager = {
    * Validate API key format
    */
   validateApiKey(apiKey) {
-    if (!apiKey) return false;
-    // OpenRouter keys typically start with sk-or-
-    // But we also accept standard sk- and pk- prefixes
-    return apiKey.startsWith('sk-') || apiKey.startsWith('pk-');
+    if (!apiKey || typeof apiKey !== 'string') return false;
+    // Accept any non-empty key with at least 5 characters
+    return apiKey.trim().length >= 5;
   },
 
   /**
@@ -419,6 +519,7 @@ export const AIProviderManager = {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
+          ...(provider.extraHeaders || {}),
         },
       });
 
@@ -573,8 +674,7 @@ export const AIProviderManager = {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://niabrowser.app',
-        'X-Title': 'NIA Browser AI',
+        ...(provider.extraHeaders || {}),
       },
       body: JSON.stringify({
         model: modelId || (provider.models?.[0]?.id),

@@ -50,6 +50,12 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const [customPrompt, setCustomPrompt] = useState('');
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [showAIEditPrompt, setShowAIEditPrompt] = useState(false);
+  const [aiEditInstruction, setAiEditInstruction] = useState('');
+  const [isAIEditing, setIsAIEditing] = useState(false);
+  const [showImportScript, setShowImportScript] = useState(false);
+  const [importScriptText, setImportScriptText] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   // Use refs for text input values to avoid re-rendering entire component on each keystroke
   const scriptNameRef = useRef('');
@@ -143,11 +149,13 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       return;
     }
 
-    const apiKey = await SettingsManager.getApiKey();
+    const activeProvider = await AIProviderManager.getActiveProvider();
+    const providerId = activeProvider?.id || 'openrouter';
+    const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
     if (!apiKey) {
       Alert.alert(
         'API Key Required',
-        'Please add your OpenRouter API Key in Settings first.',
+        'Please add your API Key in Settings for your active provider.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Open Settings', onPress: () => {
@@ -161,15 +169,12 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
 
     setIsGenerating(true);
     try {
-      const activeProvider = await AIProviderManager.getActiveProvider();
-
       const response = await fetch(`${activeProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://github.com/zizwar/niabrowser',
-          'X-Title': 'NIABrowser Script Generator'
+          ...(activeProvider?.extraHeaders || {}),
         },
         body: JSON.stringify({
           model: selectedModel,
@@ -245,6 +250,91 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       Alert.alert('Error', `An error occurred: ${error.message}`);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const aiEditScript = async () => {
+    if (!aiEditInstruction.trim()) return;
+    setIsAIEditing(true);
+    try {
+      const activeProvider = await AIProviderManager.getActiveProvider();
+      const providerId = activeProvider?.id || 'openrouter';
+      const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
+      if (!apiKey) {
+        Alert.alert('API Key Required', 'Please add your API Key in Settings for your active provider.');
+        return;
+      }
+      const currentCode = scriptCodeRef.current || currentScript.code;
+      const response = await fetch(`${activeProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          ...(activeProvider?.extraHeaders || {}),
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: [
+            { role: 'system', content: 'You are a JavaScript code editor. Given existing code and an edit instruction, return ONLY the modified JavaScript code. No explanations, no markdown formatting, just the raw code.' },
+            { role: 'user', content: `Existing code:\n\`\`\`javascript\n${currentCode}\n\`\`\`\n\nEdit instruction: ${aiEditInstruction}\n\nReturn only the modified code:` }
+          ],
+          temperature: 0.3,
+          max_tokens: 3000
+        })
+      });
+      const data = await response.json();
+      if (data.choices && data.choices[0]) {
+        let editedCode = data.choices[0].message.content;
+        const jsMatch = editedCode.match(/```(?:javascript|js)?\n?([\s\S]*?)```/);
+        if (jsMatch) editedCode = jsMatch[1];
+        editedCode = editedCode.trim();
+        scriptCodeRef.current = editedCode;
+        setCurrentScript(prev => ({ ...prev, code: editedCode }));
+        setHasUnsavedChanges(true);
+        setAiEditInstruction('');
+        setShowAIEditPrompt(false);
+        Alert.alert('AI Edit Applied', 'The code has been updated. Review and save when ready.');
+      } else {
+        Alert.alert('Error', 'Failed to edit script with AI.');
+      }
+    } catch (error) {
+      Alert.alert('Error', `AI edit failed: ${error.message}`);
+    } finally {
+      setIsAIEditing(false);
+    }
+  };
+
+  const importGreasemonkeyScript = () => {
+    if (!importScriptText.trim()) {
+      Alert.alert('Error', 'Please paste a userscript to import.');
+      return;
+    }
+    setIsImporting(true);
+    try {
+      const metadata = parseMetadata(importScriptText);
+      const name = metadata?.name || 'Imported Script';
+      const matchUrls = metadata?.match ? metadata.match.join(', ') : '*';
+      const runAt = metadata?.runAt || 'document-idle';
+
+      setCurrentScript({
+        name,
+        code: importScriptText,
+        urls: matchUrls,
+        isEnabled: true,
+        runAt,
+        metadata,
+      });
+      scriptNameRef.current = name;
+      scriptCodeRef.current = importScriptText;
+      scriptUrlsRef.current = matchUrls;
+      setShowImportScript(false);
+      setIsEditMode(false);
+      setShowEditOverlay(true);
+      Alert.alert('Script Imported', `"${name}" has been loaded. Review and save.`);
+    } catch (error) {
+      Alert.alert('Error', `Failed to import script: ${error.message}`);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -503,7 +593,16 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           onEndEditing={() => setCurrentScript(prev => ({ ...prev, name: scriptNameRef.current }))}
         />
 
-        <Text style={[styles.inputLabel, { color: textColor }]}>Script Code</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={[styles.inputLabel, { color: textColor }]}>Script Code</Text>
+          <TouchableOpacity
+            onPress={() => setShowAIEditPrompt(!showAIEditPrompt)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4 }}
+          >
+            <MaterialIcons name="auto-awesome" size={16} color="#9C27B0" />
+            <Text style={{ color: '#9C27B0', fontSize: 13, fontWeight: '500' }}>AI Edit</Text>
+          </TouchableOpacity>
+        </View>
         <TextInput
           style={[styles.input, styles.codeInput, { color: textColor, backgroundColor: inputBackground }]}
           placeholder="Enter JavaScript code"
@@ -516,6 +615,34 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           onEndEditing={() => setCurrentScript(prev => ({ ...prev, code: scriptCodeRef.current }))}
           multiline
         />
+
+        {showAIEditPrompt && (
+          <View style={[styles.aiEditCard, { backgroundColor: inputBackground }]}>
+            <Text style={[styles.cardLabel, { color: textColor, marginTop: 0 }]}>AI Edit Instruction</Text>
+            <TextInput
+              style={[styles.input, { color: textColor, backgroundColor: cardBackground, minHeight: 60 }]}
+              placeholder="Describe how to modify the code..."
+              placeholderTextColor={secondaryTextColor}
+              value={aiEditInstruction}
+              onChangeText={setAiEditInstruction}
+              multiline
+            />
+            <TouchableOpacity
+              onPress={aiEditScript}
+              style={[styles.generateButton, { marginTop: 8 }, isAIEditing && styles.buttonDisabled]}
+              disabled={isAIEditing || !aiEditInstruction.trim()}
+            >
+              {isAIEditing ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <MaterialIcons name="auto-awesome" size={18} color="#FFFFFF" />
+                  <Text style={styles.generateButtonText}>Apply AI Edit</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.urlLabelRow}>
           <Text style={[styles.inputLabel, { color: textColor }]}>URL Pattern</Text>
@@ -836,6 +963,57 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     </BaseModal>
   );
 
+  const renderImportScript = () => (
+    <BaseModal
+      visible={showImportScript}
+      onClose={() => setShowImportScript(false)}
+      title="Import Userscript"
+      isDarkMode={isDarkMode}
+      fullScreen={true}
+    >
+      <View style={[styles.promptEditorContent, { backgroundColor }]}>
+        <Text style={[styles.cardLabel, { color: textColor }]}>
+          Paste a Greasemonkey/Tampermonkey userscript below:
+        </Text>
+        <TextInput
+          style={[styles.promptTextInput, {
+            color: textColor,
+            backgroundColor: inputBackground,
+          }]}
+          placeholder="// ==UserScript==\n// @name  My Script\n// ==/UserScript==\n\n// Paste your userscript here..."
+          placeholderTextColor={secondaryTextColor}
+          value={importScriptText}
+          onChangeText={setImportScriptText}
+          multiline
+          textAlignVertical="top"
+        />
+        <View style={styles.promptButtonContainer}>
+          <TouchableOpacity
+            onPress={() => setShowImportScript(false)}
+            style={[styles.resetPromptButton, { backgroundColor: '#757575' }]}
+          >
+            <MaterialIcons name="close" size={18} color="#FFFFFF" />
+            <Text style={styles.promptButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={importGreasemonkeyScript}
+            style={[styles.savePromptButton, { backgroundColor: '#4CAF50' }, isImporting && styles.buttonDisabled]}
+            disabled={isImporting || !importScriptText.trim()}
+          >
+            {isImporting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <MaterialIcons name="file-download" size={18} color="#FFFFFF" />
+                <Text style={styles.promptButtonText}>Import</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </BaseModal>
+  );
+
   return (
     <BaseModal
       visible={visible}
@@ -865,6 +1043,10 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                   scriptUrlsRef.current = '*';
                   setIsEditMode(false);
                   setShowEditOverlay(true);
+                }},
+                { text: 'Import Userscript', onPress: () => {
+                  setImportScriptText('');
+                  setShowImportScript(true);
                 }},
                 { text: 'AI Generator', onPress: () => setShowAIGenerator(true) }
               ]
@@ -900,6 +1082,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         {renderInfoModal()}
         {renderAIGenerator()}
         {renderPromptEditor()}
+        {renderImportScript()}
         {renderUrlHelpModal()}
       </View>
     </BaseModal>
@@ -1325,6 +1508,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  aiEditCard: {
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 8,
+    gap: 8,
   },
 });
 

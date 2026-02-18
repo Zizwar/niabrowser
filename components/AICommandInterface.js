@@ -125,6 +125,28 @@ const AICommandInterface = ({
     loadSettings();
   }, []);
 
+  // Privacy warning on first open
+  const [hasShownPrivacyWarning, setHasShownPrivacyWarning] = useState(true);
+  useEffect(() => {
+    AsyncStorage.getItem('ai_privacy_warning_shown').then(val => {
+      if (!val) setHasShownPrivacyWarning(false);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (visible && !hasShownPrivacyWarning) {
+      Alert.alert(
+        'Privacy Notice',
+        'NIA AI can access browser data you choose to share (cookies, storage, network logs, page content). This data is sent to your configured AI provider.\n\nYou control what data is attached via the clip icon. No data is shared without your explicit action.\n\nBe careful with sensitive information.',
+        [{ text: 'I Understand', onPress: () => {
+          setHasShownPrivacyWarning(true);
+          AsyncStorage.setItem('ai_privacy_warning_shown', 'true').catch(() => {});
+        }}],
+        { cancelable: false }
+      );
+    }
+  }, [visible, hasShownPrivacyWarning]);
+
   // Welcome message
   useEffect(() => {
     if (visible && messages.length === 0) {
@@ -478,14 +500,14 @@ IMPORTANT RULES:
     setIsLoading(true);
 
     try {
-      const apiKey = await SettingsManager.getApiKey();
-      if (!apiKey) throw new Error('API Key not found. Add it in Settings.');
+      const activeProvider = await AIProviderManager.getActiveProvider();
+      const providerId = activeProvider?.id || 'openrouter';
+      const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
+      if (!apiKey) throw new Error('API Key not found. Add it in Settings for your active provider.');
 
       const systemPrompt = buildSystemPrompt();
       const contextData = buildContextData();
       const fullSystem = systemPrompt + (contextData ? '\n\n' + contextData : '');
-
-      const activeProvider = await AIProviderManager.getActiveProvider();
 
       const chatMessages = newMessages
         .filter(m => m.role === 'user' || m.role === 'assistant')
@@ -498,8 +520,7 @@ IMPORTANT RULES:
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': 'https://niabrowser.app',
-            'X-Title': 'NIA Browser AI',
+            ...(activeProvider?.extraHeaders || {}),
           },
           body: JSON.stringify({
             model: selectedModel,

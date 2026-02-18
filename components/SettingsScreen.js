@@ -311,27 +311,89 @@ const SettingsScreen = ({
     </TouchableOpacity>
   );
 
+  const activeProvider = providers.find(p => p.id === activeProviderId) || providers[0];
+
+  const handleProviderSwitch = async (providerId) => {
+    setActiveProviderId(providerId);
+    await AIProviderManager.setActiveProviderId(providerId);
+    const key = await AIProviderManager.getProviderApiKey(providerId);
+    setApiKey(key || '');
+    const allMods = await AIProviderManager.getAllModels();
+    setAllModels(allMods);
+    const providerModels = allMods.filter(m => m.providerId === providerId);
+    const validModel = providerModels.find(m => m.id === selectedModelId);
+    if (!validModel && providerModels.length > 0) {
+      setSelectedModelId(providerModels[0].id);
+      await SettingsManager.setSelectedModel(providerModels[0].id);
+    }
+  };
+
   const renderAISettings = () => (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: textColor }]}>AI Provider Settings</Text>
 
-      {/* Provider Selection */}
-      <View style={[styles.card, { backgroundColor: cardBackground }]}>
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="cloud" size={20} color="#007AFF" />
-          <Text style={[styles.cardTitle, { color: textColor }]}>Provider</Text>
+      {/* Provider Tabs */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+        {providers.filter(p => p.isBuiltIn).map(provider => (
+          <TouchableOpacity
+            key={provider.id}
+            style={[
+              styles.providerTab,
+              { backgroundColor: activeProviderId === provider.id ? (provider.color || '#007AFF') : cardBackground, borderColor },
+            ]}
+            onPress={() => handleProviderSwitch(provider.id)}
+          >
+            <MaterialIcons
+              name={provider.icon || 'cloud'}
+              size={18}
+              color={activeProviderId === provider.id ? '#FFF' : secondaryTextColor}
+            />
+            <Text style={[
+              styles.providerTabText,
+              { color: activeProviderId === provider.id ? '#FFF' : textColor },
+            ]} numberOfLines={1}>
+              {provider.name}
+            </Text>
+            {provider.freeQuota && (
+              <View style={styles.freeBadge}>
+                <Text style={styles.freeBadgeText}>FREE</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Provider Info */}
+      {activeProvider && (
+        <View style={[styles.card, { backgroundColor: cardBackground }]}>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name={activeProvider.icon || 'cloud'} size={20} color={activeProvider.color || '#007AFF'} />
+            <Text style={[styles.cardTitle, { color: textColor }]}>{activeProvider.name}</Text>
+            {activeProvider.freeQuota && (
+              <View style={{ backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginLeft: 8 }}>
+                <Text style={{ color: '#2E7D32', fontSize: 11, fontWeight: '700' }}>Free Quota</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
+            {activeProvider.description}
+          </Text>
+          {activeProvider.keyHelp && (
+            <Text style={[styles.cardDescription, { color: '#007AFF', fontWeight: '500', marginTop: 4, marginBottom: 4 }]}>
+              {activeProvider.keyHelp}
+            </Text>
+          )}
+          {activeProvider.docsUrl && (
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => Linking.openURL(activeProvider.docsUrl)}
+            >
+              <Text style={styles.linkText}>{activeProvider.name} Documentation</Text>
+              <MaterialIcons name="open-in-new" size={16} color="#007AFF" />
+            </TouchableOpacity>
+          )}
         </View>
-        <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
-          Currently using OpenRouter. Get your API key from OpenRouter.
-        </Text>
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => Linking.openURL('https://openrouter.ai/docs')}
-        >
-          <Text style={styles.linkText}>OpenRouter Documentation</Text>
-          <MaterialIcons name="open-in-new" size={16} color="#007AFF" />
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* API Key */}
       <View style={[styles.card, { backgroundColor: cardBackground }]}>
@@ -344,7 +406,7 @@ const SettingsScreen = ({
             style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
             value={apiKey}
             onChangeText={setApiKey}
-            placeholder="Enter your OpenRouter API Key"
+            placeholder={activeProvider?.keyPlaceholder || 'Enter API Key'}
             placeholderTextColor={secondaryTextColor}
             secureTextEntry={!showApiKey}
             autoCapitalize="none"
@@ -400,7 +462,7 @@ const SettingsScreen = ({
           <Text style={[styles.cardTitle, { color: textColor }]}>Default Model</Text>
         </View>
         <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
-          Select the default AI model for all features
+          Select the default AI model for {activeProvider?.name || 'this provider'}
         </Text>
         <ModelSelector
           selectedModelId={selectedModelId}
@@ -408,6 +470,7 @@ const SettingsScreen = ({
           isDarkMode={isDarkMode}
           showCost={true}
           showProvider={true}
+          providerId={activeProviderId}
         />
       </View>
 
@@ -418,7 +481,7 @@ const SettingsScreen = ({
           <Text style={[styles.cardTitle, { color: textColor }]}>Model Management</Text>
         </View>
         <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
-          Add custom models or remove existing ones. {allModels.length} models available.
+          Add custom models or remove existing ones.
         </Text>
 
         {/* Add Model Button */}
@@ -431,10 +494,10 @@ const SettingsScreen = ({
         </TouchableOpacity>
 
         {/* Model List (show custom models only) */}
-        {allModels.filter(m => m.isCustom).length > 0 && (
+        {allModels.filter(m => m.isCustom && m.providerId === activeProviderId).length > 0 && (
           <View style={styles.modelList}>
             <Text style={[styles.modelListTitle, { color: secondaryTextColor }]}>Custom Models:</Text>
-            {allModels.filter(m => m.isCustom).map((model, index) => (
+            {allModels.filter(m => m.isCustom && m.providerId === activeProviderId).map((model, index) => (
               <View key={model.id || index} style={[styles.modelItem, { backgroundColor: inputBackground }]}>
                 <View style={styles.modelItemInfo}>
                   <Text style={[styles.modelItemName, { color: textColor }]}>{model.name}</Text>
@@ -468,7 +531,7 @@ const SettingsScreen = ({
               style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
               value={newModel.id}
               onChangeText={(text) => setNewModel({...newModel, id: text})}
-              placeholder="e.g., openai/gpt-5-turbo"
+              placeholder="e.g., gpt-5-turbo"
               placeholderTextColor={secondaryTextColor}
             />
 
@@ -478,15 +541,6 @@ const SettingsScreen = ({
               value={newModel.name}
               onChangeText={(text) => setNewModel({...newModel, name: text})}
               placeholder="e.g., GPT-5 Turbo"
-              placeholderTextColor={secondaryTextColor}
-            />
-
-            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Provider</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
-              value={newModel.provider}
-              onChangeText={(text) => setNewModel({...newModel, provider: text})}
-              placeholder="e.g., OpenAI"
               placeholderTextColor={secondaryTextColor}
             />
 
@@ -1015,6 +1069,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 20,
+  },
+  providerTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginRight: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  providerTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  freeBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  freeBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
 });
 
