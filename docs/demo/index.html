@@ -1,299 +1,1497 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NIABrowser - Feature Test Page</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0A0A0F; color: #F0F0F5; line-height: 1.5; padding: 16px; padding-top: 60px; }
-    a { color: #007AFF; }
-    header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,10,15,0.95); backdrop-filter: blur(10px); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A3A; }
-    header h1 { font-size: 16px; font-weight: 700; }
-    header h1 span { color: #007AFF; }
-    header a { font-size: 13px; }
-    .card { background: #161620; border: 1px solid #2A2A3A; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-    .card h2 .icon { font-size: 18px; }
-    .btn { display: inline-block; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; margin: 3px; }
-    .btn-blue { background: #007AFF; color: #fff; }
-    .btn-green { background: #34C759; color: #fff; }
-    .btn-orange { background: #FF9500; color: #fff; }
-    .btn-red { background: #FF3B30; color: #fff; }
-    .btn-gray { background: #2C2C3E; color: #F0F0F5; }
-    .output { background: #0D0D14; border: 1px solid #2A2A3A; border-radius: 8px; padding: 10px; margin-top: 10px; font-family: monospace; font-size: 12px; color: #8E8EA0; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-    .output .success { color: #34C759; }
-    .output .error { color: #FF3B30; }
-    .output .warn { color: #FF9500; }
-    .output .info { color: #007AFF; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-    th, td { padding: 8px 10px; border: 1px solid #2A2A3A; text-align: left; }
-    th { background: #1A1A28; font-weight: 600; }
-    input[type="text"], input[type="number"] { background: #1A1A28; border: 1px solid #2A2A3A; border-radius: 6px; padding: 8px 10px; color: #F0F0F5; font-size: 13px; width: 100%; margin: 4px 0; }
-    .counter { font-size: 48px; font-weight: 700; text-align: center; padding: 20px; color: #007AFF; }
-    .color-box { width: 100%; height: 60px; border-radius: 8px; margin-top: 8px; transition: background 0.3s; display: flex; align-items: center; justify-content: center; font-weight: 600; }
-    .hidden-content { display: none; background: #1A1A28; padding: 12px; border-radius: 8px; margin-top: 8px; }
-    .hidden-content.visible { display: block; }
-    .metric { display: inline-block; background: #1A1A28; padding: 8px 14px; border-radius: 8px; margin: 4px; font-size: 12px; }
-    .metric .val { font-size: 18px; font-weight: 700; color: #007AFF; display: block; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIABrowser - Developer Test Page</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d27;
+            --bg-card: #21242f;
+            --bg-input: #181b24;
+            --border: #2e3240;
+            --text-primary: #e4e6eb;
+            --text-secondary: #9ba1b0;
+            --text-muted: #6b7280;
+            --accent: #4a90e2;
+            --accent-hover: #357abd;
+            --green: #34d399;
+            --green-dim: #065f46;
+            --yellow: #fbbf24;
+            --yellow-dim: #713f12;
+            --red: #f87171;
+            --red-dim: #7f1d1d;
+            --purple: #a78bfa;
+            --purple-dim: #4c1d95;
+            --cyan: #22d3ee;
+            --orange: #fb923c;
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .badge {
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ===== Section Nav ===== */
+        .section-nav {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .section-nav::-webkit-scrollbar { height: 0; }
+
+        .nav-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent);
+        }
+
+        /* ===== Layout ===== */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 900px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+            .grid .full-width { grid-column: 1 / -1; }
+        }
+
+        /* ===== Card ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .card-header .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .card-header h2 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+        .card-header p { font-size: 0.75rem; color: var(--text-muted); }
+        .card-body { padding: 1.25rem; }
+
+        /* ===== Buttons ===== */
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .btn:hover { border-color: var(--accent); background: rgba(74,144,226,0.1); }
+        .btn:active { transform: scale(0.97); }
+        .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+        .btn-green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+        .btn-green:hover { background: var(--green); color: #fff; }
+        .btn-yellow { background: var(--yellow-dim); border-color: var(--yellow); color: var(--yellow); }
+        .btn-yellow:hover { background: var(--yellow); color: #000; }
+        .btn-red { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+        .btn-red:hover { background: var(--red); color: #fff; }
+        .btn-purple { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+        .btn-purple:hover { background: var(--purple); color: #fff; }
+
+        /* ===== Output ===== */
+        .output {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            min-height: 80px;
+            max-height: 280px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        .output::-webkit-scrollbar { width: 6px; }
+        .output::-webkit-scrollbar-track { background: transparent; }
+        .output::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .output .log { color: var(--text-secondary); }
+        .output .info { color: var(--cyan); }
+        .output .warn { color: var(--yellow); }
+        .output .error { color: var(--red); }
+        .output .success { color: var(--green); }
+        .output .muted { color: var(--text-muted); }
+
+        .output-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        /* ===== Inputs ===== */
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .input-group input,
+        .input-group select {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.8rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus { border-color: var(--accent); }
+        .input-group input::placeholder { color: var(--text-muted); }
+
+        /* ===== Section Label ===== */
+        .section-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .section-label:first-child { margin-top: 0; }
+
+        /* ===== Method Badges ===== */
+        .method-badge {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .method-get { background: var(--green-dim); color: var(--green); }
+        .method-post { background: rgba(74,144,226,0.2); color: var(--accent); }
+        .method-put { background: var(--yellow-dim); color: var(--yellow); }
+        .method-delete { background: var(--red-dim); color: var(--red); }
+
+        /* ===== Counter ===== */
+        .counter-display {
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 1rem 0;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ===== Color Box ===== */
+        .color-box {
+            width: 100%;
+            height: 60px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            transition: background-color 0.3s;
+            margin-bottom: 0.75rem;
+        }
+
+        /* ===== Editable Area ===== */
+        .editable-area {
+            width: 100%;
+            min-height: 60px;
+            padding: 0.75rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .editable-area:focus { border-color: var(--accent); }
+
+        /* ===== Toggle Target ===== */
+        .toggle-target {
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(74,144,226,0.15), rgba(167,139,250,0.15));
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            margin-bottom: 0.75rem;
+        }
+
+        .toggle-target.hidden { display: none; }
+
+        /* ===== Data Table ===== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: rgba(255,255,255,0.03);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover td { background: rgba(74,144,226,0.05); }
+
+        .data-table .tag {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 500;
+        }
+
+        .tag-active { background: var(--green-dim); color: var(--green); }
+        .tag-beta { background: var(--yellow-dim); color: var(--yellow); }
+        .tag-deprecated { background: var(--red-dim); color: var(--red); }
+        .tag-new { background: var(--purple-dim); color: var(--purple); }
+
+        /* ===== Link List ===== */
+        .link-list { list-style: none; }
+
+        .link-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .link-list li:last-child { border-bottom: none; }
+
+        .link-list a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .link-list a:hover { text-decoration: underline; }
+
+        .link-list .link-meta {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            margin-left: auto;
+        }
+
+        /* ===== Form ===== */
+        .demo-form label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .demo-form .form-field { margin-bottom: 0.75rem; }
+
+        .demo-form input,
+        .demo-form select,
+        .demo-form textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.82rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .demo-form input:focus,
+        .demo-form select:focus,
+        .demo-form textarea:focus { border-color: var(--accent); }
+        .demo-form textarea { resize: vertical; min-height: 60px; }
+
+        .demo-form .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-form .checkbox-row input { width: auto; }
+
+        /* ===== Hidden Content ===== */
+        .hidden-content {
+            display: none;
+            padding: 1rem;
+            background: rgba(167,139,250,0.1);
+            border: 1px solid var(--purple);
+            border-radius: var(--radius-sm);
+            color: var(--purple);
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+        }
+
+        .hidden-content.revealed { display: block; }
+
+        /* ===== Performance Bars ===== */
+        .perf-bar-wrap { margin-bottom: 0.75rem; }
+
+        .perf-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .perf-bar-track {
+            height: 8px;
+            background: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .perf-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--accent);
+            width: 0;
+            transition: width 0.5s ease-out;
+        }
+
+        /* ===== Status Dots ===== */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .status-dot.green { background: var(--green); }
+        .status-dot.yellow { background: var(--yellow); }
+        .status-dot.red { background: var(--red); }
+
+        /* ===== Image Grid ===== */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .image-grid .img-slot {
+            aspect-ratio: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .image-grid .img-slot img { width: 100%; height: 100%; object-fit: cover; }
+        .image-grid .img-slot.loaded { border-color: var(--green); }
+        .image-grid .img-slot.error { border-color: var(--red); }
+
+        /* ===== Injection targets two-column ===== */
+        .inject-columns {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (min-width: 700px) {
+            .inject-columns { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 600px) {
+            .header-inner { padding: 0 1rem; }
+            .container { padding: 1rem; }
+            .card-body { padding: 1rem; }
+            .btn { padding: 0.4rem 0.65rem; font-size: 0.75rem; }
+            .counter-display { font-size: 2.25rem; }
+        }
+
+        /* ===== Footer ===== */
+        .page-footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .page-footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .page-footer a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>NIA<span>Browser</span> Test Page</h1>
-    <a href="../index.html">Back to Home</a>
-  </header>
 
-  <!-- Network Testing -->
-  <div class="card">
-    <h2><span class="icon">&#x1F310;</span> Network Testing</h2>
-    <p style="font-size:13px;color:#8E8EA0;margin-bottom:8px;">Test API calls — visible in NIABrowser's Network monitor</p>
-    <div class="btn-row">
-      <button class="btn btn-blue" onclick="testFetch('GET')">GET</button>
-      <button class="btn btn-green" onclick="testFetch('POST')">POST</button>
-      <button class="btn btn-orange" onclick="testFetch('PUT')">PUT</button>
-      <button class="btn btn-red" onclick="testFetch('DELETE')">DELETE</button>
-      <button class="btn btn-gray" onclick="testMultiple()">5x Parallel</button>
+<!-- ===== HEADER ===== -->
+<header class="header">
+    <div class="header-inner">
+        <div class="header-left">
+            <a class="logo" href="../index.html">NIABrowser</a>
+            <span class="badge">Test Page</span>
+        </div>
+        <a href="../index.html" class="back-link">&larr; Back to Docs</a>
     </div>
-    <div id="network-output" class="output">Ready...</div>
-  </div>
+</header>
 
-  <!-- Console Testing -->
-  <div class="card">
-    <h2><span class="icon">&#x1F4CB;</span> Console Testing</h2>
-    <p style="font-size:13px;color:#8E8EA0;margin-bottom:8px;">Generate console messages — visible in NIABrowser's Console panel</p>
-    <div class="btn-row">
-      <button class="btn btn-blue" onclick="console.log('Test log message:', new Date().toISOString())">console.log</button>
-      <button class="btn btn-orange" onclick="console.warn('Test warning:', {code: 'W001', detail: 'Something may be wrong'})">console.warn</button>
-      <button class="btn btn-red" onclick="console.error('Test error:', new Error('Something went wrong'))">console.error</button>
-      <button class="btn btn-gray" onclick="console.info('Test info: App version 1.1.0')">console.info</button>
-      <button class="btn btn-red" onclick="triggerError()">Uncaught Error</button>
+<!-- ===== SECTION NAV ===== -->
+<nav class="section-nav">
+    <div class="nav-inner">
+        <a href="#network" class="nav-link">Network</a>
+        <a href="#console" class="nav-link">Console</a>
+        <a href="#storage" class="nav-link">Storage</a>
+        <a href="#dom" class="nav-link">DOM</a>
+        <a href="#performance" class="nav-link">Performance</a>
+        <a href="#injection" class="nav-link">Script Targets</a>
     </div>
-    <div class="btn-row">
-      <button class="btn btn-gray" onclick="console.log({user:'test',roles:['admin','editor'],meta:{created:'2025-01-01'}})">Log Object</button>
-      <button class="btn btn-gray" onclick="console.log([1,2,3,'hello',{nested:true}])">Log Array</button>
-      <button class="btn btn-gray" onclick="console.table([{name:'Alice',age:30},{name:'Bob',age:25}])">console.table</button>
-    </div>
-  </div>
+</nav>
 
-  <!-- Storage Testing -->
-  <div class="card">
-    <h2><span class="icon">&#x1F4BE;</span> Storage Testing</h2>
-    <p style="font-size:13px;color:#8E8EA0;margin-bottom:8px;">Manage localStorage, sessionStorage, cookies — visible in NIABrowser's Storage panel</p>
-    <div class="btn-row">
-      <button class="btn btn-green" onclick="setStorage()">Set localStorage</button>
-      <button class="btn btn-blue" onclick="getStorage()">Read All</button>
-      <button class="btn btn-red" onclick="localStorage.clear();appendOutput('storage-output','Cleared localStorage','success')">Clear localStorage</button>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-green" onclick="setCookie()">Set Cookie</button>
-      <button class="btn btn-blue" onclick="readCookies()">Read Cookies</button>
-      <button class="btn btn-red" onclick="clearCookies()">Clear Cookies</button>
-    </div>
-    <div id="storage-output" class="output">Ready...</div>
-  </div>
+<!-- ===== MAIN CONTENT ===== -->
+<main class="container">
+<div class="grid">
 
-  <!-- DOM Manipulation -->
-  <div class="card">
-    <h2><span class="icon">&#x1F3A8;</span> DOM Manipulation Targets</h2>
-    <p style="font-size:13px;color:#8E8EA0;margin-bottom:8px;">Elements for testing scripts — try NIA AI: "change the counter color" or "hide the color box"</p>
-    <div id="counter-display" class="counter">0</div>
-    <div class="btn-row" style="justify-content:center;">
-      <button class="btn btn-blue" onclick="changeCounter(1)">+1</button>
-      <button class="btn btn-red" onclick="changeCounter(-1)">-1</button>
-      <button class="btn btn-gray" onclick="document.getElementById('counter-display').textContent='0'">Reset</button>
+<!-- ====================== 1. NETWORK TESTING ====================== -->
+<div class="card full-width" id="network">
+    <div class="card-header">
+        <div class="icon" style="background:rgba(74,144,226,0.15);color:var(--accent);">&#9889;</div>
+        <div>
+            <h2>Network Testing</h2>
+            <p>Make API calls and inspect responses</p>
+        </div>
     </div>
-    <div id="color-box" class="color-box" style="background:#007AFF;">Click buttons to change color</div>
-    <div class="btn-row" style="margin-top:8px;">
-      <button class="btn btn-blue" onclick="setColor('#007AFF')">Blue</button>
-      <button class="btn btn-green" onclick="setColor('#34C759')">Green</button>
-      <button class="btn btn-orange" onclick="setColor('#FF9500')">Orange</button>
-      <button class="btn btn-red" onclick="setColor('#FF3B30')">Red</button>
-      <button class="btn btn-gray" onclick="setColor('#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'))">Random</button>
+    <div class="card-body">
+        <div class="section-label">httpbin.org</div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="netRequest('GET','https://httpbin.org/get')"><span class="method-badge method-get">GET</span> /get</button>
+            <button class="btn btn-accent" onclick="netRequest('POST','https://httpbin.org/post',{message:'Hello from NIABrowser',timestamp:Date.now()})"><span class="method-badge method-post">POST</span> /post</button>
+            <button class="btn btn-yellow" onclick="netRequest('PUT','https://httpbin.org/put',{updated:true,value:42})"><span class="method-badge method-put">PUT</span> /put</button>
+            <button class="btn btn-red" onclick="netRequest('DELETE','https://httpbin.org/delete')"><span class="method-badge method-delete">DEL</span> /delete</button>
+            <button class="btn" onclick="netRequest('GET','https://httpbin.org/status/404')">404 Test</button>
+            <button class="btn" onclick="netRequest('GET','https://httpbin.org/delay/2')">Delay 2s</button>
+            <button class="btn" onclick="netRequest('GET','https://httpbin.org/headers')">Headers</button>
+        </div>
+
+        <div class="section-label">jsonplaceholder.typicode.com</div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="netRequest('GET','https://jsonplaceholder.typicode.com/posts/1')"><span class="method-badge method-get">GET</span> Post #1</button>
+            <button class="btn btn-green" onclick="netRequest('GET','https://jsonplaceholder.typicode.com/users')"><span class="method-badge method-get">GET</span> Users</button>
+            <button class="btn btn-accent" onclick="netRequest('POST','https://jsonplaceholder.typicode.com/posts',{title:'Test Post',body:'Created by NIABrowser',userId:1})"><span class="method-badge method-post">POST</span> Create Post</button>
+            <button class="btn btn-yellow" onclick="netRequest('PUT','https://jsonplaceholder.typicode.com/posts/1',{id:1,title:'Updated',body:'Modified by NIABrowser',userId:1})"><span class="method-badge method-put">PUT</span> Update Post</button>
+            <button class="btn btn-red" onclick="netRequest('DELETE','https://jsonplaceholder.typicode.com/posts/1')"><span class="method-badge method-delete">DEL</span> Delete Post</button>
+            <button class="btn btn-green" onclick="netRequest('GET','https://jsonplaceholder.typicode.com/comments?postId=1')"><span class="method-badge method-get">GET</span> Comments</button>
+        </div>
+
+        <div class="section-label">Custom Request</div>
+        <div class="input-group">
+            <select id="customMethod">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="PATCH">PATCH</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+            <input type="text" id="customUrl" placeholder="https://httpbin.org/anything" value="https://httpbin.org/anything">
+            <button class="btn btn-accent" onclick="customNetRequest()">Send</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="customBody" placeholder='{"key":"value"} (optional JSON body)'>
+        </div>
+
+        <div class="output-label">Response</div>
+        <div class="output" id="networkOutput"><span class="muted">Click a button to make a request...</span></div>
     </div>
-    <div id="toggle-content" class="hidden-content">
-      <p>This content was hidden! Scripts can show/hide elements on the page.</p>
-      <p>Secret data: API_KEY=demo_12345_test</p>
+</div>
+
+<!-- ====================== 2. CONSOLE TESTING ====================== -->
+<div class="card" id="console">
+    <div class="card-header">
+        <div class="icon" style="background:rgba(34,211,238,0.15);color:var(--cyan);">&#9998;</div>
+        <div>
+            <h2>Console Testing</h2>
+            <p>Generate various console messages</p>
+        </div>
     </div>
-    <button class="btn btn-gray" onclick="document.getElementById('toggle-content').classList.toggle('visible')" style="margin-top:8px;">Toggle Hidden Content</button>
-  </div>
+    <div class="card-body">
+        <div class="section-label">Console Methods</div>
+        <div class="btn-row">
+            <button class="btn" onclick="testConsole('log')">console.log</button>
+            <button class="btn btn-yellow" onclick="testConsole('warn')">console.warn</button>
+            <button class="btn btn-red" onclick="testConsole('error')">console.error</button>
+            <button class="btn" style="border-color:var(--cyan);color:var(--cyan);" onclick="testConsole('info')">console.info</button>
+            <button class="btn" onclick="testConsole('table')">console.table</button>
+            <button class="btn" onclick="testConsole('group')">console.group</button>
+            <button class="btn" onclick="testConsole('time')">console.time</button>
+        </div>
 
-  <!-- Script Targets -->
-  <div class="card">
-    <h2><span class="icon">&#x1F4CA;</span> Script Injection Targets</h2>
-    <p style="font-size:13px;color:#8E8EA0;margin-bottom:8px;">Data tables and lists for scripts to modify — try AI: "highlight rows where price > 50"</p>
-    <table id="data-table">
-      <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th></tr></thead>
-      <tbody>
-        <tr><td>Laptop Pro</td><td>Electronics</td><td>$999</td><td>15</td></tr>
-        <tr><td>Wireless Mouse</td><td>Accessories</td><td>$29</td><td>200</td></tr>
-        <tr><td>USB-C Hub</td><td>Accessories</td><td>$59</td><td>85</td></tr>
-        <tr><td>Monitor 27"</td><td>Electronics</td><td>$449</td><td>32</td></tr>
-        <tr><td>Keyboard</td><td>Accessories</td><td>$79</td><td>120</td></tr>
-        <tr><td>Webcam HD</td><td>Electronics</td><td>$89</td><td>0</td></tr>
-        <tr><td>Cable Pack</td><td>Accessories</td><td>$15</td><td>500</td></tr>
-      </tbody>
-    </table>
+        <div class="section-label">Error Generation</div>
+        <div class="btn-row">
+            <button class="btn btn-red" onclick="triggerUncaughtError()">Uncaught Error</button>
+            <button class="btn btn-red" onclick="triggerTypeError()">TypeError</button>
+            <button class="btn btn-red" onclick="triggerReferenceError()">ReferenceError</button>
+            <button class="btn btn-yellow" onclick="triggerPromiseRejection()">Promise Rejection</button>
+        </div>
 
-    <h3 style="margin-top:16px;font-size:14px;">Link List</h3>
-    <ul id="link-list" style="padding-left:20px;margin-top:8px;font-size:13px;">
-      <li><a href="https://github.com">GitHub</a> - Code hosting</li>
-      <li><a href="https://stackoverflow.com">Stack Overflow</a> - Q&A</li>
-      <li><a href="https://developer.mozilla.org">MDN</a> - Web docs</li>
-      <li><a href="https://npmjs.com">NPM</a> - Package registry</li>
-      <li><a href="https://caniuse.com">Can I Use</a> - Browser support</li>
-    </ul>
+        <div class="section-label">Bulk Generation</div>
+        <div class="btn-row">
+            <button class="btn btn-purple" onclick="floodConsole(50)">50 Messages</button>
+            <button class="btn btn-purple" onclick="floodConsole(200)">200 Messages</button>
+        </div>
 
-    <h3 style="margin-top:16px;font-size:14px;">Form</h3>
-    <form id="test-form" onsubmit="event.preventDefault();appendOutput('form-output','Form submitted: '+new FormData(this).get('name'),'success')">
-      <input type="text" name="name" placeholder="Enter your name..." />
-      <input type="text" name="email" placeholder="Enter email..." />
-      <button class="btn btn-green" type="submit" style="margin-top:4px;">Submit Form</button>
-    </form>
-    <div id="form-output" class="output" style="margin-top:8px;">Waiting for form submit...</div>
-  </div>
-
-  <!-- Performance Testing -->
-  <div class="card">
-    <h2><span class="icon">&#x26A1;</span> Performance Testing</h2>
-    <p style="font-size:13px;color:#8E8EA0;margin-bottom:8px;">Trigger heavy operations — visible in NIABrowser's Performance panel</p>
-    <div class="btn-row">
-      <button class="btn btn-blue" onclick="heavyDOM()">Heavy DOM (1000 divs)</button>
-      <button class="btn btn-orange" onclick="heavyCompute()">Heavy Compute</button>
-      <button class="btn btn-green" onclick="showPerf()">Show Metrics</button>
+        <div class="output-label">Local Console Mirror</div>
+        <div class="output" id="consoleOutput"><span class="muted">Console messages will appear here...</span></div>
     </div>
-    <div id="perf-metrics" style="margin-top:8px;"></div>
-    <div id="perf-output" class="output">Ready...</div>
-  </div>
+</div>
 
-  <div style="text-align:center;padding:20px;color:#8E8EA0;font-size:12px;">
+<!-- ====================== 3. STORAGE TESTING ====================== -->
+<div class="card" id="storage">
+    <div class="card-header">
+        <div class="icon" style="background:rgba(52,211,153,0.15);color:var(--green);">&#9881;</div>
+        <div>
+            <h2>Storage Testing</h2>
+            <p>localStorage, sessionStorage, and cookies</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="section-label">localStorage</div>
+        <div class="input-group">
+            <input type="text" id="lsKey" placeholder="Key" value="nia_test_key">
+            <input type="text" id="lsValue" placeholder="Value" value="Hello NIABrowser!">
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="lsSet()">Set</button>
+            <button class="btn" onclick="lsGet()">Get</button>
+            <button class="btn btn-yellow" onclick="lsRemove()">Remove</button>
+            <button class="btn btn-red" onclick="lsClear()">Clear All</button>
+            <button class="btn" onclick="lsList()">List All</button>
+        </div>
+
+        <div class="section-label">sessionStorage</div>
+        <div class="input-group">
+            <input type="text" id="ssKey" placeholder="Key" value="nia_session_key">
+            <input type="text" id="ssValue" placeholder="Value" value="Session data">
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="ssSet()">Set</button>
+            <button class="btn" onclick="ssGet()">Get</button>
+            <button class="btn btn-yellow" onclick="ssRemove()">Remove</button>
+            <button class="btn btn-red" onclick="ssClear()">Clear All</button>
+            <button class="btn" onclick="ssList()">List All</button>
+        </div>
+
+        <div class="section-label">Cookies</div>
+        <div class="input-group">
+            <input type="text" id="cookieName" placeholder="Name" value="nia_cookie">
+            <input type="text" id="cookieValue" placeholder="Value" value="test_value_123">
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="cookieSet()">Set Cookie</button>
+            <button class="btn" onclick="cookieRead()">Read Cookie</button>
+            <button class="btn btn-red" onclick="cookieDelete()">Delete Cookie</button>
+            <button class="btn" onclick="cookieListAll()">List All</button>
+            <button class="btn btn-red" onclick="cookieClearAll()">Clear All</button>
+        </div>
+
+        <div class="output-label">Storage Output</div>
+        <div class="output" id="storageOutput"><span class="muted">Interact with storage to see results...</span></div>
+    </div>
+</div>
+
+<!-- ====================== 4. DOM MANIPULATION ====================== -->
+<div class="card" id="dom">
+    <div class="card-header">
+        <div class="icon" style="background:rgba(251,146,60,0.15);color:var(--orange);">&#9830;</div>
+        <div>
+            <h2>DOM Manipulation</h2>
+            <p>Interactive elements for script targeting</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="section-label">Counter</div>
+        <div class="counter-display" id="counterValue">0</div>
+        <div class="btn-row" style="justify-content:center;">
+            <button class="btn btn-red" onclick="changeCounter(-10)">-10</button>
+            <button class="btn" onclick="changeCounter(-1)">-1</button>
+            <button class="btn btn-accent" onclick="resetCounter()">Reset</button>
+            <button class="btn" onclick="changeCounter(1)">+1</button>
+            <button class="btn btn-green" onclick="changeCounter(10)">+10</button>
+        </div>
+
+        <div class="section-label">Color Changer</div>
+        <div class="color-box" id="colorBox" style="background:#4a90e2;"></div>
+        <div class="btn-row">
+            <button class="btn" onclick="setColor('#4a90e2')" style="color:var(--accent);">Blue</button>
+            <button class="btn" onclick="setColor('#34d399')" style="color:var(--green);">Green</button>
+            <button class="btn" onclick="setColor('#f87171')" style="color:var(--red);">Red</button>
+            <button class="btn" onclick="setColor('#fbbf24')" style="color:var(--yellow);">Yellow</button>
+            <button class="btn" onclick="setColor('#a78bfa')" style="color:var(--purple);">Purple</button>
+            <button class="btn btn-accent" onclick="setRandomColor()">Random</button>
+        </div>
+
+        <div class="section-label">Text Editor</div>
+        <textarea class="editable-area" id="editableText" placeholder="Type anything here...">NIABrowser is a powerful developer browser built with React Native.</textarea>
+        <div class="btn-row" style="margin-top:0.5rem;">
+            <button class="btn" onclick="textToUpper()">UPPERCASE</button>
+            <button class="btn" onclick="textToLower()">lowercase</button>
+            <button class="btn" onclick="textReverse()">Reverse</button>
+            <button class="btn" onclick="textWordCount()">Word Count</button>
+            <button class="btn btn-red" onclick="textClear()">Clear</button>
+        </div>
+
+        <div class="section-label">Element Visibility</div>
+        <div class="toggle-target" id="toggleTarget">
+            This element can be shown or hidden. Use it to test visibility manipulation.
+            <br><strong>Element ID: #toggleTarget</strong>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="showElement()">Show</button>
+            <button class="btn btn-red" onclick="hideElement()">Hide</button>
+            <button class="btn btn-accent" onclick="toggleElement()">Toggle</button>
+            <button class="btn" onclick="fadeElement()">Fade Toggle</button>
+        </div>
+
+        <div class="output-label">DOM Output</div>
+        <div class="output" id="domOutput"><span class="muted">DOM operations will be logged here...</span></div>
+    </div>
+</div>
+
+<!-- ====================== 5. PERFORMANCE TESTING ====================== -->
+<div class="card" id="performance">
+    <div class="card-header">
+        <div class="icon" style="background:rgba(251,191,36,0.15);color:var(--yellow);">&#9202;</div>
+        <div>
+            <h2>Performance Testing</h2>
+            <p>Heavy operations and timing benchmarks</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="section-label">DOM Operations</div>
+        <div class="btn-row">
+            <button class="btn" onclick="perfCreateElements(100)">Create 100</button>
+            <button class="btn btn-yellow" onclick="perfCreateElements(1000)">Create 1,000</button>
+            <button class="btn btn-red" onclick="perfCreateElements(5000)">Create 5,000</button>
+            <button class="btn" onclick="perfClearElements()">Clear</button>
+        </div>
+        <div id="perfContainer" style="max-height:80px;overflow:hidden;margin-bottom:0.75rem;"></div>
+
+        <div class="section-label">Image Loading</div>
+        <div class="btn-row">
+            <button class="btn btn-accent" onclick="perfLoadImages()">Load 8 Images</button>
+            <button class="btn" onclick="perfClearImages()">Clear</button>
+        </div>
+        <div class="image-grid" id="imageGrid"></div>
+
+        <div class="section-label">Timers</div>
+        <div class="btn-row">
+            <button class="btn btn-green" onclick="perfStartTimer()">Start Timer</button>
+            <button class="btn btn-red" onclick="perfStopTimer()">Stop Timer</button>
+            <button class="btn" onclick="perfSetTimeout()">setTimeout 3s</button>
+            <button class="btn" onclick="perfSetInterval()">setInterval 500ms</button>
+            <button class="btn btn-red" onclick="perfClearIntervals()">Clear All Timers</button>
+        </div>
+
+        <div class="section-label">Computation</div>
+        <div class="btn-row">
+            <button class="btn" onclick="perfCompute('fib',30)">Fibonacci(30)</button>
+            <button class="btn btn-yellow" onclick="perfCompute('fib',40)">Fibonacci(40)</button>
+            <button class="btn" onclick="perfCompute('sort',100000)">Sort 100K</button>
+            <button class="btn" onclick="perfCompute('json',1000)">JSON x1000</button>
+        </div>
+
+        <div style="margin-top:0.75rem;">
+            <div class="perf-bar-wrap">
+                <div class="perf-bar-label"><span>DOM Operations</span><span id="perfDomTime">-</span></div>
+                <div class="perf-bar-track"><div class="perf-bar-fill" id="perfDomBar" style="background:var(--green);"></div></div>
+            </div>
+            <div class="perf-bar-wrap">
+                <div class="perf-bar-label"><span>Image Loading</span><span id="perfImgTime">-</span></div>
+                <div class="perf-bar-track"><div class="perf-bar-fill" id="perfImgBar" style="background:var(--accent);"></div></div>
+            </div>
+            <div class="perf-bar-wrap">
+                <div class="perf-bar-label"><span>Computation</span><span id="perfCompTime">-</span></div>
+                <div class="perf-bar-track"><div class="perf-bar-fill" id="perfCompBar" style="background:var(--purple);"></div></div>
+            </div>
+        </div>
+
+        <div class="output-label">Performance Output</div>
+        <div class="output" id="perfOutput"><span class="muted">Run performance tests to see results...</span></div>
+    </div>
+</div>
+
+<!-- ====================== 6. SCRIPT INJECTION TARGETS ====================== -->
+<div class="card full-width" id="injection">
+    <div class="card-header">
+        <div class="icon" style="background:rgba(167,139,250,0.15);color:var(--purple);">&#9881;</div>
+        <div>
+            <h2>Script Injection Targets</h2>
+            <p>Elements designed to be modified by user scripts</p>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="section-label">Data Table <span style="color:var(--text-muted);font-weight:400;">#injectTable</span></div>
+        <div style="overflow-x:auto;">
+        <table class="data-table" id="injectTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Feature</th>
+                    <th>Status</th>
+                    <th>Version</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr data-id="1"><td>1</td><td>Network Monitor</td><td><span class="tag tag-active">Active</span></td><td>2.1.0</td><td>High</td></tr>
+                <tr data-id="2"><td>2</td><td>Script Manager</td><td><span class="tag tag-active">Active</span></td><td>2.0.0</td><td>High</td></tr>
+                <tr data-id="3"><td>3</td><td>AI Assistant</td><td><span class="tag tag-beta">Beta</span></td><td>0.9.0</td><td>Medium</td></tr>
+                <tr data-id="4"><td>4</td><td>Tab Manager</td><td><span class="tag tag-active">Active</span></td><td>1.5.0</td><td>Medium</td></tr>
+                <tr data-id="5"><td>5</td><td>Theme Engine</td><td><span class="tag tag-new">New</span></td><td>1.0.0</td><td>Low</td></tr>
+                <tr data-id="6"><td>6</td><td>Cookie Viewer</td><td><span class="tag tag-active">Active</span></td><td>1.2.0</td><td>Low</td></tr>
+                <tr data-id="7"><td>7</td><td>Legacy Console</td><td><span class="tag tag-deprecated">Deprecated</span></td><td>0.3.0</td><td>None</td></tr>
+                <tr data-id="8"><td>8</td><td>Performance Profiler</td><td><span class="tag tag-beta">Beta</span></td><td>0.5.0</td><td>High</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="inject-columns">
+            <div>
+                <div class="section-label">Link List <span style="color:var(--text-muted);font-weight:400;">#injectLinks</span></div>
+                <ul class="link-list" id="injectLinks">
+                    <li><span class="status-dot green"></span><a href="https://github.com/nicbarker/clay" data-category="library">Clay - UI Layout Library</a><span class="link-meta">library</span></li>
+                    <li><span class="status-dot green"></span><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API" data-category="docs">Fetch API Docs</a><span class="link-meta">docs</span></li>
+                    <li><span class="status-dot yellow"></span><a href="https://httpbin.org" data-category="tool">httpbin.org</a><span class="link-meta">tool</span></li>
+                    <li><span class="status-dot green"></span><a href="https://jsonplaceholder.typicode.com" data-category="api">JSONPlaceholder API</a><span class="link-meta">api</span></li>
+                    <li><span class="status-dot green"></span><a href="https://reactnative.dev" data-category="docs">React Native Docs</a><span class="link-meta">docs</span></li>
+                    <li><span class="status-dot yellow"></span><a href="https://expo.dev" data-category="tool">Expo Platform</a><span class="link-meta">tool</span></li>
+                    <li><span class="status-dot red"></span><a href="#" data-category="internal">Internal Staging (down)</a><span class="link-meta">internal</span></li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="section-label">Editable Form <span style="color:var(--text-muted);font-weight:400;">#injectForm</span></div>
+                <form class="demo-form" id="injectForm" onsubmit="handleFormSubmit(event)">
+                    <div class="form-field">
+                        <label for="formName">Name</label>
+                        <input type="text" id="formName" name="name" value="Developer" placeholder="Your name">
+                    </div>
+                    <div class="form-field">
+                        <label for="formEmail">Email</label>
+                        <input type="email" id="formEmail" name="email" value="dev@niabrowser.com" placeholder="Email address">
+                    </div>
+                    <div class="form-field">
+                        <label for="formRole">Role</label>
+                        <select id="formRole" name="role">
+                            <option value="developer" selected>Developer</option>
+                            <option value="designer">Designer</option>
+                            <option value="tester">Tester</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="formNotes">Notes</label>
+                        <textarea id="formNotes" name="notes" rows="2" placeholder="Additional notes...">Testing NIABrowser script injection</textarea>
+                    </div>
+                    <div class="form-field">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="formAgree" name="agree" checked>
+                            <label for="formAgree" style="margin-bottom:0;">I agree to testing terms</label>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button type="submit" class="btn btn-accent">Submit</button>
+                        <button type="reset" class="btn">Reset</button>
+                        <button type="button" class="btn" onclick="readFormData()">Read Values</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="section-label" style="margin-top:1.5rem;">Hidden Content <span style="color:var(--text-muted);font-weight:400;">#hidden1 #hidden2 #hidden3</span></div>
+        <div class="btn-row">
+            <button class="btn btn-purple" onclick="revealHidden('hidden1')">Reveal Secret 1</button>
+            <button class="btn btn-purple" onclick="revealHidden('hidden2')">Reveal Secret 2</button>
+            <button class="btn btn-purple" onclick="revealHidden('hidden3')">Reveal Secret 3</button>
+            <button class="btn" onclick="hideAllHidden()">Hide All</button>
+        </div>
+        <div class="hidden-content" id="hidden1" data-secret="alpha"><strong>Secret 1:</strong> The API key is <code>NIA-DEMO-KEY-2024-ALPHA</code>. This data was hidden and revealed by script.</div>
+        <div class="hidden-content" id="hidden2" data-secret="beta"><strong>Secret 2:</strong> Feature flags: <code>{ "darkMode": true, "aiChat": true, "devTools": true, "experimental": false }</code></div>
+        <div class="hidden-content" id="hidden3" data-secret="gamma"><strong>Secret 3:</strong> Debug endpoint: <code>wss://debug.niabrowser.internal:9222/devtools/page/1</code></div>
+
+        <div class="section-label" style="margin-top:1.5rem;">Data Attributes Container <span style="color:var(--text-muted);font-weight:400;">#injectData</span></div>
+        <div id="injectData"
+             data-app="niabrowser"
+             data-version="2.1.0"
+             data-env="development"
+             data-user-id="demo-user-001"
+             data-session="abc123def456"
+             data-features="network,console,storage,scripts"
+             style="padding:0.75rem;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.78rem;font-family:monospace;color:var(--text-secondary);">
+            <div>data-app="niabrowser"</div>
+            <div>data-version="2.1.0"</div>
+            <div>data-env="development"</div>
+            <div>data-user-id="demo-user-001"</div>
+            <div>data-session="abc123def456"</div>
+            <div>data-features="network,console,storage,scripts"</div>
+        </div>
+
+        <div class="output-label" style="margin-top:0.75rem;">Injection Output</div>
+        <div class="output" id="injectionOutput"><span class="muted">Form submissions and script actions will appear here...</span></div>
+    </div>
+</div>
+
+</div><!-- /grid -->
+</main>
+
+<footer class="page-footer">
     NIABrowser Test Page &mdash; <a href="../index.html">Home</a> &mdash; <a href="https://github.com/zizwar/niabrowser">GitHub</a>
-  </div>
+</footer>
 
-  <script>
-    // Network Testing
-    async function testFetch(method) {
-      const out = document.getElementById('network-output');
-      const url = method === 'GET' ? 'https://jsonplaceholder.typicode.com/posts/1' :
-                  method === 'DELETE' ? 'https://jsonplaceholder.typicode.com/posts/1' :
-                  'https://jsonplaceholder.typicode.com/posts';
-      const opts = { method };
-      if (method === 'POST' || method === 'PUT') {
-        opts.headers = { 'Content-Type': 'application/json' };
-        opts.body = JSON.stringify({ title: 'Test', body: 'NIABrowser test', userId: 1 });
-      }
-      appendOutput('network-output', `${method} ${url}...`, 'info');
-      try {
-        const start = performance.now();
-        const res = await fetch(url, opts);
-        const data = await res.json();
-        const ms = (performance.now() - start).toFixed(0);
-        appendOutput('network-output', `${res.status} OK (${ms}ms): ${JSON.stringify(data).slice(0, 120)}...`, 'success');
-      } catch (e) {
-        appendOutput('network-output', `Error: ${e.message}`, 'error');
-      }
-    }
+<script>
+/* ================================================================
+   UTILITY
+   ================================================================ */
+function timestamp() {
+    return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+}
 
-    async function testMultiple() {
-      appendOutput('network-output', 'Sending 5 parallel requests...', 'info');
-      const urls = [
-        'https://jsonplaceholder.typicode.com/posts/1',
-        'https://jsonplaceholder.typicode.com/users/1',
-        'https://jsonplaceholder.typicode.com/comments?postId=1',
-        'https://jsonplaceholder.typicode.com/albums/1',
-        'https://jsonplaceholder.typicode.com/todos/1',
-      ];
-      const start = performance.now();
-      const results = await Promise.allSettled(urls.map(u => fetch(u).then(r => r.json())));
-      const ms = (performance.now() - start).toFixed(0);
-      appendOutput('network-output', `All 5 completed in ${ms}ms`, 'success');
+function appendOutput(targetId, message, className) {
+    var el = document.getElementById(targetId);
+    if (!el) return;
+    if (el.querySelector('.muted')) el.innerHTML = '';
+    var line = document.createElement('div');
+    line.className = className || 'log';
+    line.textContent = '[' + timestamp() + '] ' + message;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+}
+
+/* ================================================================
+   1. NETWORK
+   ================================================================ */
+function netRequest(method, url, body) {
+    var out = 'networkOutput';
+    appendOutput(out, method + ' ' + url, 'info');
+    var startTime = performance.now();
+
+    var opts = { method: method, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } };
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        opts.body = JSON.stringify(body);
     }
 
-    // Console Error
-    function triggerError() { undefined_function(); }
+    fetch(url, opts)
+        .then(function(res) {
+            var elapsed = (performance.now() - startTime).toFixed(1);
+            appendOutput(out, 'Status: ' + res.status + ' ' + res.statusText + ' (' + elapsed + 'ms)', res.ok ? 'success' : 'error');
+            return res.text();
+        })
+        .then(function(text) {
+            try {
+                var json = JSON.parse(text);
+                appendOutput(out, JSON.stringify(json, null, 2), 'log');
+            } catch (e) {
+                appendOutput(out, text.substring(0, 500), 'log');
+            }
+        })
+        .catch(function(err) {
+            appendOutput(out, 'Error (' + (performance.now() - startTime).toFixed(1) + 'ms): ' + err.message, 'error');
+        });
+}
 
-    // Storage
-    function setStorage() {
-      const items = { nia_test: 'hello', nia_count: '42', nia_config: JSON.stringify({theme:'dark',lang:'en'}), nia_timestamp: Date.now().toString() };
-      Object.entries(items).forEach(([k,v]) => localStorage.setItem(k, v));
-      appendOutput('storage-output', `Set ${Object.keys(items).length} localStorage items`, 'success');
+function customNetRequest() {
+    var method = document.getElementById('customMethod').value;
+    var url = document.getElementById('customUrl').value.trim();
+    var bodyStr = document.getElementById('customBody').value.trim();
+    var body = null;
+    if (!url) { appendOutput('networkOutput', 'Please enter a URL', 'warn'); return; }
+    if (bodyStr) {
+        try { body = JSON.parse(bodyStr); }
+        catch (e) { appendOutput('networkOutput', 'Invalid JSON body: ' + e.message, 'error'); return; }
     }
-    function getStorage() {
-      const items = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        items.push(`${key} = ${localStorage.getItem(key)}`);
-      }
-      appendOutput('storage-output', items.length ? items.join('\n') : 'localStorage is empty', 'info');
-    }
-    function setCookie() {
-      document.cookie = 'nia_test=hello;max-age=3600;path=/';
-      document.cookie = 'nia_session=abc123;max-age=3600;path=/';
-      document.cookie = 'nia_pref=dark;max-age=3600;path=/';
-      appendOutput('storage-output', 'Set 3 test cookies', 'success');
-    }
-    function readCookies() {
-      appendOutput('storage-output', document.cookie || '(no cookies)', 'info');
-    }
-    function clearCookies() {
-      document.cookie.split(';').forEach(c => {
-        document.cookie = c.trim().split('=')[0] + '=;max-age=0;path=/';
-      });
-      appendOutput('storage-output', 'Cleared all cookies', 'success');
-    }
+    netRequest(method, url, body);
+}
 
-    // DOM
-    function changeCounter(delta) {
-      const el = document.getElementById('counter-display');
-      el.textContent = parseInt(el.textContent) + delta;
+/* ================================================================
+   2. CONSOLE
+   ================================================================ */
+function testConsole(type) {
+    var out = 'consoleOutput';
+    var ts = timestamp();
+    switch (type) {
+        case 'log':
+            console.log('[NIABrowser Test]', 'This is a console.log message', { demo: true, time: ts });
+            appendOutput(out, 'console.log - message with object sent', 'log');
+            break;
+        case 'warn':
+            console.warn('[NIABrowser Test]', 'This is a warning message');
+            appendOutput(out, 'console.warn - warning message sent', 'warn');
+            break;
+        case 'error':
+            console.error('[NIABrowser Test]', 'This is an error message', new Error('Demo error'));
+            appendOutput(out, 'console.error - error message sent', 'error');
+            break;
+        case 'info':
+            console.info('[NIABrowser Test]', 'Info message', { browser: 'NIABrowser', version: '2.1.0' });
+            appendOutput(out, 'console.info - info message sent', 'info');
+            break;
+        case 'table':
+            console.table([{ feature: 'Network Monitor', status: 'Active' }, { feature: 'Script Manager', status: 'Active' }, { feature: 'AI Assistant', status: 'Beta' }]);
+            appendOutput(out, 'console.table - table data sent (check DevTools)', 'log');
+            break;
+        case 'group':
+            console.group('NIABrowser Feature Group');
+            console.log('Feature 1: Network Monitor');
+            console.log('Feature 2: Script Manager');
+            console.warn('Feature 3: AI (Beta)');
+            console.groupEnd();
+            appendOutput(out, 'console.group - grouped messages sent', 'log');
+            break;
+        case 'time':
+            console.time('NIABrowser Timer');
+            for (var i = 0; i < 100000; i++) { /* busy work */ }
+            console.timeEnd('NIABrowser Timer');
+            appendOutput(out, 'console.time / console.timeEnd - timer completed', 'log');
+            break;
     }
-    function setColor(c) {
-      const box = document.getElementById('color-box');
-      box.style.background = c;
-      box.textContent = c;
-    }
+}
 
-    // Performance
-    function heavyDOM() {
-      const start = performance.now();
-      const container = document.createElement('div');
-      for (let i = 0; i < 1000; i++) {
-        const div = document.createElement('div');
-        div.textContent = `Item ${i}`;
-        div.style.cssText = 'padding:2px;font-size:10px;color:#8E8EA0;';
-        container.appendChild(div);
-      }
-      document.body.appendChild(container);
-      setTimeout(() => container.remove(), 1000);
-      appendOutput('perf-output', `Created 1000 DOM elements in ${(performance.now()-start).toFixed(1)}ms`, 'success');
-    }
-    function heavyCompute() {
-      const start = performance.now();
-      let sum = 0;
-      for (let i = 0; i < 10000000; i++) sum += Math.sqrt(i);
-      appendOutput('perf-output', `Computed 10M sqrt ops in ${(performance.now()-start).toFixed(1)}ms (sum=${sum.toFixed(0)})`, 'success');
-    }
-    function showPerf() {
-      const perf = performance.getEntriesByType('navigation')[0];
-      const el = document.getElementById('perf-metrics');
-      el.innerHTML = `
-        <span class="metric">DOM Load<span class="val">${perf ? (perf.domContentLoadedEventEnd - perf.startTime).toFixed(0) : '?'}ms</span></span>
-        <span class="metric">Full Load<span class="val">${perf ? (perf.loadEventEnd - perf.startTime).toFixed(0) : '?'}ms</span></span>
-        <span class="metric">DOM Nodes<span class="val">${document.getElementsByTagName('*').length}</span></span>
-        <span class="metric">Scripts<span class="val">${document.scripts.length}</span></span>
-      `;
-    }
+function triggerUncaughtError() {
+    appendOutput('consoleOutput', 'Throwing uncaught error...', 'error');
+    setTimeout(function() { throw new Error('NIABrowser uncaught error test - ' + timestamp()); }, 100);
+}
 
-    // Helper
-    function appendOutput(id, text, cls) {
-      const el = document.getElementById(id);
-      const line = document.createElement('div');
-      line.className = cls || '';
-      line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
-      el.appendChild(line);
-      el.scrollTop = el.scrollHeight;
+function triggerTypeError() {
+    appendOutput('consoleOutput', 'Triggering TypeError...', 'error');
+    setTimeout(function() { var obj = null; obj.nonExistentMethod(); }, 100);
+}
+
+function triggerReferenceError() {
+    appendOutput('consoleOutput', 'Triggering ReferenceError...', 'error');
+    setTimeout(function() { undeclaredVariable123.doSomething(); }, 100);
+}
+
+function triggerPromiseRejection() {
+    appendOutput('consoleOutput', 'Triggering unhandled Promise rejection...', 'warn');
+    new Promise(function(_, reject) { reject(new Error('NIABrowser promise rejection test')); });
+}
+
+function floodConsole(count) {
+    appendOutput('consoleOutput', 'Flooding console with ' + count + ' messages...', 'info');
+    var types = ['log', 'info', 'warn', 'error'];
+    for (var i = 0; i < count; i++) {
+        console[types[i % types.length]]('[NIABrowser Flood ' + (i + 1) + '/' + count + ']', 'Message #' + (i + 1));
     }
-  </script>
+    appendOutput('consoleOutput', 'Flood complete: ' + count + ' messages sent', 'success');
+}
+
+/* ================================================================
+   3. STORAGE
+   ================================================================ */
+function lsSet() {
+    var k = document.getElementById('lsKey').value, v = document.getElementById('lsValue').value;
+    try { localStorage.setItem(k, v); appendOutput('storageOutput', 'localStorage.setItem("' + k + '", "' + v + '")', 'success'); }
+    catch (e) { appendOutput('storageOutput', 'Error: ' + e.message, 'error'); }
+}
+function lsGet() {
+    var k = document.getElementById('lsKey').value, v = localStorage.getItem(k);
+    appendOutput('storageOutput', 'localStorage.getItem("' + k + '") = ' + JSON.stringify(v), v !== null ? 'info' : 'warn');
+}
+function lsRemove() {
+    var k = document.getElementById('lsKey').value;
+    localStorage.removeItem(k);
+    appendOutput('storageOutput', 'localStorage.removeItem("' + k + '")', 'warn');
+}
+function lsClear() { localStorage.clear(); appendOutput('storageOutput', 'localStorage.clear() - all items removed', 'error'); }
+function lsList() {
+    var items = [];
+    for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); items.push(k + ' = ' + JSON.stringify(localStorage.getItem(k))); }
+    appendOutput('storageOutput', items.length ? 'localStorage (' + items.length + ' items):\n  ' + items.join('\n  ') : 'localStorage is empty', items.length ? 'info' : 'muted');
+}
+
+function ssSet() {
+    var k = document.getElementById('ssKey').value, v = document.getElementById('ssValue').value;
+    try { sessionStorage.setItem(k, v); appendOutput('storageOutput', 'sessionStorage.setItem("' + k + '", "' + v + '")', 'success'); }
+    catch (e) { appendOutput('storageOutput', 'Error: ' + e.message, 'error'); }
+}
+function ssGet() {
+    var k = document.getElementById('ssKey').value, v = sessionStorage.getItem(k);
+    appendOutput('storageOutput', 'sessionStorage.getItem("' + k + '") = ' + JSON.stringify(v), v !== null ? 'info' : 'warn');
+}
+function ssRemove() {
+    var k = document.getElementById('ssKey').value;
+    sessionStorage.removeItem(k);
+    appendOutput('storageOutput', 'sessionStorage.removeItem("' + k + '")', 'warn');
+}
+function ssClear() { sessionStorage.clear(); appendOutput('storageOutput', 'sessionStorage.clear() - all items removed', 'error'); }
+function ssList() {
+    var items = [];
+    for (var i = 0; i < sessionStorage.length; i++) { var k = sessionStorage.key(i); items.push(k + ' = ' + JSON.stringify(sessionStorage.getItem(k))); }
+    appendOutput('storageOutput', items.length ? 'sessionStorage (' + items.length + ' items):\n  ' + items.join('\n  ') : 'sessionStorage is empty', items.length ? 'info' : 'muted');
+}
+
+function cookieSet() {
+    var name = document.getElementById('cookieName').value, value = document.getElementById('cookieValue').value;
+    var expires = new Date(Date.now() + 86400000).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+    appendOutput('storageOutput', 'Cookie set: ' + name + '=' + value + ' (expires in 24h)', 'success');
+}
+function cookieRead() {
+    var name = document.getElementById('cookieName').value, cookies = document.cookie.split(';'), found = false;
+    for (var i = 0; i < cookies.length; i++) {
+        var c = cookies[i].trim();
+        if (c.indexOf(name + '=') === 0) { appendOutput('storageOutput', 'Cookie found: ' + c, 'info'); found = true; break; }
+    }
+    if (!found) appendOutput('storageOutput', 'Cookie "' + name + '" not found', 'warn');
+}
+function cookieDelete() {
+    var name = document.getElementById('cookieName').value;
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    appendOutput('storageOutput', 'Cookie deleted: ' + name, 'warn');
+}
+function cookieListAll() {
+    var raw = document.cookie;
+    if (!raw) { appendOutput('storageOutput', 'No cookies set', 'muted'); return; }
+    var pairs = raw.split(';').map(function(c) { return c.trim(); });
+    appendOutput('storageOutput', 'Cookies (' + pairs.length + '):\n  ' + pairs.join('\n  '), 'info');
+}
+function cookieClearAll() {
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length; i++) {
+        var name = cookies[i].split('=')[0].trim();
+        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+    appendOutput('storageOutput', 'All cookies cleared (' + cookies.length + ' removed)', 'error');
+}
+
+/* ================================================================
+   4. DOM MANIPULATION
+   ================================================================ */
+var counterVal = 0;
+
+function changeCounter(delta) {
+    counterVal += delta;
+    document.getElementById('counterValue').textContent = counterVal;
+    appendOutput('domOutput', 'Counter changed by ' + (delta > 0 ? '+' : '') + delta + ' = ' + counterVal, 'log');
+}
+function resetCounter() {
+    counterVal = 0;
+    document.getElementById('counterValue').textContent = '0';
+    appendOutput('domOutput', 'Counter reset to 0', 'info');
+}
+function setColor(color) {
+    document.getElementById('colorBox').style.backgroundColor = color;
+    appendOutput('domOutput', 'Color changed to ' + color, 'log');
+}
+function setRandomColor() {
+    var color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    document.getElementById('colorBox').style.backgroundColor = color;
+    appendOutput('domOutput', 'Random color: ' + color, 'info');
+}
+function textToUpper() { var el = document.getElementById('editableText'); el.value = el.value.toUpperCase(); appendOutput('domOutput', 'Text converted to UPPERCASE', 'log'); }
+function textToLower() { var el = document.getElementById('editableText'); el.value = el.value.toLowerCase(); appendOutput('domOutput', 'Text converted to lowercase', 'log'); }
+function textReverse() { var el = document.getElementById('editableText'); el.value = el.value.split('').reverse().join(''); appendOutput('domOutput', 'Text reversed', 'log'); }
+function textWordCount() {
+    var el = document.getElementById('editableText');
+    var words = el.value.trim().split(/\s+/).filter(function(w) { return w.length > 0; });
+    appendOutput('domOutput', 'Words: ' + words.length + ', Characters: ' + el.value.length, 'info');
+}
+function textClear() { document.getElementById('editableText').value = ''; appendOutput('domOutput', 'Text cleared', 'warn'); }
+
+function showElement() {
+    var el = document.getElementById('toggleTarget');
+    el.classList.remove('hidden');
+    el.style.opacity = '1';
+    appendOutput('domOutput', '#toggleTarget shown', 'success');
+}
+function hideElement() { document.getElementById('toggleTarget').classList.add('hidden'); appendOutput('domOutput', '#toggleTarget hidden', 'warn'); }
+function toggleElement() {
+    var el = document.getElementById('toggleTarget');
+    el.classList.toggle('hidden');
+    appendOutput('domOutput', '#toggleTarget toggled ' + (!el.classList.contains('hidden') ? 'visible' : 'hidden'), !el.classList.contains('hidden') ? 'success' : 'warn');
+}
+function fadeElement() {
+    var el = document.getElementById('toggleTarget');
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        el.style.opacity = '0';
+        requestAnimationFrame(function() { el.style.transition = 'opacity 0.4s ease'; el.style.opacity = '1'; });
+        appendOutput('domOutput', '#toggleTarget faded in', 'success');
+    } else {
+        el.style.transition = 'opacity 0.4s ease';
+        el.style.opacity = '0';
+        setTimeout(function() { el.classList.add('hidden'); el.style.opacity = '1'; el.style.transition = ''; }, 400);
+        appendOutput('domOutput', '#toggleTarget faded out', 'warn');
+    }
+}
+
+/* ================================================================
+   5. PERFORMANCE
+   ================================================================ */
+var perfTimerStart = null;
+var perfIntervals = [];
+
+function perfCreateElements(count) {
+    var container = document.getElementById('perfContainer');
+    container.innerHTML = '';
+    var startTime = performance.now();
+    var fragment = document.createDocumentFragment();
+    for (var i = 0; i < count; i++) {
+        var el = document.createElement('span');
+        el.style.cssText = 'display:inline-block;width:6px;height:6px;margin:1px;border-radius:1px;background:hsl(' + ((i * 3.6) % 360) + ',70%,60%)';
+        fragment.appendChild(el);
+    }
+    container.appendChild(fragment);
+    var elapsed = (performance.now() - startTime).toFixed(2);
+    appendOutput('perfOutput', 'Created ' + count + ' DOM elements in ' + elapsed + 'ms', 'success');
+    document.getElementById('perfDomTime').textContent = elapsed + 'ms';
+    document.getElementById('perfDomBar').style.width = Math.min(100, (parseFloat(elapsed) / 200) * 100) + '%';
+}
+
+function perfClearElements() { document.getElementById('perfContainer').innerHTML = ''; appendOutput('perfOutput', 'DOM elements cleared', 'log'); }
+
+function perfLoadImages() {
+    var grid = document.getElementById('imageGrid');
+    grid.innerHTML = '';
+    var startTime = performance.now();
+    var loaded = 0, total = 8;
+    var imageIds = [1, 10, 20, 30, 40, 50, 60, 70];
+    appendOutput('perfOutput', 'Loading ' + total + ' images from picsum.photos...', 'info');
+
+    imageIds.forEach(function(id) {
+        var slot = document.createElement('div');
+        slot.className = 'img-slot';
+        slot.textContent = 'Loading...';
+        grid.appendChild(slot);
+
+        var img = new Image();
+        img.onload = function() {
+            slot.textContent = '';
+            slot.appendChild(img);
+            slot.classList.add('loaded');
+            loaded++;
+            if (loaded === total) {
+                var elapsed = (performance.now() - startTime).toFixed(1);
+                appendOutput('perfOutput', 'All ' + total + ' images loaded in ' + elapsed + 'ms', 'success');
+                document.getElementById('perfImgTime').textContent = elapsed + 'ms';
+                document.getElementById('perfImgBar').style.width = Math.min(100, (parseFloat(elapsed) / 5000) * 100) + '%';
+            }
+        };
+        img.onerror = function() { slot.textContent = 'Error'; slot.classList.add('error'); loaded++; };
+        img.src = 'https://picsum.photos/id/' + id + '/200/200';
+    });
+}
+
+function perfClearImages() { document.getElementById('imageGrid').innerHTML = ''; appendOutput('perfOutput', 'Images cleared', 'log'); }
+
+function perfStartTimer() { perfTimerStart = performance.now(); appendOutput('perfOutput', 'Timer started', 'info'); }
+function perfStopTimer() {
+    if (perfTimerStart === null) { appendOutput('perfOutput', 'No timer running', 'warn'); return; }
+    appendOutput('perfOutput', 'Timer stopped: ' + (performance.now() - perfTimerStart).toFixed(3) + 'ms', 'success');
+    perfTimerStart = null;
+}
+
+function perfSetTimeout() {
+    appendOutput('perfOutput', 'setTimeout set for 3 seconds...', 'info');
+    var id = setTimeout(function() { appendOutput('perfOutput', 'setTimeout fired after 3s (id: ' + id + ')', 'success'); }, 3000);
+    perfIntervals.push({ type: 'timeout', id: id });
+}
+
+function perfSetInterval() {
+    var count = 0;
+    appendOutput('perfOutput', 'setInterval started (500ms)...', 'info');
+    var id = setInterval(function() {
+        count++;
+        appendOutput('perfOutput', 'setInterval tick #' + count + ' (id: ' + id + ')', 'log');
+        if (count >= 10) { clearInterval(id); appendOutput('perfOutput', 'setInterval auto-stopped after 10 ticks', 'warn'); }
+    }, 500);
+    perfIntervals.push({ type: 'interval', id: id });
+}
+
+function perfClearIntervals() {
+    perfIntervals.forEach(function(t) { if (t.type === 'interval') clearInterval(t.id); else clearTimeout(t.id); });
+    appendOutput('perfOutput', 'Cleared ' + perfIntervals.length + ' timer(s)', 'warn');
+    perfIntervals = [];
+}
+
+function perfCompute(type, n) {
+    var startTime = performance.now();
+    var result;
+    switch (type) {
+        case 'fib':
+            appendOutput('perfOutput', 'Computing Fibonacci(' + n + ')...', 'info');
+            result = fib(n);
+            break;
+        case 'sort':
+            appendOutput('perfOutput', 'Sorting ' + n.toLocaleString() + ' random items...', 'info');
+            var arr = [];
+            for (var i = 0; i < n; i++) arr.push(Math.random());
+            arr.sort(function(a, b) { return a - b; });
+            result = 'sorted ' + n + ' items';
+            break;
+        case 'json':
+            appendOutput('perfOutput', 'Parsing JSON x' + n + '...', 'info');
+            var data = JSON.stringify({ users: [{ name: 'Alice', age: 30 }, { name: 'Bob', age: 25 }], meta: { total: 2, page: 1 } });
+            for (var j = 0; j < n; j++) JSON.parse(data);
+            result = 'parsed ' + n + ' times';
+            break;
+    }
+    var elapsed = (performance.now() - startTime).toFixed(2);
+    appendOutput('perfOutput', 'Completed in ' + elapsed + 'ms - Result: ' + result, 'success');
+    document.getElementById('perfCompTime').textContent = elapsed + 'ms';
+    document.getElementById('perfCompBar').style.width = Math.min(100, (parseFloat(elapsed) / 3000) * 100) + '%';
+}
+
+function fib(n) { if (n <= 1) return n; return fib(n - 1) + fib(n - 2); }
+
+/* ================================================================
+   6. INJECTION TARGETS
+   ================================================================ */
+function handleFormSubmit(e) {
+    e.preventDefault();
+    var data = new FormData(document.getElementById('injectForm'));
+    var obj = {};
+    data.forEach(function(val, key) { obj[key] = val; });
+    obj.agree = document.getElementById('formAgree').checked;
+    appendOutput('injectionOutput', 'Form submitted: ' + JSON.stringify(obj, null, 2), 'success');
+}
+
+function readFormData() {
+    var obj = {
+        name: document.getElementById('formName').value,
+        email: document.getElementById('formEmail').value,
+        role: document.getElementById('formRole').value,
+        notes: document.getElementById('formNotes').value,
+        agree: document.getElementById('formAgree').checked
+    };
+    appendOutput('injectionOutput', 'Form values: ' + JSON.stringify(obj, null, 2), 'info');
+}
+
+function revealHidden(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.classList.add('revealed');
+        appendOutput('injectionOutput', 'Revealed #' + id + ' (data-secret="' + el.getAttribute('data-secret') + '")', 'success');
+    }
+}
+
+function hideAllHidden() {
+    ['hidden1', 'hidden2', 'hidden3'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('revealed');
+    });
+    appendOutput('injectionOutput', 'All hidden content concealed', 'warn');
+}
+
+/* ================================================================
+   NAV SMOOTH SCROLL
+   ================================================================ */
+document.querySelectorAll('.nav-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var target = document.getElementById(this.getAttribute('href').substring(1));
+        if (target) {
+            window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
+        }
+    });
+});
+
+/* ================================================================
+   PAGE LOAD
+   ================================================================ */
+window.addEventListener('load', function() {
+    console.log('%c[NIABrowser Test Page]%c Loaded successfully', 'color:#4a90e2;font-weight:bold;', 'color:inherit;');
+    console.log('Available sections: Network, Console, Storage, DOM, Performance, Script Injection');
+    console.log('Global helper: window.NIATestPage');
+
+    window.NIATestPage = {
+        version: '1.0.0',
+        sections: ['network', 'console', 'storage', 'dom', 'performance', 'injection'],
+        appendOutput: appendOutput,
+        getCounter: function() { return counterVal; },
+        setCounter: function(v) { counterVal = v; document.getElementById('counterValue').textContent = v; },
+        getFormData: function() {
+            return {
+                name: document.getElementById('formName').value,
+                email: document.getElementById('formEmail').value,
+                role: document.getElementById('formRole').value,
+                notes: document.getElementById('formNotes').value,
+                agree: document.getElementById('formAgree').checked
+            };
+        },
+        getTableData: function() {
+            var rows = [];
+            document.querySelectorAll('#injectTable tbody tr').forEach(function(tr) {
+                var cells = tr.querySelectorAll('td');
+                rows.push({ id: cells[0].textContent, feature: cells[1].textContent, status: cells[2].textContent.trim(), version: cells[3].textContent, priority: cells[4].textContent });
+            });
+            return rows;
+        }
+    };
+});
+</script>
 </body>
 </html>
