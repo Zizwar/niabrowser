@@ -36,6 +36,13 @@ const BaseModal = ({
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
 
+  // Get safe area insets at component top level to avoid inline component re-creation
+  let insets = { top: 0, bottom: 0, left: 0, right: 0 };
+  try { insets = useSafeAreaInsets(); } catch {}
+  const safeAreaPadding = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 24)
+    : insets.top;
+
   // Handle back button on Android
   React.useEffect(() => {
     if (!visible) return;
@@ -51,37 +58,6 @@ const BaseModal = ({
     return () => backHandler.remove();
   }, [visible, onClose]);
 
-  // Get safe area insets for proper padding
-  const SafeContent = ({ children: safeChildren }) => {
-    try {
-      const insets = useSafeAreaInsets();
-      return (
-        <View style={[
-          styles.fullScreenContainer,
-          {
-            backgroundColor,
-            paddingTop: Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 24) : insets.top,
-          }
-        ]}>
-          {safeChildren}
-        </View>
-      );
-    } catch {
-      // Fallback if SafeAreaContext not available
-      return (
-        <View style={[
-          styles.fullScreenContainer,
-          {
-            backgroundColor,
-            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0,
-          }
-        ]}>
-          {safeChildren}
-        </View>
-      );
-    }
-  };
-
   return (
     <Modal
       visible={visible}
@@ -91,7 +67,7 @@ const BaseModal = ({
       statusBarTranslucent={Platform.OS === 'android'}
     >
       {fullScreen ? (
-        <SafeContent>
+        <View style={[styles.fullScreenContainer, { backgroundColor, paddingTop: safeAreaPadding }]}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor="transparent"
@@ -119,7 +95,7 @@ const BaseModal = ({
           <View style={[styles.content, { backgroundColor }, contentStyle]}>
             {children}
           </View>
-        </SafeContent>
+        </View>
       ) : (
         <View style={styles.overlay}>
           <TouchableOpacity

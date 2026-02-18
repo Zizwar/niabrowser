@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIABrowser - AI-Powered Developer Browser</title>
+    <meta name="description" content="NIABrowser is an AI-powered developer browser built with React Native/Expo. Chat with AI, manage scripts, use DevTools, and more.">
+    <meta name="keywords" content="developer browser, AI browser, devtools, script manager, API client, React Native, Expo">
+    <meta name="author" content="NIAScript">
+    <meta property="og:title" content="NIABrowser - AI-Powered Developer Browser">
+    <meta property="og:description" content="The developer browser with built-in AI chat, script manager, DevTools, and API client. Free Gemini AI included.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://browser.niascript.com">
+    <link rel="icon" href="../assets/favicon.png" type="image/png">
+    <style>
+        /* ========== RESET & BASE ========== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --blue: #007AFF;
+            --blue-dark: #0055CC;
+            --blue-light: #4DA3FF;
+            --purple: #5856D6;
+            --green: #34C759;
+            --orange: #FF9500;
+            --red: #FF3B30;
+            --cyan: #00C7BE;
+            --bg-primary: #0A0A0F;
+            --bg-secondary: #12121A;
+            --bg-card: #1A1A25;
+            --bg-card-hover: #22222F;
+            --border: #2A2A3A;
+            --text-primary: #F5F5F7;
+            --text-secondary: #A1A1AA;
+            --text-muted: #71717A;
+            --glow-blue: rgba(0, 122, 255, 0.15);
+            --glow-purple: rgba(88, 86, 214, 0.15);
+            --radius: 12px;
+            --radius-lg: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: var(--blue);
+            text-decoration: none;
+            transition: color var(--transition);
+        }
+        a:hover {
+            color: var(--blue-light);
+        }
+
+        /* ========== UTILITY ========== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section {
+            padding: 100px 0;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 640px;
+            line-height: 1.7;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ========== ANIMATED BACKGROUND ========== */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .bg-glow--blue {
+            background: var(--glow-blue);
+            top: -200px;
+            right: -100px;
+        }
+        .bg-glow--purple {
+            background: var(--glow-purple);
+            bottom: -200px;
+            left: -100px;
+        }
+
+        /* ========== NAV ========== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 0;
+            transition: background var(--transition), box-shadow var(--transition);
+        }
+        .nav.scrolled {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 1px 0 var(--border);
+        }
+        .nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .nav-brand:hover {
+            color: var(--text-primary);
+        }
+        .nav-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            font-weight: 700;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color var(--transition);
+        }
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+        .nav-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: var(--blue);
+            color: #fff !important;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background var(--transition), transform var(--transition);
+        }
+        .nav-cta:hover {
+            background: var(--blue-dark);
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* ========== HERO ========== */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+            position: relative;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px 6px 8px;
+            background: rgba(0, 122, 255, 0.1);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: 100px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--blue-light);
+            margin-bottom: 32px;
+        }
+        .hero-badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse-dot 2s ease infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .hero-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 28px;
+            margin: 0 auto 32px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 122, 255, 0.25);
+        }
+        .hero-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 7vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2.5vw, 1.375rem);
+            color: var(--text-secondary);
+            max-width: 620px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(0, 122, 255, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 122, 255, 0.4);
+            color: #fff;
+        }
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+            color: var(--text-primary);
+        }
+        .btn svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        .hero-stats {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+        .hero-stat {
+            text-align: center;
+        }
+        .hero-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .hero-stat-label {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ========== GEMINI BANNER ========== */
+        .gemini-banner {
+            padding: 48px 0;
+        }
+        .gemini-card {
+            background: linear-gradient(135deg, rgba(52, 199, 89, 0.08), rgba(0, 199, 190, 0.08));
+            border: 1px solid rgba(52, 199, 89, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .gemini-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(52, 199, 89, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .gemini-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--green), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 28px;
+        }
+        .gemini-content {
+            flex: 1;
+        }
+        .gemini-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(52, 199, 89, 0.15);
+            color: var(--green);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .gemini-content h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .gemini-content p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* ========== FEATURES GRID ========== */
+        .features-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        .features-header .section-subtitle {
+            margin: 0 auto;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--blue), transparent);
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(0, 122, 255, 0.3);
+            transform: translateY(-4px);
+        }
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .feature-icon--blue {
+            background: rgba(0, 122, 255, 0.12);
+            color: var(--blue);
+        }
+        .feature-icon--purple {
+            background: rgba(88, 86, 214, 0.12);
+            color: var(--purple);
+        }
+        .feature-icon--green {
+            background: rgba(52, 199, 89, 0.12);
+            color: var(--green);
+        }
+        .feature-icon--orange {
+            background: rgba(255, 149, 0, 0.12);
+            color: var(--orange);
+        }
+        .feature-icon--cyan {
+            background: rgba(0, 199, 190, 0.12);
+            color: var(--cyan);
+        }
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .feature-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ========== AI PROVIDERS ========== */
+        .providers {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .providers-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        .providers-header .section-subtitle {
+            margin: 0 auto;
+        }
+        .providers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .provider-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            text-align: center;
+            transition: all var(--transition);
+        }
+        .provider-card:hover {
+            border-color: rgba(0, 122, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .provider-card--featured {
+            border-color: rgba(52, 199, 89, 0.3);
+            background: linear-gradient(180deg, rgba(52, 199, 89, 0.05), var(--bg-card));
+            position: relative;
+        }
+        .provider-card--featured::after {
+            content: 'RECOMMENDED';
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            padding: 3px 10px;
+            background: rgba(52, 199, 89, 0.15);
+            color: var(--green);
+            border-radius: 6px;
+            font-size: 0.625rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .provider-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+        }
+        .provider-logo--openrouter {
+            background: linear-gradient(135deg, rgba(0, 122, 255, 0.15), rgba(88, 86, 214, 0.15));
+            color: var(--blue-light);
+        }
+        .provider-logo--gemini {
+            background: linear-gradient(135deg, rgba(52, 199, 89, 0.15), rgba(0, 199, 190, 0.15));
+            color: var(--green);
+        }
+        .provider-logo--openai {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+        .provider-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .provider-card .provider-price {
+            font-size: 0.875rem;
+            color: var(--green);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .provider-card p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        /* ========== HOW IT WORKS ========== */
+        .how-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        .how-header .section-subtitle {
+            margin: 0 auto;
+        }
+        .how-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 32px;
+            counter-reset: step;
+        }
+        .how-step {
+            text-align: center;
+            position: relative;
+        }
+        .how-step-number {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .how-step h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .how-step p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        /* ========== CTA SECTION ========== */
+        .cta-section {
+            text-align: center;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+        .cta-box {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .cta-box h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        .cta-box p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+        .cta-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* ========== FOOTER ========== */
+        .footer {
+            padding: 48px 0 32px;
+            border-top: 1px solid var(--border);
+        }
+        .footer-content {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            max-width: 300px;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+        .footer-links-group h4 {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .footer-links-group ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .footer-links-group a {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            transition: color var(--transition);
+        }
+        .footer-links-group a:hover {
+            color: var(--text-primary);
+        }
+        .footer-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .footer-bottom p {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+        .footer-social {
+            display: flex;
+            gap: 16px;
+        }
+        .footer-social a {
+            color: var(--text-muted);
+            transition: color var(--transition);
+        }
+        .footer-social a:hover {
+            color: var(--text-primary);
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 15, 0.95);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                flex-direction: column;
+                padding: 24px;
+                gap: 16px;
+                border-bottom: 1px solid var(--border);
+            }
+            .nav-links.active {
+                display: flex;
+            }
+            .nav-toggle {
+                display: block;
+            }
+            .hero {
+                padding: 130px 0 60px;
+            }
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+            .hero-stats {
+                gap: 24px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .gemini-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 28px;
+            }
+            .providers-grid {
+                grid-template-columns: 1fr;
+            }
+            .how-steps {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .section {
+                padding: 60px 0;
+            }
+            .footer-content {
+                flex-direction: column;
+            }
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-actions {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .cta-actions {
+                flex-direction: column;
+            }
+            .cta-actions .btn {
+                width: 100%;
+            }
+        }
+
+        /* ========== SCROLL ANIMATIONS ========== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow--blue"></div>
+    <div class="bg-glow bg-glow--purple"></div>
+
+    <!-- Nav -->
+    <nav class="nav" id="nav">
+        <div class="container">
+            <a href="#" class="nav-brand">
+                <div class="nav-icon">N</div>
+                NIABrowser
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#ai-providers">AI Providers</a></li>
+                <li><a href="#get-started">Get Started</a></li>
+                <li>
+                    <a href="https://github.com/zizwar/niabrowser" class="nav-cta" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                        GitHub
+                    </a>
+                </li>
+            </ul>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                Built with React Native &amp; Expo
+            </div>
+            <div class="hero-icon">
+                <img src="../assets/icon.png" alt="NIABrowser icon" onerror="this.parentElement.innerHTML='<div style=&quot;width:100%;height:100%;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;font-size:48px;color:#fff;font-weight:800&quot;>N</div>'">
+            </div>
+            <h1>The Browser Built<br>for <span class="gradient-text">Developers</span></h1>
+            <p class="hero-subtitle">
+                AI-powered browsing with built-in DevTools, script automation, and an API client.
+                Chat with AI about any page using free Google Gemini or 100+ models.
+            </p>
+            <div class="hero-actions">
+                <a href="https://github.com/zizwar/niabrowser" class="btn btn-primary" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    View on GitHub
+                </a>
+                <a href="https://github.com/zizwar/niabrowser/releases" class="btn btn-secondary" target="_blank" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-value">100+</div>
+                    <div class="hero-stat-label">AI Models</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">3</div>
+                    <div class="hero-stat-label">AI Providers</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">Free</div>
+                    <div class="hero-stat-label">Gemini Quota</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">Open</div>
+                    <div class="hero-stat-label">Source</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gemini Banner -->
+    <section class="gemini-banner">
+        <div class="container">
+            <div class="gemini-card fade-in">
+                <div class="gemini-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div class="gemini-content">
+                    <span class="gemini-tag">Free AI</span>
+                    <h3>Google Gemini -- Free Daily Quota</h3>
+                    <p>
+                        Get started with AI-powered browsing at zero cost. Google Gemini provides a generous free daily quota
+                        so you can chat with AI about any page, generate scripts, and analyze network traffic without spending a cent.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="features-header fade-in">
+                <span class="section-label">Features</span>
+                <h2 class="section-title">Everything you need,<br><span class="gradient-text">built right in</span></h2>
+                <p class="section-subtitle">
+                    No more switching between browser, terminal, and API tools. NIABrowser puts every developer tool a tap away.
+                </p>
+            </div>
+            <div class="features-grid">
+                <!-- Feature 1: AI Chat -->
+                <div class="feature-card fade-in">
+                    <div class="feature-icon feature-icon--blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <h3>Multi-Provider AI Chat</h3>
+                    <p>
+                        Chat with AI about any page you visit. Attach cookies, network logs, console output, or the full page HTML
+                        for deep context-aware conversations. NIA AI understands your browsing context.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">OpenRouter</span>
+                        <span class="feature-tag">Google Gemini</span>
+                        <span class="feature-tag">OpenAI</span>
+                        <span class="feature-tag">100+ Models</span>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Script Manager -->
+                <div class="feature-card fade-in">
+                    <div class="feature-icon feature-icon--purple">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    </div>
+                    <h3>Smart Script Manager</h3>
+                    <p>
+                        Create, edit, and auto-run JavaScript on any website. AI Generator writes scripts from plain English descriptions.
+                        AI Edit modifies existing scripts. Import Greasemonkey/Tampermonkey userscripts with automatic AI conversion.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">AI Generator</span>
+                        <span class="feature-tag">AI Edit</span>
+                        <span class="feature-tag">Auto-run</span>
+                        <span class="feature-tag">Userscript Import</span>
+                    </div>
+                </div>
+
+                <!-- Feature 3: DevTools -->
+                <div class="feature-card fade-in">
+                    <div class="feature-icon feature-icon--green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <h3>Full DevTools Suite</h3>
+                    <p>
+                        Console viewer, Network monitor, Storage inspector, and Performance metrics -- all on mobile.
+                        Each panel includes AI analysis buttons to instantly understand issues and optimize performance.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">Console</span>
+                        <span class="feature-tag">Network</span>
+                        <span class="feature-tag">Storage</span>
+                        <span class="feature-tag">Performance</span>
+                        <span class="feature-tag">AI Analysis</span>
+                    </div>
+                </div>
+
+                <!-- Feature 4: API Client -->
+                <div class="feature-card fade-in">
+                    <div class="feature-icon feature-icon--orange">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <h3>API Client</h3>
+                    <p>
+                        Send HTTP requests directly from the browser. Import from cURL or Postman, export collections for your team.
+                        Long-press any network log entry to instantly test it in the API client.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">HTTP Requests</span>
+                        <span class="feature-tag">cURL Import</span>
+                        <span class="feature-tag">Postman Import</span>
+                        <span class="feature-tag">Export Collections</span>
+                    </div>
+                </div>
+
+                <!-- Feature 5: Developer Browser -->
+                <div class="feature-card fade-in">
+                    <div class="feature-icon feature-icon--cyan">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <h3>Developer Browser</h3>
+                    <p>
+                        Multi-tab browsing, favorites, history, desktop mode, and user agent switching.
+                        Safe mode for testing, dark and light themes, and all the features you expect from a modern browser.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">Multi-Tab</span>
+                        <span class="feature-tag">Desktop Mode</span>
+                        <span class="feature-tag">UA Switching</span>
+                        <span class="feature-tag">Dark/Light</span>
+                        <span class="feature-tag">Safe Mode</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Providers -->
+    <section class="section providers" id="ai-providers">
+        <div class="container">
+            <div class="providers-header fade-in">
+                <span class="section-label">AI Providers</span>
+                <h2 class="section-title">Choose your <span class="gradient-text">AI engine</span></h2>
+                <p class="section-subtitle">
+                    Connect to the AI provider that fits your needs. Switch between providers at any time, or use them all.
+                </p>
+            </div>
+            <div class="providers-grid">
+                <!-- OpenRouter -->
+                <div class="provider-card fade-in">
+                    <div class="provider-logo provider-logo--openrouter">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <h3>OpenRouter</h3>
+                    <p class="provider-price">Pay-per-use</p>
+                    <p>Access 100+ AI models including GPT-4, Claude, Llama, Mistral, and more through a single API key. Choose the best model for each task.</p>
+                </div>
+                <!-- Gemini -->
+                <div class="provider-card provider-card--featured fade-in">
+                    <div class="provider-logo provider-logo--gemini">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    </div>
+                    <h3>Google Gemini</h3>
+                    <p class="provider-price">Free daily quota!</p>
+                    <p>Get started immediately with Google Gemini's generous free tier. Perfect for trying out AI features without any cost. Just add your API key and go.</p>
+                </div>
+                <!-- OpenAI -->
+                <div class="provider-card fade-in">
+                    <div class="provider-logo provider-logo--openai">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    </div>
+                    <h3>OpenAI Direct</h3>
+                    <p class="provider-price">Pay-per-use</p>
+                    <p>Connect directly to OpenAI's API for GPT-4o and other OpenAI models. Use your existing OpenAI API key with direct, low-latency access.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section" id="get-started">
+        <div class="container">
+            <div class="how-header fade-in">
+                <span class="section-label">Get Started</span>
+                <h2 class="section-title">Up and running <span class="gradient-text">in minutes</span></h2>
+                <p class="section-subtitle">
+                    Install NIABrowser, configure your AI provider, and start building.
+                </p>
+            </div>
+            <div class="how-steps">
+                <div class="how-step fade-in">
+                    <div class="how-step-number">1</div>
+                    <h3>Install the App</h3>
+                    <p>Download NIABrowser from GitHub releases or build from source with Expo.</p>
+                </div>
+                <div class="how-step fade-in">
+                    <div class="how-step-number">2</div>
+                    <h3>Add an AI Key</h3>
+                    <p>Enter your Google Gemini key (free!), OpenRouter key, or OpenAI key in Settings.</p>
+                </div>
+                <div class="how-step fade-in">
+                    <div class="how-step-number">3</div>
+                    <h3>Browse &amp; Chat</h3>
+                    <p>Visit any site and tap the AI button to chat, analyze, or generate scripts.</p>
+                </div>
+                <div class="how-step fade-in">
+                    <div class="how-step-number">4</div>
+                    <h3>Automate &amp; Debug</h3>
+                    <p>Use DevTools, create auto-run scripts, and test APIs -- all from one app.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section cta-section">
+        <div class="container">
+            <div class="cta-box fade-in">
+                <h2>Start building <span class="gradient-text">smarter</span></h2>
+                <p>
+                    NIABrowser is open source and free to use. Get AI-powered browsing with DevTools,
+                    script automation, and an API client in one app.
+                </p>
+                <div class="cta-actions">
+                    <a href="https://github.com/zizwar/niabrowser" class="btn btn-primary" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 16 16" fill="currentColor" width="20" height="20"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                        Star on GitHub
+                    </a>
+                    <a href="https://github.com/zizwar/niabrowser/releases" class="btn btn-secondary" target="_blank" rel="noopener">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="nav-brand">
+                        <div class="nav-icon">N</div>
+                        NIABrowser
+                    </a>
+                    <p>AI-powered developer browser built with React Native and Expo. Open source and free to use.</p>
+                </div>
+                <div class="footer-links-group">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#ai-providers">AI Providers</a></li>
+                        <li><a href="#get-started">Get Started</a></li>
+                        <li><a href="https://github.com/zizwar/niabrowser/releases" target="_blank" rel="noopener">Download</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-group">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="../privacy.html">Privacy Policy</a></li>
+                        <li><a href="../terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-group">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="mailto:contact_browser@niascript.com">contact_browser@niascript.com</a></li>
+                        <li><a href="https://github.com/zizwar/niabrowser" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://browser.niascript.com">browser.niascript.com</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 NIABrowser by NIAScript. All rights reserved.</p>
+                <div class="footer-social">
+                    <a href="https://github.com/zizwar/niabrowser" target="_blank" rel="noopener" aria-label="GitHub">
+                        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    </a>
+                    <a href="mailto:contact_browser@niascript.com" aria-label="Email">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Nav scroll effect
+        (function() {
+            var nav = document.getElementById('nav');
+            var scrolled = false;
+            window.addEventListener('scroll', function() {
+                var shouldAdd = window.scrollY > 40;
+                if (shouldAdd !== scrolled) {
+                    scrolled = shouldAdd;
+                    nav.classList.toggle('scrolled', shouldAdd);
+                }
+            }, { passive: true });
+        })();
+
+        // Mobile nav toggle
+        (function() {
+            var toggle = document.getElementById('navToggle');
+            var links = document.getElementById('navLinks');
+            toggle.addEventListener('click', function() {
+                links.classList.toggle('active');
+            });
+            // Close on link click
+            var navAnchors = links.querySelectorAll('a');
+            for (var i = 0; i < navAnchors.length; i++) {
+                navAnchors[i].addEventListener('click', function() {
+                    links.classList.remove('active');
+                });
+            }
+        })();
+
+        // Scroll-triggered fade-in animations
+        (function() {
+            var elements = document.querySelectorAll('.fade-in');
+            if (!elements.length) return;
+
+            var observer = new IntersectionObserver(function(entries) {
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].isIntersecting) {
+                        entries[i].target.classList.add('visible');
+                        observer.unobserve(entries[i].target);
+                    }
+                }
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -40px 0px'
+            });
+
+            for (var i = 0; i < elements.length; i++) {
+                observer.observe(elements[i]);
+            }
+        })();
+
+        // Smooth scroll for anchor links
+        (function() {
+            var anchors = document.querySelectorAll('a[href^="#"]');
+            for (var i = 0; i < anchors.length; i++) {
+                anchors[i].addEventListener('click', function(e) {
+                    var href = this.getAttribute('href');
+                    if (href === '#') return;
+                    var target = document.querySelector(href);
+                    if (target) {
+                        e.preventDefault();
+                        var navHeight = document.getElementById('nav').offsetHeight;
+                        var top = target.getBoundingClientRect().top + window.pageYOffset - navHeight - 20;
+                        window.scrollTo({ top: top, behavior: 'smooth' });
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
