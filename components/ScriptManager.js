@@ -149,18 +149,18 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       return;
     }
 
-    const activeProvider = await AIProviderManager.getActiveProvider();
-    const providerId = activeProvider?.id || 'openrouter';
+    // Find the provider that owns the selected model
+    const modelProvider = await AIProviderManager.getProviderForModel(selectedModel);
+    const providerId = modelProvider?.id || 'openrouter';
     const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
     if (!apiKey) {
       Alert.alert(
         'API Key Required',
-        'Please add your API Key in Settings for your active provider.',
+        `Please add your API Key for ${modelProvider?.name || 'provider'} in Settings.`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Open Settings', onPress: () => {
             setShowAIGenerator(false);
-            // The settings screen will be opened from App.js
           }}
         ]
       );
@@ -169,12 +169,12 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
 
     setIsGenerating(true);
     try {
-      const response = await fetch(`${activeProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
+      const response = await fetch(`${modelProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          ...(activeProvider?.extraHeaders || {}),
+          ...(modelProvider?.extraHeaders || {}),
         },
         body: JSON.stringify({
           model: selectedModel,
@@ -257,20 +257,20 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     if (!aiEditInstruction.trim()) return;
     setIsAIEditing(true);
     try {
-      const activeProvider = await AIProviderManager.getActiveProvider();
-      const providerId = activeProvider?.id || 'openrouter';
+      const modelProvider = await AIProviderManager.getProviderForModel(selectedModel);
+      const providerId = modelProvider?.id || 'openrouter';
       const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
       if (!apiKey) {
-        Alert.alert('API Key Required', 'Please add your API Key in Settings for your active provider.');
+        Alert.alert('API Key Required', `Please add your API Key for ${modelProvider?.name || 'provider'} in Settings.`);
         return;
       }
       const currentCode = scriptCodeRef.current || currentScript.code;
-      const response = await fetch(`${activeProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
+      const response = await fetch(`${modelProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          ...(activeProvider?.extraHeaders || {}),
+          ...(modelProvider?.extraHeaders || {}),
         },
         body: JSON.stringify({
           model: selectedModel,
@@ -1028,35 +1028,66 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
       }
     >
       <View style={[styles.container, { backgroundColor }]}>
-        {/* Add Button */}
-        <TouchableOpacity
-          onPress={() => {
-            Alert.alert(
-              'Add Script',
-              'Choose how to create the script:',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Manual Creation', onPress: () => {
-                  setCurrentScript({ name: '', code: '', urls: '*', isEnabled: true, runAt: 'document-idle' });
-                  scriptNameRef.current = '';
-                  scriptCodeRef.current = '';
-                  scriptUrlsRef.current = '*';
-                  setIsEditMode(false);
-                  setShowEditOverlay(true);
-                }},
-                { text: 'Import Userscript', onPress: () => {
-                  setImportScriptText('');
-                  setShowImportScript(true);
-                }},
-                { text: 'AI Generator', onPress: () => setShowAIGenerator(true) }
-              ]
-            );
-          }}
-          style={styles.addButton}
-        >
-          <MaterialIcons name="add" size={22} color="#FFFFFF" />
-          <Text style={styles.addButtonText}>Add New Script</Text>
-        </TouchableOpacity>
+        {/* Create Script Section - Prominent */}
+        <View style={[styles.createSection, { backgroundColor: cardBackground }]}>
+          <View style={styles.createHeader}>
+            <MaterialIcons name="auto-awesome" size={22} color="#9C27B0" />
+            <Text style={[styles.createTitle, { color: textColor }]}>Create Script</Text>
+          </View>
+          <Text style={[styles.createSubtitle, { color: secondaryTextColor }]}>
+            Describe what you want and AI writes the code for you
+          </Text>
+
+          {/* Task Examples as quick buttons */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.examplesRow}>
+            {taskExamples.map((example, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.exampleChip, { backgroundColor: inputBackground }]}
+                onPress={() => { setAiTaskDescription(example); aiTaskRef.current = example; setShowAIGenerator(true); }}
+              >
+                <MaterialIcons
+                  name={index === 0 ? 'image' : index === 1 ? 'format-textdirection-r-to-l' : index === 2 ? 'block' : index === 3 ? 'dark-mode' : 'email'}
+                  size={16}
+                  color="#9C27B0"
+                />
+                <Text style={[styles.exampleChipText, { color: textColor }]} numberOfLines={2}>{example}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Action Buttons */}
+          <View style={styles.createActions}>
+            <TouchableOpacity
+              onPress={() => setShowAIGenerator(true)}
+              style={[styles.createMainBtn, { backgroundColor: '#9C27B0' }]}
+            >
+              <MaterialIcons name="auto-awesome" size={20} color="#FFFFFF" />
+              <Text style={styles.createMainBtnText}>AI Generator</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setCurrentScript({ name: '', code: '', urls: '*', isEnabled: true, runAt: 'document-idle' });
+                scriptNameRef.current = '';
+                scriptCodeRef.current = '';
+                scriptUrlsRef.current = '*';
+                setIsEditMode(false);
+                setShowEditOverlay(true);
+              }}
+              style={[styles.createSecBtn, { borderColor }]}
+            >
+              <MaterialIcons name="code" size={18} color={textColor} />
+              <Text style={[styles.createSecBtnText, { color: textColor }]}>Manual</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => { setImportScriptText(''); setShowImportScript(true); }}
+              style={[styles.createSecBtn, { borderColor }]}
+            >
+              <MaterialIcons name="file-download" size={18} color={textColor} />
+              <Text style={[styles.createSecBtnText, { color: textColor }]}>Import</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Script List */}
         <FlatList
@@ -1150,21 +1181,76 @@ const styles = StyleSheet.create({
   headerAction: {
     padding: 4,
   },
-  addButton: {
+  createSection: {
+    marginHorizontal: 16,
+    marginVertical: 12,
+    padding: 16,
+    borderRadius: 14,
+  },
+  createHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  createTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  createSubtitle: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  examplesRow: {
+    marginBottom: 12,
+    marginHorizontal: -4,
+  },
+  exampleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginHorizontal: 4,
+    width: 160,
+  },
+  exampleChipText: {
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
+  },
+  createActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  createMainBtn: {
+    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4CAF50',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    padding: 14,
-    borderRadius: 12,
-    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    gap: 6,
   },
-  addButtonText: {
+  createMainBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
+  },
+  createSecBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 4,
+  },
+  createSecBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   list: {
     flex: 1,

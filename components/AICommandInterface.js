@@ -500,10 +500,11 @@ IMPORTANT RULES:
     setIsLoading(true);
 
     try {
-      const activeProvider = await AIProviderManager.getActiveProvider();
-      const providerId = activeProvider?.id || 'openrouter';
+      // Find the provider that owns the selected model (not just the "active" provider)
+      const modelProvider = await AIProviderManager.getProviderForModel(selectedModel);
+      const providerId = modelProvider?.id || 'openrouter';
       const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
-      if (!apiKey) throw new Error('API Key not found. Add it in Settings for your active provider.');
+      if (!apiKey) throw new Error(`API Key not found for ${modelProvider?.name || 'provider'}. Add it in Settings.`);
 
       const systemPrompt = buildSystemPrompt();
       const contextData = buildContextData();
@@ -514,13 +515,13 @@ IMPORTANT RULES:
         .map(m => ({ role: m.role, content: m.content }));
 
       const response = await fetch(
-        `${activeProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`,
+        `${modelProvider?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
-            ...(activeProvider?.extraHeaders || {}),
+            ...(modelProvider?.extraHeaders || {}),
           },
           body: JSON.stringify({
             model: selectedModel,
@@ -799,6 +800,87 @@ IMPORTANT RULES:
     </View>
   );
 
+  // Parse message content into text and code blocks
+  const parseMessageContent = (content) => {
+    const parts = [];
+    const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+      }
+      parts.push({ type: 'code', language: match[1] || 'code', content: match[2].trim() });
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push({ type: 'text', content: content.slice(lastIndex) });
+    }
+
+    return parts.length > 0 ? parts : [{ type: 'text', content }];
+  };
+
+  // Render formatted content with code blocks
+  const renderFormattedContent = (content, isLight) => {
+    const parts = parseMessageContent(content);
+    const baseTextColor = isLight ? '#FFFFFF' : textColor;
+
+    return parts.map((part, i) => {
+      if (part.type === 'code') {
+        return (
+          <View key={i} style={styles.codeBlock}>
+            <View style={styles.codeBlockHeader}>
+              <Text style={styles.codeBlockLang}>{part.language}</Text>
+              <TouchableOpacity onPress={() => copyMessage(part.content)} style={styles.codeBlockCopy}>
+                <MaterialIcons name="content-copy" size={13} color="#A0A0A0" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <Text style={styles.codeBlockText} selectable>{part.content}</Text>
+            </ScrollView>
+          </View>
+        );
+      }
+      // Render inline code with `backticks`
+      const inlineCodeRegex = /`([^`]+)`/g;
+      const textParts = [];
+      let textLastIndex = 0;
+      let inlineMatch;
+      while ((inlineMatch = inlineCodeRegex.exec(part.content)) !== null) {
+        if (inlineMatch.index > textLastIndex) {
+          textParts.push({ type: 'text', content: part.content.slice(textLastIndex, inlineMatch.index) });
+        }
+        textParts.push({ type: 'inline', content: inlineMatch[1] });
+        textLastIndex = inlineMatch.index + inlineMatch[0].length;
+      }
+      if (textLastIndex < part.content.length) {
+        textParts.push({ type: 'text', content: part.content.slice(textLastIndex) });
+      }
+
+      if (textParts.some(p => p.type === 'inline')) {
+        return (
+          <Text key={i} style={[styles.messageText, { color: baseTextColor }]} selectable>
+            {textParts.map((tp, j) =>
+              tp.type === 'inline' ? (
+                <Text key={j} style={[styles.inlineCode, !isLight && { backgroundColor: isDarkMode ? '#3C3C3E' : '#E8E8ED' }]}>{tp.content}</Text>
+              ) : (
+                <Text key={j}>{tp.content}</Text>
+              )
+            )}
+          </Text>
+        );
+      }
+
+      return (
+        <Text key={i} style={[styles.messageText, { color: baseTextColor }]} selectable>
+          {part.content}
+        </Text>
+      );
+    });
+  };
+
   // Render a single message
   const renderMessage = (msg, index) => {
     const isUser = msg.role === 'user';
@@ -830,15 +912,7 @@ IMPORTANT RULES:
             </TouchableOpacity>
           </View>
         )}
-        <Text
-          style={[
-            styles.messageText,
-            { color: isUser || msg.isError || msg.isSuccess ? '#FFFFFF' : textColor },
-          ]}
-          selectable
-        >
-          {msg.content}
-        </Text>
+        {renderFormattedContent(msg.content, isUser || msg.isError || msg.isSuccess)}
 
         {msg.hasExecutableCode && msg.code && (
           <View style={styles.codeActions}>
@@ -1029,6 +1103,23 @@ const styles = StyleSheet.create({
   tokenInfo: { fontSize: 10, fontFamily: 'monospace' },
   copyMsgBtn: { padding: 2 },
   messageText: { fontSize: 14, lineHeight: 21 },
+  codeBlock: {
+    backgroundColor: '#1E1E2E', borderRadius: 10, marginVertical: 6, overflow: 'hidden',
+  },
+  codeBlockHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#2A2A3A',
+  },
+  codeBlockLang: { fontSize: 11, color: '#A0A0A0', fontWeight: '600', textTransform: 'uppercase' },
+  codeBlockCopy: { padding: 2 },
+  codeBlockText: {
+    fontFamily: 'monospace', fontSize: 13, lineHeight: 20, color: '#E0E0E0',
+    padding: 12,
+  },
+  inlineCode: {
+    fontFamily: 'monospace', fontSize: 13, backgroundColor: 'rgba(0,122,255,0.15)',
+    borderRadius: 4, paddingHorizontal: 4,
+  },
   codeActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
   executeButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

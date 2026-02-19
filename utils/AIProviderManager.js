@@ -78,24 +78,34 @@ const DEFAULT_PROVIDERS = [
         description: 'Fast and affordable GPT-4o',
       },
       {
-        id: 'google/gemini-1.5-pro',
+        id: 'google/gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        provider: 'Google',
+        cost: 'Low',
+        inputCost: 0.00015,
+        outputCost: 0.0006,
+        maxTokens: 8192,
+        description: 'Best price-performance Gemini model',
+      },
+      {
+        id: 'google/gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        provider: 'Google',
+        cost: 'Medium',
+        inputCost: 0.00125,
+        outputCost: 0.005,
+        maxTokens: 8192,
+        description: 'Advanced reasoning model',
+      },
+      {
+        id: 'google/gemini-pro-1.5',
         name: 'Gemini 1.5 Pro',
         provider: 'Google',
         cost: 'Medium',
         inputCost: 0.00125,
         outputCost: 0.005,
         maxTokens: 8192,
-        description: 'Google\'s most capable model',
-      },
-      {
-        id: 'google/gemini-flash-1.5',
-        name: 'Gemini 1.5 Flash',
-        provider: 'Google',
-        cost: 'Low',
-        inputCost: 0.000075,
-        outputCost: 0.0003,
-        maxTokens: 8192,
-        description: 'Fast and efficient',
+        description: 'Multimodal and code generation',
       },
       {
         id: 'deepseek/deepseek-r1-distill-0528:free',
@@ -149,6 +159,16 @@ const DEFAULT_PROVIDERS = [
       },
       // xAI Grok Models
       {
+        id: 'x-ai/grok-4-fast',
+        name: 'Grok 4 Fast',
+        provider: 'xAI',
+        cost: 'Medium',
+        inputCost: 0.003,
+        outputCost: 0.015,
+        maxTokens: 8192,
+        description: 'Multimodal with toggleable reasoning',
+      },
+      {
         id: 'x-ai/grok-4.1-fast',
         name: 'Grok 4.1 Fast',
         provider: 'xAI',
@@ -156,7 +176,7 @@ const DEFAULT_PROVIDERS = [
         inputCost: 0.003,
         outputCost: 0.015,
         maxTokens: 8192,
-        description: 'Fast Grok model for quick tasks',
+        description: 'Best agentic/tool-calling model',
       },
       {
         id: 'x-ai/grok-3-mini',
@@ -166,7 +186,7 @@ const DEFAULT_PROVIDERS = [
         inputCost: 0.0006,
         outputCost: 0.003,
         maxTokens: 4096,
-        description: 'Smaller Grok model for simple tasks',
+        description: 'Lightweight thinking model',
       },
       {
         id: 'x-ai/grok-code-fast-1',
@@ -176,7 +196,18 @@ const DEFAULT_PROVIDERS = [
         inputCost: 0.002,
         outputCost: 0.01,
         maxTokens: 8192,
-        description: 'Grok optimized for code generation',
+        description: 'Optimized for code generation',
+      },
+      // Free Models
+      {
+        id: 'deepseek/deepseek-chat',
+        name: 'DeepSeek V3 Chat',
+        provider: 'DeepSeek',
+        cost: 'Low',
+        inputCost: 0.00027,
+        outputCost: 0.0011,
+        maxTokens: 8192,
+        description: 'General-purpose DeepSeek V3',
       },
     ],
   },
@@ -195,6 +226,26 @@ const DEFAULT_PROVIDERS = [
     isBuiltIn: true,
     models: [
       {
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        provider: 'Google',
+        cost: 'Free*',
+        inputCost: 0,
+        outputCost: 0,
+        maxTokens: 8192,
+        description: 'Best price-performance, stable',
+      },
+      {
+        id: 'gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        provider: 'Google',
+        cost: 'Free*',
+        inputCost: 0,
+        outputCost: 0,
+        maxTokens: 8192,
+        description: 'Advanced reasoning and coding',
+      },
+      {
         id: 'gemini-2.0-flash',
         name: 'Gemini 2.0 Flash',
         provider: 'Google',
@@ -202,7 +253,7 @@ const DEFAULT_PROVIDERS = [
         inputCost: 0,
         outputCost: 0,
         maxTokens: 8192,
-        description: 'Fast and capable Gemini 2.0 model',
+        description: 'Fast and capable multimodal',
       },
       {
         id: 'gemini-2.0-flash-lite',
@@ -212,27 +263,7 @@ const DEFAULT_PROVIDERS = [
         inputCost: 0,
         outputCost: 0,
         maxTokens: 8192,
-        description: 'Lightweight Gemini 2.0 for quick tasks',
-      },
-      {
-        id: 'gemini-1.5-pro',
-        name: 'Gemini 1.5 Pro',
-        provider: 'Google',
-        cost: 'Free*',
-        inputCost: 0,
-        outputCost: 0,
-        maxTokens: 8192,
-        description: 'Google\'s most capable model',
-      },
-      {
-        id: 'gemini-1.5-flash',
-        name: 'Gemini 1.5 Flash',
-        provider: 'Google',
-        cost: 'Free*',
-        inputCost: 0,
-        outputCost: 0,
-        maxTokens: 8192,
-        description: 'Fast and efficient',
+        description: 'Lightweight for quick tasks',
       },
     ],
   },
@@ -548,12 +579,27 @@ export const AIProviderManager = {
             ...model,
             providerId: provider.id,
             providerName: provider.name,
+            providerColor: provider.color,
           });
         });
       }
     });
 
     return models;
+  },
+
+  /**
+   * Find the provider that owns a specific model by model ID
+   */
+  async getProviderForModel(modelId) {
+    const providers = await this.getProviders();
+    for (const provider of providers) {
+      if (provider.models?.some(m => m.id === modelId)) {
+        return provider;
+      }
+    }
+    // Fallback: return the active provider
+    return await this.getActiveProvider();
   },
 
   /**

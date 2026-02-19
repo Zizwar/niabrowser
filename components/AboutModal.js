@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, Image, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
 import appJson from '../app.json';
@@ -62,6 +62,17 @@ const GuideContent = ({ isDarkMode }) => {
           ))}
         </View>
       ))}
+      <TouchableOpacity
+        style={[styles.guideCard, { backgroundColor: '#007AFF', flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+        onPress={() => Linking.openURL('https://browser.niascript.com/demo/')}
+      >
+        <MaterialIcons name="science" size={24} color="#FFF" />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>Interactive Demo</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>Try all features with the live test page</Text>
+        </View>
+        <MaterialIcons name="chevron-right" size={22} color="rgba(255,255,255,0.8)" />
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -137,8 +148,9 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>LEGAL</Text>
         <View style={styles.linkSection}>
-          {renderLinkItem('gavel', 'Terms of Service', () => openLink('https://browser.niascript.com/term'))}
-          {renderLinkItem('privacy-tip', 'Privacy Policy', () => openLink('https://browser.niascript.com/privacy'))}
+          {renderLinkItem('gavel', 'Terms of Service', () => openLink('https://browser.niascript.com/terms.html'))}
+          {renderLinkItem('privacy-tip', 'Privacy Policy', () => openLink('https://browser.niascript.com/privacy.html'))}
+          {renderLinkItem('info', 'Disclaimer', () => openLink('https://browser.niascript.com/disclaimer.html'))}
         </View>
 
         {/* Notice */}

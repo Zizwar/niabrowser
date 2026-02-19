@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
+import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, Animated, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
@@ -393,7 +393,13 @@ const goHomeOld = useCallback(async () => {
   const statusBarPadding = Platform.OS === 'android' ? Math.max(insets.top, RNStatusBar.currentHeight || 24) : insets.top;
 
   if (!hasCheckedOnboarding) {
-    return null;
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8E8EC', justifyContent: 'center', alignItems: 'center' }}>
+        <Image source={require('./assets/icon.png')} style={{ width: 160, height: 160, borderRadius: 36 }} />
+        <Text style={{ marginTop: 16, fontSize: 24, fontWeight: '700', color: '#1C1C1E' }}>NIABrowser</Text>
+        <Text style={{ marginTop: 4, fontSize: 14, color: '#8E8E93' }}>AI-Powered Developer Browser</Text>
+      </View>
+    );
   }
 
   if (!hasSeenOnboarding) {
