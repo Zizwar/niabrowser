@@ -20,6 +20,7 @@ import { Overlay } from 'react-native-elements';
 import { createGreasemonkeyEnvironment, parseMetadata } from '../utils/GreasemonkeyCompatibility';
 import { SettingsManager } from '../utils/SettingsManager';
 import { AIProviderManager } from '../utils/AIProviderManager';
+import { SCRIPT_GENERATOR_PROMPT, SCRIPT_EDITOR_PROMPT, SCRIPT_TASK_EXAMPLES, getCustomPrompt, PROMPT_KEYS } from '../config/prompts';
 import BaseModal from './ui/BaseModal';
 import ModelSelector from './ui/ModelSelector';
 
@@ -71,23 +72,20 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
   const inputBackground = isDarkMode ? '#3C3C3E' : '#F0F0F0';
   const borderColor = isDarkMode ? '#3C3C3E' : '#E5E5E5';
 
-  const defaultSystemPrompt = `You are an assistant for creating JavaScript code to be executed in React Native WebView.
-
-Technical Context:
-- Environment: WebView with React Native
-- Communication: window.ReactNativeWebView.postMessage(JSON.stringify({...}))
-- DOM: Full access to page elements
-- Security: Avoid malicious code
-
-IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown formatting, or additional text. Just provide the raw JavaScript code that can be executed directly.`;
+  const defaultSystemPrompt = SCRIPT_GENERATOR_PROMPT;
 
   useEffect(() => {
     loadScripts();
     loadSessionCosts();
     loadSelectedModel();
     checkApiKey();
-    setCustomPrompt(defaultSystemPrompt);
-    customPromptRef.current = defaultSystemPrompt;
+    // Load custom prompt override from storage, or use default
+    (async () => {
+      const savedPrompt = await getCustomPrompt(PROMPT_KEYS.SCRIPT_GENERATOR);
+      const prompt = savedPrompt || defaultSystemPrompt;
+      setCustomPrompt(prompt);
+      customPromptRef.current = prompt;
+    })();
   }, []);
 
   // Re-check API key when ScriptManager becomes visible (but not during sub-modals)
@@ -275,7 +273,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
         body: JSON.stringify({
           model: selectedModel,
           messages: [
-            { role: 'system', content: 'You are a JavaScript code editor. Given existing code and an edit instruction, return ONLY the modified JavaScript code. No explanations, no markdown formatting, just the raw code.' },
+            { role: 'system', content: (await getCustomPrompt(PROMPT_KEYS.SCRIPT_EDITOR)) || SCRIPT_EDITOR_PROMPT },
             { role: 'user', content: `Existing code:\n\`\`\`javascript\n${currentCode}\n\`\`\`\n\nEdit instruction: ${aiEditInstruction}\n\nReturn only the modified code:` }
           ],
           temperature: 0.3,
@@ -530,13 +528,7 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
     }
   };
 
-  const taskExamples = [
-    "Collect all image and video links and add download buttons",
-    "Convert page direction from left-to-right to right-to-left",
-    "Hide all advertisements from the page",
-    "Change page colors to dark mode theme",
-    "Extract all email addresses from the page"
-  ];
+  const taskExamples = SCRIPT_TASK_EXAMPLES;
 
   const handleCloseEditOverlay = () => {
     if (hasUnsavedChanges) {
@@ -646,7 +638,10 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
 
         <View style={styles.urlLabelRow}>
           <Text style={[styles.inputLabel, { color: textColor }]}>URL Pattern</Text>
-          <TouchableOpacity onPress={() => setShowUrlHelp(true)} style={styles.helpButton}>
+          <TouchableOpacity onPress={() => Alert.alert(
+            'URL Pattern Help',
+            '* = All websites\n\nhttps://example.com/* = All pages on example.com\n\nhttps://*.example.com/* = All subdomains\n\nSeparate multiple patterns with commas:\nhttps://google.com/*, https://bing.com/*\n\nRegex: wrap in slashes /pattern/\n\nExamples:\n\u2022 https://youtube.com/watch* — YouTube videos\n\u2022 https://*.twitter.com/* — Twitter\n\u2022 * — Run on all websites'
+          )} style={styles.helpButton}>
             <MaterialIcons name="help-outline" size={18} color="#007AFF" />
           </TouchableOpacity>
         </View>
@@ -874,13 +869,6 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
               <Text style={styles.editPromptText}>Edit System Prompt</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => Linking.openURL('https://openrouter.ai/docs')}
-              style={styles.editPromptButton}
-            >
-              <MaterialIcons name="open-in-new" size={18} color="#007AFF" />
-              <Text style={styles.editPromptText}>OpenRouter Documentation</Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -1060,10 +1048,10 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
           <View style={styles.createActions}>
             <TouchableOpacity
               onPress={() => setShowAIGenerator(true)}
-              style={[styles.createMainBtn, { backgroundColor: '#9C27B0' }]}
+              style={[styles.createActionBtn, { backgroundColor: '#9C27B0' }]}
             >
-              <MaterialIcons name="auto-awesome" size={20} color="#FFFFFF" />
-              <Text style={styles.createMainBtnText}>AI Generator</Text>
+              <MaterialIcons name="auto-awesome" size={28} color="#FFFFFF" />
+              <Text style={styles.createActionBtnTextLight}>AI Generator</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -1074,17 +1062,17 @@ IMPORTANT: Return ONLY the JavaScript code without any explanation, markdown for
                 setIsEditMode(false);
                 setShowEditOverlay(true);
               }}
-              style={[styles.createSecBtn, { borderColor }]}
+              style={[styles.createActionBtn, { backgroundColor: inputBackground }]}
             >
-              <MaterialIcons name="code" size={18} color={textColor} />
-              <Text style={[styles.createSecBtnText, { color: textColor }]}>Manual</Text>
+              <MaterialIcons name="code" size={28} color={textColor} />
+              <Text style={[styles.createActionBtnText, { color: textColor }]}>Manual</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => { setImportScriptText(''); setShowImportScript(true); }}
-              style={[styles.createSecBtn, { borderColor }]}
+              style={[styles.createActionBtn, { backgroundColor: inputBackground }]}
             >
-              <MaterialIcons name="file-download" size={18} color={textColor} />
-              <Text style={[styles.createSecBtnText, { color: textColor }]}>Import</Text>
+              <MaterialIcons name="file-download" size={28} color={textColor} />
+              <Text style={[styles.createActionBtnText, { color: textColor }]}>Userscript</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1222,35 +1210,27 @@ const styles = StyleSheet.create({
   },
   createActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
-  createMainBtn: {
-    flex: 2,
-    flexDirection: 'row',
+  createActionBtn: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 12,
     gap: 6,
   },
-  createMainBtnText: {
+  createActionBtnTextLight: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  createSecBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 4,
-  },
-  createSecBtnText: {
-    fontSize: 13,
-    fontWeight: '500',
+  createActionBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   list: {
     flex: 1,

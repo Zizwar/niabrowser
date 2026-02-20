@@ -5,7 +5,7 @@ import { theme } from '../constants/theme';
 import appJson from '../app.json';
 import BaseModal from './ui/BaseModal';
 
-const GuideContent = ({ isDarkMode }) => {
+const GuideContent = ({ isDarkMode, onNavigate }) => {
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
   const cardBg = isDarkMode ? '#2C2C2E' : '#F5F5F5';
@@ -64,7 +64,7 @@ const GuideContent = ({ isDarkMode }) => {
       ))}
       <TouchableOpacity
         style={[styles.guideCard, { backgroundColor: '#007AFF', flexDirection: 'row', alignItems: 'center', gap: 12 }]}
-        onPress={() => Linking.openURL('https://browser.niascript.com/demo/')}
+        onPress={() => onNavigate ? onNavigate('https://browser.niascript.com/demo/') : Linking.openURL('https://browser.niascript.com/demo/')}
       >
         <MaterialIcons name="science" size={24} color="#FFF" />
         <View style={{ flex: 1 }}>
@@ -77,7 +77,7 @@ const GuideContent = ({ isDarkMode }) => {
   );
 };
 
-const AboutModal = ({ visible, onClose, isDarkMode }) => {
+const AboutModal = ({ visible, onClose, isDarkMode, onNavigate }) => {
   const [showGuide, setShowGuide] = useState(false);
   const backgroundColor = isDarkMode ? '#1C1C1E' : '#FFFFFF';
   const cardBackground = isDarkMode ? '#2C2C2E' : '#F5F5F5';
@@ -167,7 +167,7 @@ const AboutModal = ({ visible, onClose, isDarkMode }) => {
         </Text>
       </ScrollView>
       <BaseModal visible={showGuide} onClose={() => setShowGuide(false)} title="NIABrowser Guide" isDarkMode={isDarkMode} fullScreen={true}>
-        <GuideContent isDarkMode={isDarkMode} />
+        <GuideContent isDarkMode={isDarkMode} onNavigate={onNavigate} />
       </BaseModal>
     </BaseModal>
   );

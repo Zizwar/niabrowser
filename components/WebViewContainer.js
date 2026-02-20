@@ -141,47 +141,59 @@ console.log("###: coookis header", requestCookies)
 };
       // Intercept and log console outputs
       var originalConsole = window.console;
+      var _consoleTimers = {};
+      var _consoleCounts = {};
+      var _consoleGroupDepth = 0;
+      function _fmtArgs(args) {
+        return Array.from(args).map(function(arg) {
+          if (arg === null) return 'null';
+          if (arg === undefined) return 'undefined';
+          if (typeof arg === 'object') {
+            try { return JSON.stringify(arg, null, 2); } catch(e) { return String(arg); }
+          }
+          return String(arg);
+        });
+      }
+      function _sendLog(type, args) {
+        var prefix = _consoleGroupDepth > 0 ? '  '.repeat(_consoleGroupDepth) : '';
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'consoleLog',
+          message: { type: type, message: prefix + args.join(' ') }
+        }));
+      }
       window.console = {
-        log: function() {
-          var args = Array.from(arguments).map(arg => 
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          );
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'consoleLog',
-            message: { type: 'log', message: args.join(' ') }
-          }));
-          originalConsole.log.apply(originalConsole, arguments);
+        log: function() { var a = _fmtArgs(arguments); _sendLog('log', a); originalConsole.log.apply(originalConsole, arguments); },
+        error: function() { var a = _fmtArgs(arguments); _sendLog('error', a); originalConsole.error.apply(originalConsole, arguments); },
+        warn: function() { var a = _fmtArgs(arguments); _sendLog('warn', a); originalConsole.warn.apply(originalConsole, arguments); },
+        info: function() { var a = _fmtArgs(arguments); _sendLog('info', a); originalConsole.info.apply(originalConsole, arguments); },
+        debug: function() { var a = _fmtArgs(arguments); _sendLog('debug', a); originalConsole.debug.apply(originalConsole, arguments); },
+        table: function(data) {
+          var msg;
+          try {
+            if (Array.isArray(data)) {
+              var header = Object.keys(data[0] || {});
+              msg = '[Table] ' + header.join(' | ') + '\\n' + data.map(function(row) {
+                return header.map(function(h) { return String(row[h] || ''); }).join(' | ');
+              }).join('\\n');
+            } else {
+              msg = '[Table] ' + JSON.stringify(data, null, 2);
+            }
+          } catch(e) { msg = '[Table] ' + String(data); }
+          _sendLog('log', [msg]);
+          originalConsole.table.apply(originalConsole, arguments);
         },
-        error: function() {
-          var args = Array.from(arguments).map(arg => 
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          );
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'consoleLog',
-            message: { type: 'error', message: args.join(' ') }
-          }));
-          originalConsole.error.apply(originalConsole, arguments);
-        },
-        warn: function() {
-          var args = Array.from(arguments).map(arg => 
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          );
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'consoleLog',
-            message: { type: 'warn', message: args.join(' ') }
-          }));
-          originalConsole.warn.apply(originalConsole, arguments);
-        },
-        info: function() {
-          var args = Array.from(arguments).map(arg => 
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          );
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'consoleLog',
-            message: { type: 'info', message: args.join(' ') }
-          }));
-          originalConsole.info.apply(originalConsole, arguments);
-        }
+        group: function() { var a = _fmtArgs(arguments); _sendLog('log', ['▼ ' + (a[0] || 'Group')]); _consoleGroupDepth++; if(originalConsole.group) originalConsole.group.apply(originalConsole, arguments); },
+        groupCollapsed: function() { var a = _fmtArgs(arguments); _sendLog('log', ['▶ ' + (a[0] || 'Group')]); _consoleGroupDepth++; if(originalConsole.groupCollapsed) originalConsole.groupCollapsed.apply(originalConsole, arguments); },
+        groupEnd: function() { if(_consoleGroupDepth > 0) _consoleGroupDepth--; if(originalConsole.groupEnd) originalConsole.groupEnd.apply(originalConsole, arguments); },
+        time: function(label) { label = label || 'default'; _consoleTimers[label] = performance.now(); if(originalConsole.time) originalConsole.time.apply(originalConsole, arguments); },
+        timeEnd: function(label) { label = label || 'default'; if(_consoleTimers[label]) { var d = (performance.now() - _consoleTimers[label]).toFixed(2); _sendLog('log', [label + ': ' + d + 'ms']); delete _consoleTimers[label]; } if(originalConsole.timeEnd) originalConsole.timeEnd.apply(originalConsole, arguments); },
+        timeLog: function(label) { label = label || 'default'; if(_consoleTimers[label]) { var d = (performance.now() - _consoleTimers[label]).toFixed(2); _sendLog('log', [label + ': ' + d + 'ms (running)']); } if(originalConsole.timeLog) originalConsole.timeLog.apply(originalConsole, arguments); },
+        count: function(label) { label = label || 'default'; _consoleCounts[label] = (_consoleCounts[label] || 0) + 1; _sendLog('log', [label + ': ' + _consoleCounts[label]]); if(originalConsole.count) originalConsole.count.apply(originalConsole, arguments); },
+        countReset: function(label) { label = label || 'default'; _consoleCounts[label] = 0; if(originalConsole.countReset) originalConsole.countReset.apply(originalConsole, arguments); },
+        assert: function(cond) { if(!cond) { var a = _fmtArgs(Array.from(arguments).slice(1)); _sendLog('error', ['Assertion failed: ' + (a.join(' ') || '')]); } if(originalConsole.assert) originalConsole.assert.apply(originalConsole, arguments); },
+        dir: function(obj) { var a = _fmtArgs([obj]); _sendLog('log', ['[dir] ' + a[0]]); if(originalConsole.dir) originalConsole.dir.apply(originalConsole, arguments); },
+        trace: function() { var a = _fmtArgs(arguments); _sendLog('log', ['[trace] ' + (a[0] || '') + '\\n' + (new Error().stack || '')]); if(originalConsole.trace) originalConsole.trace.apply(originalConsole, arguments); },
+        clear: function() { _sendLog('log', ['--- Console Cleared ---']); if(originalConsole.clear) originalConsole.clear.apply(originalConsole, arguments); },
       };
 
       // Improve storage monitoring
