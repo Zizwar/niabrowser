@@ -602,6 +602,7 @@ const goHomeOld = useCallback(async () => {
         visible={isAboutModalVisible}
         onClose={() => setAboutModalVisible(false)}
         isDarkMode={isDarkMode}
+        onNavigate={(url) => { setAboutModalVisible(false); addNewTab(url); }}
       />
       <ScriptManager 
         visible={isScriptManagerVisible} 

@@ -14,6 +14,8 @@ import {
   StatusBar,
   Alert,
   Switch,
+  Keyboard,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -22,6 +24,7 @@ import * as Clipboard from 'expo-clipboard';
 import ModelSelector from './ui/ModelSelector';
 import { SettingsManager } from '../utils/SettingsManager';
 import { AIProviderManager } from '../utils/AIProviderManager';
+import { getCustomPrompt, PROMPT_KEYS } from '../config/prompts';
 
 const CONVERSATIONS_KEY = 'ai_conversations';
 const AI_SETTINGS_KEY = 'ai_chat_settings';
@@ -94,6 +97,20 @@ const AICommandInterface = ({
   // Token tracking
   const [contextTokens, setContextTokens] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
+
+  // Keyboard handling - lift only the input bar on Android
+  const keyboardHeight = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      Animated.timing(keyboardHeight, { toValue: e.endCoordinates.height, duration: 200, useNativeDriver: false }).start();
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      Animated.timing(keyboardHeight, { toValue: 0, duration: 150, useNativeDriver: false }).start();
+    });
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
 
   // Colors
   const backgroundColor = isDarkMode ? '#121212' : '#F5F5F5';
@@ -506,7 +523,8 @@ IMPORTANT RULES:
       const apiKey = await AIProviderManager.getProviderApiKey(providerId) || await SettingsManager.getApiKey();
       if (!apiKey) throw new Error(`API Key not found for ${modelProvider?.name || 'provider'}. Add it in Settings.`);
 
-      const systemPrompt = buildSystemPrompt();
+      const customChatPrompt = await getCustomPrompt(PROMPT_KEYS.CHAT_SYSTEM);
+      const systemPrompt = customChatPrompt || buildSystemPrompt();
       const contextData = buildContextData();
       const fullSystem = systemPrompt + (contextData ? '\n\n' + contextData : '');
 
@@ -1066,6 +1084,7 @@ IMPORTANT RULES:
               <MaterialIcons name="send" size={20} color={command.trim() ? '#FFFFFF' : secondaryTextColor} />
             </TouchableOpacity>
           </View>
+          {Platform.OS === 'android' && <Animated.View style={{ height: keyboardHeight }} />}
         </>
       )}
     </ContainerView>

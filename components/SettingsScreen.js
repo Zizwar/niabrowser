@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,11 +18,22 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
+import * as Clipboard from 'expo-clipboard';
 import BaseModal from './ui/BaseModal';
 import ModelSelector from './ui/ModelSelector';
 import { AppIcon } from './ui/AppIcons';
 import { SettingsManager } from '../utils/SettingsManager';
 import { AIProviderManager } from '../utils/AIProviderManager';
+import {
+  buildChatSystemPrompt,
+  SCRIPT_GENERATOR_PROMPT,
+  SCRIPT_EDITOR_PROMPT,
+  SCRIPT_TASK_EXAMPLES,
+  PROMPT_KEYS,
+  getCustomPrompt,
+  saveCustomPrompt,
+  resetCustomPrompt,
+} from '../config/prompts';
 
 /**
  * SettingsScreen - Comprehensive settings interface
@@ -62,6 +74,17 @@ const SettingsScreen = ({
 
   // Appearance
   const [themeMode, setThemeMode] = useState('dark');
+
+  // Developer - Prompt editing
+  const [editingPrompt, setEditingPrompt] = useState(null); // key being edited
+  const [editPromptText, setEditPromptText] = useState('');
+  const [customPrompts, setCustomPrompts] = useState({});
+
+  // Custom Provider creation
+  const [showAddProvider, setShowAddProvider] = useState(false);
+  const [newProvider, setNewProvider] = useState({
+    name: '', baseUrl: '', docsUrl: '', description: '', color: '#6366F1',
+  });
 
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
   const secondaryTextColor = isDarkMode ? '#A0A0A0' : '#666666';
@@ -108,6 +131,18 @@ const SettingsScreen = ({
       // Load all models
       const models = await AIProviderManager.getAllModels();
       setAllModels(models);
+
+      // Load custom prompt overrides
+      const [customChat, customGen, customEdit] = await Promise.all([
+        getCustomPrompt(PROMPT_KEYS.CHAT_SYSTEM),
+        getCustomPrompt(PROMPT_KEYS.SCRIPT_GENERATOR),
+        getCustomPrompt(PROMPT_KEYS.SCRIPT_EDITOR),
+      ]);
+      setCustomPrompts({
+        [PROMPT_KEYS.CHAT_SYSTEM]: customChat,
+        [PROMPT_KEYS.SCRIPT_GENERATOR]: customGen,
+        [PROMPT_KEYS.SCRIPT_EDITOR]: customEdit,
+      });
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -334,7 +369,7 @@ const SettingsScreen = ({
 
       {/* Provider Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-        {providers.filter(p => p.isBuiltIn).map(provider => (
+        {providers.map(provider => (
           <TouchableOpacity
             key={provider.id}
             style={[
@@ -342,6 +377,14 @@ const SettingsScreen = ({
               { backgroundColor: activeProviderId === provider.id ? (provider.color || '#007AFF') : cardBackground, borderColor },
             ]}
             onPress={() => handleProviderSwitch(provider.id)}
+            onLongPress={() => {
+              if (!provider.isBuiltIn) {
+                Alert.alert('Delete Provider', `Remove "${provider.name}" and all its models?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => handleDeleteProvider(provider.id) },
+                ]);
+              }
+            }}
           >
             <MaterialIcons
               name={provider.icon || 'cloud'}
@@ -359,8 +402,20 @@ const SettingsScreen = ({
                 <Text style={styles.freeBadgeText}>FREE</Text>
               </View>
             )}
+            {!provider.isBuiltIn && (
+              <View style={[styles.freeBadge, { backgroundColor: '#FF9800' }]}>
+                <Text style={styles.freeBadgeText}>CUSTOM</Text>
+              </View>
+            )}
           </TouchableOpacity>
         ))}
+        <TouchableOpacity
+          style={[styles.providerTab, { backgroundColor: cardBackground, borderColor, borderStyle: 'dashed' }]}
+          onPress={() => setShowAddProvider(true)}
+        >
+          <MaterialIcons name="add" size={18} color="#007AFF" />
+          <Text style={[styles.providerTabText, { color: '#007AFF' }]}>Add</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Provider Info */}
@@ -515,6 +570,99 @@ const SettingsScreen = ({
         )}
       </View>
 
+      {/* Add Custom Provider Modal */}
+      {showAddProvider && (
+        <View style={[styles.addModelOverlay]}>
+          <View style={[styles.addModelCard, { backgroundColor: cardBackground }]}>
+            <View style={styles.addModelHeader}>
+              <Text style={[styles.addModelTitle, { color: textColor }]}>Add Custom Provider</Text>
+              <TouchableOpacity onPress={() => setShowAddProvider(false)}>
+                <MaterialIcons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Provider Name *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newProvider.name}
+              onChangeText={(text) => setNewProvider({...newProvider, name: text})}
+              placeholder="e.g., Groq, Together AI"
+              placeholderTextColor={secondaryTextColor}
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Base URL * (OpenAI-compatible)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newProvider.baseUrl}
+              onChangeText={(text) => setNewProvider({...newProvider, baseUrl: text})}
+              placeholder="https://api.example.com/v1"
+              placeholderTextColor={secondaryTextColor}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Documentation URL</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newProvider.docsUrl}
+              onChangeText={(text) => setNewProvider({...newProvider, docsUrl: text})}
+              placeholder="https://docs.example.com"
+              placeholderTextColor={secondaryTextColor}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Description</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newProvider.description}
+              onChangeText={(text) => setNewProvider({...newProvider, description: text})}
+              placeholder="Short description..."
+              placeholderTextColor={secondaryTextColor}
+            />
+
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Brand Color</Text>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+              {['#6366F1', '#4285F4', '#10A37F', '#F97316', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F59E0B', '#64748B'].map(c => (
+                <TouchableOpacity
+                  key={c}
+                  onPress={() => setNewProvider({...newProvider, color: c})}
+                  style={{
+                    width: 32, height: 32, borderRadius: 16, backgroundColor: c,
+                    borderWidth: newProvider.color === c ? 3 : 0,
+                    borderColor: '#FFF',
+                    shadowColor: newProvider.color === c ? c : 'transparent',
+                    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: newProvider.color === c ? 4 : 0,
+                  }}
+                />
+              ))}
+            </View>
+
+            <View style={{ backgroundColor: isDarkMode ? '#1C1C1E' : '#F0F0F0', padding: 10, borderRadius: 8, marginTop: 12 }}>
+              <Text style={{ color: secondaryTextColor, fontSize: 12, lineHeight: 16 }}>
+                Must be OpenAI-compatible API (supports /chat/completions endpoint). After creating the provider, add models and set the API key.
+              </Text>
+            </View>
+
+            <View style={styles.addModelButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.secondaryButton, { borderColor, flex: 1 }]}
+                onPress={() => setShowAddProvider(false)}
+              >
+                <Text style={[styles.buttonTextSecondary, { color: textColor }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.primaryButton, { flex: 1 }]}
+                onPress={handleAddProvider}
+              >
+                <MaterialIcons name="add" size={18} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Add Model Modal */}
       {showAddModel && (
         <View style={[styles.addModelOverlay]}>
@@ -622,6 +770,266 @@ const SettingsScreen = ({
       ]
     );
   };
+
+  const handleAddProvider = async () => {
+    if (!newProvider.name || !newProvider.baseUrl) {
+      Alert.alert('Error', 'Provider name and base URL are required');
+      return;
+    }
+    const id = newProvider.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const success = await AIProviderManager.addProvider({
+      id,
+      name: newProvider.name,
+      icon: 'cloud',
+      color: newProvider.color || '#6366F1',
+      description: newProvider.description || `Custom provider: ${newProvider.name}`,
+      baseUrl: newProvider.baseUrl.replace(/\/+$/, ''),
+      docsUrl: newProvider.docsUrl || '',
+      keyPlaceholder: 'Enter API Key...',
+      keyHelp: `API key for ${newProvider.name}`,
+      extraHeaders: {},
+      isBuiltIn: false,
+      models: [],
+    });
+
+    if (success) {
+      Alert.alert('Success', `Provider "${newProvider.name}" created. Switch to it to add API key and models.`);
+      setShowAddProvider(false);
+      setNewProvider({ name: '', baseUrl: '', docsUrl: '', description: '', color: '#6366F1' });
+      loadSettings();
+    } else {
+      Alert.alert('Error', 'Failed to create provider');
+    }
+  };
+
+  const handleDeleteProvider = async (providerId) => {
+    const success = await AIProviderManager.removeProvider(providerId);
+    if (success) {
+      if (activeProviderId === providerId) {
+        await handleProviderSwitch('openrouter');
+      }
+      loadSettings();
+    } else {
+      Alert.alert('Error', 'Failed to delete provider');
+    }
+  };
+
+  // Developer section - prompt helpers
+  const getPromptInfo = () => [
+    {
+      key: PROMPT_KEYS.CHAT_SYSTEM,
+      title: 'Chat System Prompt',
+      icon: 'psychology',
+      color: '#007AFF',
+      description: 'Main AI assistant prompt with dynamic context injection',
+      defaultText: buildChatSystemPrompt({
+        currentUrl: 'https://example.com',
+        attachments: { cookies: true, console: true, network: true },
+        consoleCount: 10, networkCount: 5, cookieCount: 3, lsCount: 2,
+      }),
+    },
+    {
+      key: PROMPT_KEYS.SCRIPT_GENERATOR,
+      title: 'Script Generator Prompt',
+      icon: 'auto-awesome',
+      color: '#9C27B0',
+      description: 'AI prompt for generating JavaScript scripts',
+      defaultText: SCRIPT_GENERATOR_PROMPT,
+    },
+    {
+      key: PROMPT_KEYS.SCRIPT_EDITOR,
+      title: 'Script Editor Prompt',
+      icon: 'edit',
+      color: '#FF9800',
+      description: 'AI prompt for editing existing scripts',
+      defaultText: SCRIPT_EDITOR_PROMPT,
+    },
+  ];
+
+  const handleCopyPrompt = async (key, defaultText) => {
+    const text = customPrompts[key] || defaultText;
+    await Clipboard.setStringAsync(text);
+    Alert.alert('Copied', 'Prompt copied to clipboard');
+  };
+
+  const handleEditPrompt = (key, defaultText) => {
+    setEditingPrompt(key);
+    setEditPromptText(customPrompts[key] || defaultText);
+  };
+
+  const handleSavePrompt = async () => {
+    if (!editingPrompt) return;
+    await saveCustomPrompt(editingPrompt, editPromptText);
+    setCustomPrompts({ ...customPrompts, [editingPrompt]: editPromptText });
+    setEditingPrompt(null);
+    Alert.alert('Saved', 'Custom prompt saved. It will be used in future AI interactions.');
+  };
+
+  const handleResetPrompt = (key) => {
+    Alert.alert('Reset Prompt', 'Revert to the default prompt?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        onPress: async () => {
+          await resetCustomPrompt(key);
+          setCustomPrompts({ ...customPrompts, [key]: null });
+          Alert.alert('Reset', 'Prompt reverted to default');
+        },
+      },
+    ]);
+  };
+
+  const renderDeveloperSettings = () => (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: textColor }]}>Developer Config</Text>
+
+      {/* Prompts Section */}
+      <View style={[styles.card, { backgroundColor: cardBackground }]}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="description" size={20} color="#007AFF" />
+          <Text style={[styles.cardTitle, { color: textColor }]}>System Prompts</Text>
+        </View>
+        <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
+          View, copy, or customize all AI prompts used by the app.
+        </Text>
+      </View>
+
+      {getPromptInfo().map((prompt) => (
+        <View key={prompt.key} style={[styles.card, { backgroundColor: cardBackground }]}>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name={prompt.icon} size={20} color={prompt.color} />
+            <Text style={[styles.cardTitle, { color: textColor, flex: 1 }]}>{prompt.title}</Text>
+            {customPrompts[prompt.key] && (
+              <View style={[styles.freeBadge, { backgroundColor: '#FF9800' }]}>
+                <Text style={styles.freeBadgeText}>CUSTOM</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
+            {prompt.description}
+          </Text>
+
+          {editingPrompt === prompt.key ? (
+            <View>
+              <TextInput
+                style={[styles.input, {
+                  backgroundColor: inputBackground,
+                  color: textColor,
+                  height: 200,
+                  textAlignVertical: 'top',
+                  fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                  fontSize: 12,
+                  lineHeight: 18,
+                }]}
+                value={editPromptText}
+                onChangeText={setEditPromptText}
+                multiline
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              <View style={[styles.buttonRow, { marginTop: 8 }]}>
+                <TouchableOpacity
+                  style={[styles.button, styles.secondaryButton, { borderColor }]}
+                  onPress={() => setEditingPrompt(null)}
+                >
+                  <Text style={[styles.buttonTextSecondary, { color: textColor }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.primaryButton]}
+                  onPress={handleSavePrompt}
+                >
+                  <MaterialIcons name="save" size={16} color="#FFF" />
+                  <Text style={styles.buttonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View>
+              <View style={{
+                backgroundColor: inputBackground,
+                borderRadius: 8,
+                padding: 10,
+                maxHeight: 100,
+              }}>
+                <Text style={{
+                  color: secondaryTextColor,
+                  fontSize: 11,
+                  fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                  lineHeight: 16,
+                }} numberOfLines={5}>
+                  {(customPrompts[prompt.key] || prompt.defaultText).substring(0, 300)}...
+                </Text>
+              </View>
+              <View style={[styles.buttonRow, { marginTop: 8 }]}>
+                <TouchableOpacity
+                  style={[styles.button, styles.secondaryButton, { borderColor }]}
+                  onPress={() => handleCopyPrompt(prompt.key, prompt.defaultText)}
+                >
+                  <MaterialIcons name="content-copy" size={16} color="#007AFF" />
+                  <Text style={[styles.buttonTextSecondary, { color: '#007AFF' }]}>Copy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.secondaryButton, { borderColor }]}
+                  onPress={() => handleEditPrompt(prompt.key, prompt.defaultText)}
+                >
+                  <MaterialIcons name="edit" size={16} color="#FF9800" />
+                  <Text style={[styles.buttonTextSecondary, { color: '#FF9800' }]}>Modify</Text>
+                </TouchableOpacity>
+                {customPrompts[prompt.key] && (
+                  <TouchableOpacity
+                    style={[styles.button, styles.secondaryButton, { borderColor }]}
+                    onPress={() => handleResetPrompt(prompt.key)}
+                  >
+                    <MaterialIcons name="restore" size={16} color="#F44336" />
+                    <Text style={[styles.buttonTextSecondary, { color: '#F44336' }]}>Reset</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+        </View>
+      ))}
+
+      {/* Task Examples */}
+      <View style={[styles.card, { backgroundColor: cardBackground }]}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="lightbulb" size={20} color="#FFC107" />
+          <Text style={[styles.cardTitle, { color: textColor }]}>Script Task Examples</Text>
+        </View>
+        <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
+          Quick-select examples shown in the AI Script Generator.
+        </Text>
+        {SCRIPT_TASK_EXAMPLES.map((example, i) => (
+          <View key={i} style={{ flexDirection: 'row', paddingVertical: 4 }}>
+            <Text style={{ color: secondaryTextColor, fontSize: 12, marginRight: 6 }}>{i + 1}.</Text>
+            <Text style={{ color: textColor, fontSize: 12, flex: 1 }}>{example}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Config Info */}
+      <View style={[styles.card, { backgroundColor: cardBackground }]}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="folder" size={20} color="#4CAF50" />
+          <Text style={[styles.cardTitle, { color: textColor }]}>Config Files</Text>
+        </View>
+        <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
+          Defaults are defined in the config/ folder. Custom overrides from this screen are stored in app storage and take priority.
+        </Text>
+        {[
+          { file: 'config/providers.js', desc: 'AI provider definitions' },
+          { file: 'config/models.js', desc: 'Model lists by provider' },
+          { file: 'config/prompts.js', desc: 'System prompts' },
+        ].map((f, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 3 }}>
+            <MaterialIcons name="insert-drive-file" size={14} color={secondaryTextColor} />
+            <Text style={{ color: textColor, fontSize: 12, marginLeft: 6, fontWeight: '600' }}>{f.file}</Text>
+            <Text style={{ color: secondaryTextColor, fontSize: 11, marginLeft: 6 }}>- {f.desc}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 
   const renderAppearanceSettings = () => (
     <View style={styles.section}>
@@ -785,6 +1193,8 @@ const SettingsScreen = ({
         return renderBrowserSettings();
       case 'data':
         return renderDataSettings();
+      case 'developer':
+        return renderDeveloperSettings();
       default:
         return renderAISettings();
     }
@@ -810,6 +1220,7 @@ const SettingsScreen = ({
           {renderSectionButton('appearance', 'palette', 'Appearance')}
           {renderSectionButton('browser', 'language', 'Browser')}
           {renderSectionButton('data', 'storage', 'Data')}
+          {renderSectionButton('developer', 'code', 'Developer')}
         </ScrollView>
 
         {/* Content */}

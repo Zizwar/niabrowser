@@ -17,6 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.zizwar.niabrowser"
     },
+    "scheme": "niabrowser",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -24,6 +25,17 @@
       },
       "package": "com.zizwar.niabrowser",
       "versionCode": 3,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            { "scheme": "http" },
+            { "scheme": "https" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
