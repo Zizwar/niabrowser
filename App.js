@@ -242,6 +242,14 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       case 'pageCache':
         setPageCacheData(data.content);
         break;
+      case 'newTabAction':
+        if (data.action === 'ai') setIsAICommandVisible(true);
+        else if (data.action === 'scripts') setScriptManagerVisible(true);
+        else if (data.action === 'devtools') updateTabInfo(activeTabIndex, { isDevToolsVisible: true });
+        else if (data.action === 'api') updateTabInfo(activeTabIndex, { isCrudModalVisible: true });
+        else if (data.action === 'settings') setSettingsVisible(true);
+        else if (data.action === 'about') setAboutModalVisible(true);
+        break;
     }
     } catch (error) {
       console.error('Error handling message:', error);

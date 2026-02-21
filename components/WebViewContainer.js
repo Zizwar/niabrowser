@@ -1,6 +1,63 @@
-import React, { forwardRef, useImperativeHandle ,useState} from 'react';
+import React, { forwardRef, useImperativeHandle, useState, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
+
+const NEW_TAB_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0A0A0F;color:#F5F5F7;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+.logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;margin:32px auto 16px;box-shadow:0 8px 32px rgba(0,122,255,0.25)}
+h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
+.sub{font-size:13px;color:#8E8E93;margin-bottom:28px;text-align:center}
+.search{width:100%;max-width:500px;position:relative;margin-bottom:32px}
+.search input{width:100%;padding:14px 16px 14px 44px;background:#1C1C2E;border:1px solid #2A2A3A;border-radius:12px;color:#F5F5F7;font-size:16px;outline:none;transition:border-color .2s}
+.search input:focus{border-color:#007AFF}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#8E8E93}
+.tools{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.tool{background:#1C1C2E;border:1px solid #2A2A3A;border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s}
+.tool:active{transform:scale(.96);background:#22222F}
+.tool-icon{width:40px;height:40px;border-radius:12px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.tool-name{font-size:12px;font-weight:600;color:#A1A1AA}
+.section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#5856D6;margin-bottom:12px;width:100%;max-width:500px;text-align:left}
+.shortcuts{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.shortcut{text-align:center;cursor:pointer;padding:8px}
+.shortcut:active{opacity:.7}
+.shortcut-icon{width:44px;height:44px;border-radius:12px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#1C1C2E;border:1px solid #2A2A3A}
+.shortcut-name{font-size:11px;color:#8E8E93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style></head><body>
+<div class="logo">N</div>
+<h1>NIABrowser</h1>
+<p class="sub">AI-Powered Developer Browser</p>
+<div class="search">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+<input type="text" placeholder="Search or enter URL..." id="searchInput" autocomplete="off"/>
+</div>
+<div class="tools">
+<div class="tool" onclick="postMsg('ai')"><div class="tool-icon" style="background:rgba(0,122,255,.12);color:#007AFF">&#x1F4AC;</div><div class="tool-name">AI Chat</div></div>
+<div class="tool" onclick="postMsg('scripts')"><div class="tool-icon" style="background:rgba(156,39,176,.12);color:#9C27B0">&#x2728;</div><div class="tool-name">Scripts</div></div>
+<div class="tool" onclick="postMsg('devtools')"><div class="tool-icon" style="background:rgba(52,199,89,.12);color:#34C759">&#x1F6E0;</div><div class="tool-name">DevTools</div></div>
+<div class="tool" onclick="postMsg('api')"><div class="tool-icon" style="background:rgba(255,149,0,.12);color:#FF9500">&#x26A1;</div><div class="tool-name">API Client</div></div>
+<div class="tool" onclick="postMsg('settings')"><div class="tool-icon" style="background:rgba(88,86,214,.12);color:#5856D6">&#x2699;</div><div class="tool-name">Settings</div></div>
+<div class="tool" onclick="postMsg('about')"><div class="tool-icon" style="background:rgba(142,142,147,.12);color:#8E8E93">&#x2139;</div><div class="tool-name">About</div></div>
+</div>
+<div class="section-title">Quick Access</div>
+<div class="shortcuts">
+<div class="shortcut" onclick="go('https://google.com')"><div class="shortcut-icon">&#x1F50D;</div><div class="shortcut-name">Google</div></div>
+<div class="shortcut" onclick="go('https://github.com')"><div class="shortcut-icon">&#x1F4BB;</div><div class="shortcut-name">GitHub</div></div>
+<div class="shortcut" onclick="go('https://stackoverflow.com')"><div class="shortcut-icon">&#x1F4DA;</div><div class="shortcut-name">Stack</div></div>
+<div class="shortcut" onclick="go('https://developer.mozilla.org')"><div class="shortcut-icon">&#x1F4D6;</div><div class="shortcut-name">MDN</div></div>
+</div>
+<script>
+var searchInput=document.getElementById('searchInput');
+searchInput.addEventListener('keydown',function(e){
+if(e.key==='Enter'){var v=this.value.trim();if(!v)return;
+if(v.match(/^https?:\\/\\//)||v.match(/^[\\w-]+\\.[a-z]{2,}/)){go(v.match(/^https?:\\/\\//)?v:'https://'+v)}
+else{go('https://www.google.com/search?q='+encodeURIComponent(v))}}
+});
+function go(u){window.location.href=u}
+function postMsg(t){if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(JSON.stringify({type:'newTabAction',action:t}))}}
+</script></body></html>`;
 
 const WebViewContainer = forwardRef(({
   url,
@@ -149,7 +206,7 @@ console.log("###: coookis header", requestCookies)
           if (arg === null) return 'null';
           if (arg === undefined) return 'undefined';
           if (typeof arg === 'object') {
-            try { return JSON.stringify(arg, null, 2); } catch(e) { return String(arg); }
+            try { return JSON.stringify(arg, null, 2); } catch(e) { return arg && arg.constructor ? '[' + arg.constructor.name + ']' : '[Object]'; }
           }
           return String(arg);
         });
@@ -373,10 +430,12 @@ console.log("###: coookis header", requestCookies)
     return true;
   };
 
-  return ( 
-   <WebView 
+  const isNewTab = !url || url === 'about:blank';
+
+  return (
+   <WebView
       ref={webViewRef}
-      source={{ uri: url }}
+      source={isNewTab ? { html: NEW_TAB_HTML } : { uri: url }}
       style={styles.webview}
       injectedJavaScript={injectedJavaScript}
       onMessage={handleMessage}

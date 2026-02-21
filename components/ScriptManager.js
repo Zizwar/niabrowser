@@ -336,12 +336,23 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     }
   };
 
+  const generateScriptId = () => Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
+
   const loadScripts = async () => {
     try {
       const savedScripts = await AsyncStorage.getItem('userScripts');
       if (savedScripts) {
         const parsedScripts = JSON.parse(savedScripts);
-        setScripts(parsedScripts);
+        // Ensure every script has a unique id (migrate legacy scripts)
+        let needsSave = false;
+        const withIds = parsedScripts.map(s => {
+          if (!s.id) { needsSave = true; return { ...s, id: generateScriptId() }; }
+          return s;
+        });
+        if (needsSave) {
+          await AsyncStorage.setItem('userScripts', JSON.stringify(withIds));
+        }
+        setScripts(withIds);
       }
     } catch (error) {
       console.error('Error loading scripts:', error);
@@ -367,9 +378,9 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     };
     if (scriptToSave.name && scriptToSave.code) {
       const metadata = parseMetadata(scriptToSave.code);
-      const updatedScript = { ...scriptToSave, metadata };
+      const updatedScript = { ...scriptToSave, id: scriptToSave.id || generateScriptId(), metadata };
       const updatedScripts = isEditMode
-        ? scripts.map(s => s.name === originalScript?.name ? updatedScript : s)
+        ? scripts.map(s => s.id === originalScript?.id ? updatedScript : s)
         : [...scripts, updatedScript];
       saveScripts(updatedScripts);
       setCurrentScript({ name: '', code: '', urls: '', isEnabled: true, runAt: 'document-idle' });
@@ -393,14 +404,14 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     setShowEditOverlay(true);
   };
 
-  const deleteScript = (scriptName) => {
+  const deleteScript = (script) => {
     Alert.alert(
       "Delete Script",
-      `Are you sure you want to delete "${scriptName}"?`,
+      `Are you sure you want to delete "${script.name}"?`,
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: () => {
-          const updatedScripts = scripts.filter(s => s.name !== scriptName);
+          const updatedScripts = scripts.filter(s => s.id !== script.id);
           saveScripts(updatedScripts);
         }}
       ]
@@ -437,9 +448,9 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
     });
   };
 
-  const handleToggleScript = useCallback(async (scriptName) => {
+  const handleToggleScript = useCallback(async (scriptId) => {
     const updatedScripts = scripts.map(s =>
-      s.name === scriptName ? { ...s, isEnabled: !s.isEnabled } : s
+      s.id === scriptId ? { ...s, isEnabled: !s.isEnabled } : s
     );
     // Save to AsyncStorage and update state
     try {
@@ -475,13 +486,13 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
         <TouchableOpacity onPress={() => editScript(item)} style={styles.actionButton}>
           <MaterialIcons name="edit" size={22} color="#2196F3" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => deleteScript(item.name)} style={styles.actionButton}>
+        <TouchableOpacity onPress={() => deleteScript(item)} style={styles.actionButton}>
           <MaterialIcons name="delete" size={22} color="#F44336" />
         </TouchableOpacity>
         <View style={styles.actionButton}>
           <Switch
             value={item.isEnabled}
-            onValueChange={() => handleToggleScript(item.name)}
+            onValueChange={() => handleToggleScript(item.id)}
             trackColor={{ false: "#767577", true: "#81b0ff" }}
             thumbColor={item.isEnabled ? "#007AFF" : "#f4f3f4"}
           />
@@ -1081,7 +1092,7 @@ const ScriptManager = ({ visible, onClose, scripts, setScripts, injectScript, cu
         <FlatList
           data={scripts}
           renderItem={renderScriptItem}
-          keyExtractor={(item) => item.name}
+          keyExtractor={(item) => item.id || item.name}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
