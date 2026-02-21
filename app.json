@@ -23,17 +23,22 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F5F5F0"
       },
-      "package": "com.zizwar.niabrowser",
-      "versionCode": 3,
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": false,
           "data": [
-            { "scheme": "http" },
-            { "scheme": "https" }
+            {
+              "scheme": "http"
+            },
+            {
+              "scheme": "https"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
@@ -62,7 +67,9 @@
     ],
     "githubUrl": "https://github.com/zizwar/niabrowser",
     "extra": {
-      "eas": {}
+      "eas": {
+        "projectId": "f3de0a65-ce2b-4752-9b82-4ed5e4e4dabe"
+      }
     }
   }
 }
