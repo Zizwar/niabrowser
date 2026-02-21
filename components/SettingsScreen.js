@@ -640,7 +640,7 @@ const SettingsScreen = ({
 
             <View style={{ backgroundColor: isDarkMode ? '#1C1C1E' : '#F0F0F0', padding: 10, borderRadius: 8, marginTop: 12 }}>
               <Text style={{ color: secondaryTextColor, fontSize: 12, lineHeight: 16 }}>
-                Must be OpenAI-compatible API (supports /chat/completions endpoint). After creating the provider, add models and set the API key.
+                Must be OpenAI-compatible API (supports /chat/completions endpoint). HTTPS only — your API key is sent to this URL. After creating, add models and set the API key.
               </Text>
             </View>
 
@@ -776,7 +776,20 @@ const SettingsScreen = ({
       Alert.alert('Error', 'Provider name and base URL are required');
       return;
     }
-    const id = newProvider.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (!newProvider.baseUrl.startsWith('https://')) {
+      Alert.alert('Security Warning', 'Only HTTPS URLs are allowed for custom providers. Your API key will be sent to this URL.');
+      return;
+    }
+    const id = newProvider.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    if (!id) {
+      Alert.alert('Invalid Name', 'Provider name must contain alphanumeric characters.');
+      return;
+    }
+    const existingProvider = providers.find(p => p.id === id);
+    if (existingProvider) {
+      Alert.alert('Duplicate', `A provider with ID "${id}" already exists.`);
+      return;
+    }
     const success = await AIProviderManager.addProvider({
       id,
       name: newProvider.name,
