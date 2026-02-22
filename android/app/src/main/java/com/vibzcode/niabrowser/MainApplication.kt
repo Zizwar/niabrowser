@@ -1,4 +1,4 @@
-package com.zizwar.niabrowser
+package com.vibzcode.niabrowser
 
 import android.app.Application
 import android.content.res.Configuration

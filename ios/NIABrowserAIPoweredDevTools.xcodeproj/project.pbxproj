@@ -259,7 +259,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.zizwar.niabrowser";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.vibzcode.niabrowser";
 				PRODUCT_NAME = "NIABrowserAIPoweredDevTools";
 				SWIFT_OBJC_BRIDGING_HEADER = "NIABrowserAIPoweredDevTools/NIABrowserAIPoweredDevTools-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -288,7 +288,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.zizwar.niabrowser";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.vibzcode.niabrowser";
 				PRODUCT_NAME = "NIABrowserAIPoweredDevTools";
 				SWIFT_OBJC_BRIDGING_HEADER = "NIABrowserAIPoweredDevTools/NIABrowserAIPoweredDevTools-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

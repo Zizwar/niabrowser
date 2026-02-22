@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.zizwar.niabrowser</string>
+          <string>com.vibzcode.niabrowser</string>
         </array>
       </dict>
     </array>

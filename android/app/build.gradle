@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.zizwar.niabrowser'
+    namespace 'com.vibzcode.niabrowser'
     defaultConfig {
-        applicationId 'com.zizwar.niabrowser'
+        applicationId 'com.vibzcode.niabrowser'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2

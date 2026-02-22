@@ -1,4 +1,4 @@
-package com.zizwar.niabrowser
+package com.vibzcode.niabrowser
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
