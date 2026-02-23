@@ -1,5 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useState, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import { StyleSheet, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 const NEW_TAB_HTML = `<!DOCTYPE html>
@@ -49,14 +49,34 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
 <div class="shortcut" onclick="go('https://developer.mozilla.org')"><div class="shortcut-icon">&#x1F4D6;</div><div class="shortcut-name">MDN</div></div>
 </div>
 <script>
-var searchInput=document.getElementById('searchInput');
-searchInput.addEventListener('keydown',function(e){
-if(e.key==='Enter'){var v=this.value.trim();if(!v)return;
-if(v.match(/^https?:\\/\\//)||v.match(/^[\\w-]+\\.[a-z]{2,}/)){go(v.match(/^https?:\\/\\//)?v:'https://'+v)}
-else{go('https://www.google.com/search?q='+encodeURIComponent(v))}}
-});
-function go(u){window.location.href=u}
-function postMsg(t){if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(JSON.stringify({type:'newTabAction',action:t}))}}
+  var searchInput = document.getElementById('searchInput');
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      var value = e.target.value.trim();
+      if (!value) return;
+
+      if (value.match(/^https?:\\/\\//) || value.match(/^[\\w-]+\\.[a-z]{2,}/)) {
+        var url = value.match(/^https?:\\/\\//) ? value : 'https://' + value;
+        go(url);
+      } else {
+        go('https://www.google.com/search?q=' + encodeURIComponent(value));
+      }
+    }
+  });
+
+  function go(url) {
+    window.location.href = url;
+  }
+
+  function postMsg(action) {
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'newTabAction',
+        action: action
+      }));
+    }
+  }
 </script></body></html>`;
 
 const WebViewContainer = forwardRef(({
@@ -67,6 +87,7 @@ const WebViewContainer = forwardRef(({
   onNavigationStateChange,
   onLoadStart,
   onLoad,
+  onLoadEnd,
   addNewTab,
   userAgent: customUserAgent,
   isSafeMode
@@ -414,19 +435,18 @@ console.log("###: coookis header", requestCookies)
   };
 
   const handleShouldStartLoadWithRequest = (event) => {
-    // Allow authentication redirects (Google OAuth, etc.) to continue in same tab
-    if (event.url.includes('accounts.google.com') || 
-        event.url.includes('oauth') || 
-        event.url.includes('auth') ||
-        event.url.includes('callback') ||
-        event.url.includes('redirect')) {
-      return true;
-    }
-    
-    if (event.url !== url && event.navigationType === 'click') {
-      addNewTab(event.url);
+    const { url: reqUrl } = event;
+
+    // Handle non-http protocols (tel:, mailto:, whatsapp://, intent://, etc.)
+    if (!reqUrl.startsWith('http://') && !reqUrl.startsWith('https://') && !reqUrl.startsWith('about:')) {
+      Linking.canOpenURL(reqUrl).then((supported) => {
+        if (supported) {
+          Linking.openURL(reqUrl);
+        }
+      }).catch(() => {});
       return false;
     }
+
     return true;
   };
 
@@ -441,6 +461,7 @@ console.log("###: coookis header", requestCookies)
       onMessage={handleMessage}
       onLoadStart={onLoadStart}
       onLoad={onLoad}
+      onLoadEnd={onLoadEnd}
       forceDarkOn={isDarkMode}
       userAgent={userAgent}
       onNavigationStateChange={onNavigationStateChange}
@@ -451,6 +472,11 @@ console.log("###: coookis header", requestCookies)
       scalesPageToFit={true}
       mixedContentMode="compatibility"
       allowsBackForwardNavigationGestures={true}
+      sharedCookiesEnabled={true}
+      thirdPartyCookiesEnabled={true}
+      allowsInlineMediaPlayback={true}
+      mediaPlaybackRequiresUserAction={false}
+      cacheEnabled={true}
     />
   );
 });

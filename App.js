@@ -8,6 +8,7 @@ import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WebViewContainer from './components/WebViewContainer';
 import ToolBar from './components/ToolBar';
+import LoadingProgressBar from './components/LoadingProgressBar';
 import TabBar from './components/TabBar';
 import BottomNavigation from './components/BottomNavigation';
 import BottomSheet from './components/BottomSheet';
@@ -58,6 +59,7 @@ const AppContent = () => {
   const [isAICommandVisible, setIsAICommandVisible] = useState(false);
   const [aiInitialContext, setAiInitialContext] = useState(null);
   const [isSettingsVisible, setSettingsVisible] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
   const webViewRefs = useWebViewRefs();
   const { history, addToHistory, clearHistory, setHistory } = useHistory();
@@ -242,14 +244,20 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       case 'pageCache':
         setPageCacheData(data.content);
         break;
-      case 'newTabAction':
-        if (data.action === 'ai') setIsAICommandVisible(true);
-        else if (data.action === 'scripts') setScriptManagerVisible(true);
-        else if (data.action === 'devtools') updateTabInfo(activeTabIndex, { isDevToolsVisible: true });
-        else if (data.action === 'api') updateTabInfo(activeTabIndex, { isCrudModalVisible: true });
-        else if (data.action === 'settings') setSettingsVisible(true);
-        else if (data.action === 'about') setAboutModalVisible(true);
+      case 'newTabAction': {
+        // Security: only allow newTabAction from the new tab page (about:blank / no URL)
+        const senderUrl = tabs[activeTabIndex]?.url;
+        if (senderUrl && senderUrl !== 'about:blank') break;
+        switch (data.action) {
+          case 'ai': setIsAICommandVisible(true); break;
+          case 'scripts': setScriptManagerVisible(true); break;
+          case 'devtools': updateTabInfo(activeTabIndex, { isDevToolsVisible: true }); break;
+          case 'api': updateTabInfo(activeTabIndex, { isCrudModalVisible: true }); break;
+          case 'settings': setSettingsVisible(true); break;
+          case 'about': setAboutModalVisible(true); break;
+        }
         break;
+      }
     }
     } catch (error) {
       console.error('Error handling message:', error);
@@ -435,7 +443,7 @@ const goHomeOld = useCallback(async () => {
             isDarkMode={isDarkMode}
             isLoading={isTabsLoading}
           />
-          <ToolBar 
+          <ToolBar
             url={tabs[activeTabIndex]?.url || ''}
             setUrl={(newUrl) => updateTabUrl(activeTabIndex, newUrl)}
             isDarkMode={isDarkMode}
@@ -458,6 +466,7 @@ const goHomeOld = useCallback(async () => {
             canGoBack={tabs[activeTabIndex]?.canGoBack || false}
             canGoForward={tabs[activeTabIndex]?.canGoForward || false}
           />
+          <LoadingProgressBar isLoading={isPageLoading} isDarkMode={isDarkMode} />
         </>
       )}
       <View style={{ flex: 1 }}>
@@ -477,8 +486,17 @@ const goHomeOld = useCallback(async () => {
               isDarkMode={isDarkMode}
               isDesktopMode={isDesktopMode}
               onNavigationStateChange={(navState) => handleNavigationStateChange(navState, index)}
-              onLoadStart={(event) => runAutoScripts(event.nativeEvent.url, 'start')}
-              onLoad={(event) => runAutoScripts(event.nativeEvent.url, 'load')}
+              onLoadStart={(event) => {
+                if (index === activeTabIndex) setIsPageLoading(true);
+                runAutoScripts(event.nativeEvent.url, 'start');
+              }}
+              onLoad={(event) => {
+                if (index === activeTabIndex) setIsPageLoading(false);
+                runAutoScripts(event.nativeEvent.url, 'load');
+              }}
+              onLoadEnd={() => {
+                if (index === activeTabIndex) setIsPageLoading(false);
+              }}
               addNewTab={addNewTab}
               isSafeMode={isSafeMode}
               userAgent={currentUserAgent}
