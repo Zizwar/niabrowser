@@ -66,6 +66,10 @@
       "expo-sharing"
     ],
     "githubUrl": "https://github.com/zizwar/niabrowser",
-    "extra": {}
+    "extra": {
+      "eas": {
+        "projectId": "f3de0a65-ce2b-4752-9b82-4ed5e4e4dabe"
+      }
+    }
   }
 }
