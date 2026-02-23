@@ -3,8 +3,6 @@ import { SafeAreaView, StyleSheet, View, BackHandler, Share, Alert, Modal, Text,
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
-import * as MediaLibrary from 'expo-media-library';
-import * as ScreenCapture from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WebViewContainer from './components/WebViewContainer';
 import ToolBar from './components/ToolBar';
@@ -375,22 +373,6 @@ const goHomeOld = useCallback(async () => {
     }
   }, [activeTabIndex, webViewRefs]);
 
-  const takeScreenshot = useCallback(async () => {
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant media library permission to save screenshots');
-        return;
-      }
-      
-      const uri = await ScreenCapture.captureAsync();
-      await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('Screenshot saved', 'Screenshot has been saved to your gallery');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to take screenshot');
-      console.error('Screenshot error:', error);
-    }
-  }, []);
 
   // Handle desktop mode toggle with page reload
   const handleDesktopModeToggle = useCallback(() => {

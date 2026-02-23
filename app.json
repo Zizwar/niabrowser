@@ -43,15 +43,7 @@
       ],
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "WRITE_EXTERNAL_STORAGE",
-        "READ_EXTERNAL_STORAGE",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VIDEO",
-        "android.permission.READ_MEDIA_AUDIO"
+        "ACCESS_NETWORK_STATE"
       ]
     },
     "web": {
@@ -60,7 +52,6 @@
     "owner": "zizwar",
     "plugins": [
       "expo-web-browser",
-      "expo-media-library",
       "expo-secure-store",
       "expo-font",
       "expo-sharing"

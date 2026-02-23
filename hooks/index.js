@@ -53,10 +53,25 @@ export const useTabs = (webViewRefs) => {
   const [tabs, setTabs] = useState([createNewTab()]);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [isTabsLoading, setIsTabsLoading] = useState(true);
+  const tabsRef = useRef([]);
 
   useEffect(() => {
     loadTabs();
   }, []);
+
+  // حفظ التابات عند تغيير URLs
+  useEffect(() => {
+    if (!isTabsLoading && tabs.length > 0) {
+      // تحقق من تغيير URLs فقط
+      const currentUrls = tabs.map(t => t.url).join(',');
+      const prevUrls = tabsRef.current.map(t => t.url || '').join(',');
+
+      if (currentUrls !== prevUrls) {
+        saveTabs(tabs, activeTabIndex);
+        tabsRef.current = tabs;
+      }
+    }
+  }, [tabs, activeTabIndex, isTabsLoading]);
 
   useEffect(() => {
     const backAction = () => {
@@ -78,14 +93,21 @@ export const useTabs = (webViewRefs) => {
     try {
       const savedTabs = await AsyncStorage.getItem('savedTabs');
       const savedActiveIndex = await AsyncStorage.getItem('activeTabIndex');
-      
+
       if (savedTabs) {
         const parsedTabs = JSON.parse(savedTabs);
-        setTabs(parsedTabs.map(tab => ({
-          ...createNewTab(tab.url, tab.title),
-          ...tab
-        })));
-        
+        setTabs(parsedTabs.map(tab => {
+          // إنشاء tab جديد بالقيم المحفوظة
+          const newTab = createNewTab(tab.url, tab.title);
+          // الاحتفاظ بالـ id المحفوظ إذا كان موجود
+          return {
+            ...newTab,
+            id: tab.id || newTab.id,
+            url: tab.url || newTab.url, // التأكد من استخدام الـ URL المحفوظ
+            title: tab.title || newTab.title
+          };
+        }));
+
         if (savedActiveIndex) {
           setActiveTabIndex(parseInt(savedActiveIndex));
         }
