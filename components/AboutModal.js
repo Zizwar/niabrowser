@@ -136,8 +136,8 @@ const AboutModal = ({ visible, onClose, isDarkMode, onNavigate }) => {
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>CONTACT</Text>
         <View style={styles.linkSection}>
           {renderLinkItem('language', 'Website', () => openLink('https://niabrowser.vibzcode.com'))}
-          {renderLinkItem('email', 'Contact Us', () => openLink('mailto:niabrowser@vibzcode.com'))}
-          {renderLinkItem('feedback', 'Send Feedback', () => openLink('mailto:niabrowser@vibzcode.com'))}
+          {renderLinkItem('email', 'Contact Us', () => openLink('mailto:contact-niabrowser@vibzcode.com'))}
+          {renderLinkItem('feedback', 'Send Feedback', () => openLink('mailto:feedback-niabrowser@vibzcode.com'))}
         </View>
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>SOURCE CODE</Text>

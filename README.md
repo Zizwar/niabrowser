@@ -172,5 +172,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 - **Website**: [niabrowser.vibzcode.com](https://niabrowser.vibzcode.com)
 - **GitHub**: [github.com/zizwar/niabrowser](https://github.com/zizwar/niabrowser)
 - **Issues**: [GitHub Issues](https://github.com/zizwar/niabrowser/issues)
-- **Contact**: niabrowser@vibzcode.com
+- **Contact**: contact-niabrowser@vibzcode.com
 - **Developer**: [Brahim Bidi](https://brah.im)

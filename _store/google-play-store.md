@@ -111,7 +111,7 @@ developer browser, devtools, AI browser, script manager, API client, web inspect
 
 ## Contact Details (required)
 ```
-Email: niabrowser@vibzcode.com
+Email: contact-niabrowser@vibzcode.com
 Website: https://niabrowser.vibzcode.com
 Privacy Policy: https://niabrowser.vibzcode.com/privacy.html
 ```
