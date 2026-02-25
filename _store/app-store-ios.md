@@ -68,7 +68,7 @@ FULLY CUSTOMIZABLE
 
 Your API keys stay on your device. All AI requests go directly to your chosen provider.
 
-Website: https://browser.niascript.com
+Website: https://niabrowser.vibzcode.com
 ```
 
 ## Keywords (max 100 chars, comma separated)
@@ -107,7 +107,7 @@ Secondary: Productivity
 1. Go to App Privacy section
 2. Data Types Collected: **None** (collected by the app itself)
 3. Note: Users provide their own API keys which are stored locally only
-4. Privacy Policy URL: `https://browser.niascript.com/privacy.html`
+4. Privacy Policy URL: `https://niabrowser.vibzcode.com/privacy.html`
 
 ### Step 5: Version Information
 1. Paste the Description, Promotional Text, Keywords

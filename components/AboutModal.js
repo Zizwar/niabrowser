@@ -64,7 +64,7 @@ const GuideContent = ({ isDarkMode, onNavigate }) => {
       ))}
       <TouchableOpacity
         style={[styles.guideCard, { backgroundColor: '#007AFF', flexDirection: 'row', alignItems: 'center', gap: 12 }]}
-        onPress={() => onNavigate ? onNavigate('https://browser.niascript.com/demo/') : Linking.openURL('https://browser.niascript.com/demo/')}
+        onPress={() => onNavigate ? onNavigate('https://niabrowser.vibzcode.com/demo/') : Linking.openURL('https://niabrowser.vibzcode.com/demo/')}
       >
         <MaterialIcons name="science" size={24} color="#FFF" />
         <View style={{ flex: 1 }}>
@@ -135,9 +135,9 @@ const AboutModal = ({ visible, onClose, isDarkMode, onNavigate }) => {
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>CONTACT</Text>
         <View style={styles.linkSection}>
-          {renderLinkItem('language', 'Website', () => openLink('https://browser.niascript.com'))}
-          {renderLinkItem('email', 'Contact Us', () => openLink('mailto:contact_browser@niascript.com'))}
-          {renderLinkItem('feedback', 'Send Feedback', () => openLink('mailto:feedback_browser@niascript.com'))}
+          {renderLinkItem('language', 'Website', () => openLink('https://niabrowser.vibzcode.com'))}
+          {renderLinkItem('email', 'Contact Us', () => openLink('mailto:niabrowser@vibzcode.com'))}
+          {renderLinkItem('feedback', 'Send Feedback', () => openLink('mailto:niabrowser@vibzcode.com'))}
         </View>
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>SOURCE CODE</Text>
@@ -148,9 +148,9 @@ const AboutModal = ({ visible, onClose, isDarkMode, onNavigate }) => {
 
         <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>LEGAL</Text>
         <View style={styles.linkSection}>
-          {renderLinkItem('gavel', 'Terms of Service', () => openLink('https://browser.niascript.com/terms.html'))}
-          {renderLinkItem('privacy-tip', 'Privacy Policy', () => openLink('https://browser.niascript.com/privacy.html'))}
-          {renderLinkItem('info', 'Disclaimer', () => openLink('https://browser.niascript.com/disclaimer.html'))}
+          {renderLinkItem('gavel', 'Terms of Service', () => openLink('https://niabrowser.vibzcode.com/terms.html'))}
+          {renderLinkItem('privacy-tip', 'Privacy Policy', () => openLink('https://niabrowser.vibzcode.com/privacy.html'))}
+          {renderLinkItem('info', 'Disclaimer', () => openLink('https://niabrowser.vibzcode.com/disclaimer.html'))}
         </View>
 
         {/* Notice */}

@@ -13,10 +13,10 @@
 </p>
 
 <p align="center">
-  <a href="https://browser.niascript.com">Website</a> •
+  <a href="https://niabrowser.vibzcode.com">Website</a> •
   <a href="https://github.com/zizwar/niabrowser/releases">Download</a> •
-  <a href="https://browser.niascript.com/privacy">Privacy</a> •
-  <a href="https://browser.niascript.com/terms">Terms</a>
+  <a href="https://niabrowser.vibzcode.com/privacy">Privacy</a> •
+  <a href="https://niabrowser.vibzcode.com/terms">Terms</a>
 </p>
 
 ---
@@ -161,7 +161,7 @@ utils/
 - No analytics, tracking, or data collection by the app
 - Open source for full transparency
 
-See [Privacy Policy](https://browser.niascript.com/privacy) for details.
+See [Privacy Policy](https://niabrowser.vibzcode.com/privacy) for details.
 
 ## License
 
@@ -169,8 +169,8 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## Links
 
-- **Website**: [browser.niascript.com](https://browser.niascript.com)
+- **Website**: [niabrowser.vibzcode.com](https://niabrowser.vibzcode.com)
 - **GitHub**: [github.com/zizwar/niabrowser](https://github.com/zizwar/niabrowser)
 - **Issues**: [GitHub Issues](https://github.com/zizwar/niabrowser/issues)
-- **Contact**: contact_browser@niascript.com
+- **Contact**: niabrowser@vibzcode.com
 - **Developer**: [Brahim Bidi](https://brah.im)

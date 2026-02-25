@@ -72,5 +72,5 @@ All other categories — we collect nothing.
 
 ## Privacy Policy URL
 ```
-https://browser.niascript.com/privacy.html
+https://niabrowser.vibzcode.com/privacy.html
 ```

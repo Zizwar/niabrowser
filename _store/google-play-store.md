@@ -73,7 +73,7 @@ PRIVACY & SECURITY
 
 NIABrowser is free, open source, and designed for web developers, front-end engineers, QA testers, and anyone who needs powerful browser tools on mobile.
 
-Website: https://browser.niascript.com
+Website: https://niabrowser.vibzcode.com
 Source: https://github.com/zizwar/niabrowser
 ```
 
@@ -111,9 +111,9 @@ developer browser, devtools, AI browser, script manager, API client, web inspect
 
 ## Contact Details (required)
 ```
-Email: contact_browser@niascript.com
-Website: https://browser.niascript.com
-Privacy Policy: https://browser.niascript.com/privacy.html
+Email: niabrowser@vibzcode.com
+Website: https://niabrowser.vibzcode.com
+Privacy Policy: https://niabrowser.vibzcode.com/privacy.html
 ```
 
 ---
@@ -206,7 +206,7 @@ Privacy Policy: https://browser.niascript.com/privacy.html
 2. Data collected: None by the app itself
 3. Data shared: None
 4. Security: Data encrypted in transit (HTTPS for API calls)
-5. Privacy policy URL: `https://browser.niascript.com/privacy.html`
+5. Privacy policy URL: `https://niabrowser.vibzcode.com/privacy.html`
 
 ### Step 8: App Access
 1. Go to **App access**
@@ -247,5 +247,5 @@ What's new in v1.1.0:
 | "Browser app" extra scrutiny | Emphasize it's a **developer tool**, not a general browser. The description positions it as a development utility. |
 | JavaScript execution concerns | We say "run JavaScript" and "script automation" — never "inject" or "exploit". Scripts are user-created for their own use. |
 | API key storage | Keys stored locally via AsyncStorage. Mention in Data Safety that no keys are transmitted to your servers. |
-| Missing privacy policy | Must have a live privacy policy URL before submitting. Already at browser.niascript.com/privacy.html |
+| Missing privacy policy | Must have a live privacy policy URL before submitting. Already at niabrowser.vibzcode.com/privacy.html |
 | Permissions justification | INTERNET: required for browsing. STORAGE: for screenshot saving and data export. Explain each in Data Safety. |
