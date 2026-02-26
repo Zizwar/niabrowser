@@ -1,7 +1,8 @@
 // components/BottomNavigation.js
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const BottomNavigation = ({
   isDarkMode,
@@ -19,6 +20,10 @@ const BottomNavigation = ({
   isFullscreen,
   onAIPress,
 }) => {
+  let insets = { bottom: 0 };
+  try { insets = useSafeAreaInsets(); } catch {}
+  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 4) : insets.bottom;
+
   const bg = isDarkMode ? '#1A1A1A' : '#FFFFFF';
   const borderColor = isDarkMode ? '#2C2C2E' : '#E5E5E5';
   const iconColor = isDarkMode ? '#AAAAAA' : '#8E8E93';
@@ -43,7 +48,7 @@ const BottomNavigation = ({
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: bg, borderTopColor: borderColor }]}>
+    <View style={[styles.container, { backgroundColor: bg, borderTopColor: borderColor, paddingBottom: bottomPadding }]}>
       <NavItem icon="home" label="Home" onPress={onHomePress} onLongPress={onHomeLongPress} />
       {isSafeMode ? (
         <>

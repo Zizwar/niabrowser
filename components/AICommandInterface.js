@@ -55,6 +55,10 @@ const AICommandInterface = ({
   onExecuteCommand,
   pageCacheData,
   initialContext,
+  tabs = [],
+  activeTabIndex = 0,
+  onSwitchTab,
+  webViewRefs,
 }) => {
   // Messages & State
   const [command, setCommand] = useState('');
@@ -97,6 +101,7 @@ const AICommandInterface = ({
   // Token tracking
   const [contextTokens, setContextTokens] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
+  const [showTargetSelector, setShowTargetSelector] = useState(false);
 
   // Keyboard handling - lift only the input bar on Android
   const keyboardHeight = useRef(new Animated.Value(0)).current;
@@ -985,6 +990,53 @@ IMPORTANT RULES:
         </View>
       </View>
 
+      {/* Target URL selector */}
+      {tabs.length > 0 && (
+        <TouchableOpacity
+          style={[styles.targetUrlBar, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}
+          onPress={() => setShowTargetSelector(!showTargetSelector)}
+        >
+          <MaterialIcons name="language" size={16} color="#4CAF50" />
+          <Text style={[styles.targetUrlText, { color: textColor }]} numberOfLines={1}>
+            {currentUrl || 'No page open'}
+          </Text>
+          {tabs.length > 1 && (
+            <MaterialIcons name={showTargetSelector ? 'expand-less' : 'expand-more'} size={16} color={secondaryTextColor} />
+          )}
+        </TouchableOpacity>
+      )}
+      {showTargetSelector && tabs.length > 1 && (
+        <View style={[styles.targetSelectorList, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
+          {tabs.map((tab, index) => (
+            <TouchableOpacity
+              key={tab.id}
+              style={[
+                styles.targetSelectorItem,
+                { borderBottomColor: borderColor },
+                index === activeTabIndex && { backgroundColor: '#007AFF15' },
+              ]}
+              onPress={() => {
+                if (onSwitchTab) onSwitchTab(index);
+                setShowTargetSelector(false);
+              }}
+            >
+              <View style={[styles.targetDot, index === activeTabIndex && { backgroundColor: '#007AFF' }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.targetTabTitle, { color: textColor }]} numberOfLines={1}>
+                  {tab.title || 'New Tab'}
+                </Text>
+                <Text style={[styles.targetTabUrl, { color: secondaryTextColor }]} numberOfLines={1}>
+                  {tab.url || 'about:blank'}
+                </Text>
+              </View>
+              {index === activeTabIndex && (
+                <MaterialIcons name="check" size={18} color="#007AFF" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Model + Token info bar */}
       <View style={[styles.infoBar, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
         <TouchableOpacity style={styles.modelBtn} onPress={() => setShowModelSelector(!showModelSelector)}>
@@ -1101,6 +1153,19 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700' },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: { padding: 4 },
+  targetUrlBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1,
+  },
+  targetUrlText: { fontSize: 12, flex: 1 },
+  targetSelectorList: { borderBottomWidth: 1, maxHeight: 200 },
+  targetSelectorItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 0.5,
+  },
+  targetDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#8E8E93' },
+  targetTabTitle: { fontSize: 13, fontWeight: '500' },
+  targetTabUrl: { fontSize: 11, marginTop: 1 },
   infoBar: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1,

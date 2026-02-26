@@ -10,7 +10,7 @@ import {
 import { Icon } from 'react-native-elements';
 import { SettingsManager } from '../utils/SettingsManager';
 
-const AINetworkAnalyzer = ({ networkLogs, isDarkMode, selectedModel = 'anthropic/claude-3.5-sonnet' }) => {
+const AINetworkAnalyzer = ({ networkLogs, isDarkMode, selectedModel = 'openai/gpt-4.1-mini' }) => {
   const [analysis, setAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState([]);

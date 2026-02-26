@@ -69,10 +69,10 @@ const UnifiedSettings = ({ visible, onClose, isDarkMode }) => {
 
   const models = [
     {
-      id: 'anthropic/claude-3.5-sonnet',
-      name: 'Claude 3.5 Sonnet',
-      cost: 'Medium',
-      description: 'الأفضل للمهام المعقدة'
+      id: 'openai/gpt-4.1-mini',
+      name: 'GPT-4.1 Mini',
+      cost: 'Low',
+      description: 'Fast and affordable GPT model'
     },
     {
       id: 'openai/gpt-4o',

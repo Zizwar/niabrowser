@@ -14,7 +14,7 @@ const AIPerformanceAnalyzer = ({
   performanceData,
   isDarkMode,
   webViewRef,
-  selectedModel = 'anthropic/claude-3.5-sonnet'
+  selectedModel = 'openai/gpt-4.1-mini'
 }) => {
   const [analysis, setAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

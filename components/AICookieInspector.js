@@ -10,7 +10,7 @@ import {
 import { Icon } from 'react-native-elements';
 import { SettingsManager } from '../utils/SettingsManager';
 
-const AICookieInspector = ({ storageData, isDarkMode, selectedModel = 'anthropic/claude-3.5-sonnet' }) => {
+const AICookieInspector = ({ storageData, isDarkMode, selectedModel = 'openai/gpt-4.1-mini' }) => {
   const [analysis, setAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 

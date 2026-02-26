@@ -10,7 +10,7 @@ export const AppProvider = ({ children }) => {
   const [isDesktopMode, setIsDesktopMode] = useState(false);
   const [isSafeMode, setIsSafeMode] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('anthropic/claude-3.5-sonnet');
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-4.1-mini');
 
   // Tabs State
   const [tabs, setTabs] = useState([{

@@ -65,8 +65,10 @@ const SettingsScreen = ({
 
   // Model Management
   const [showAddModel, setShowAddModel] = useState(false);
-  const [newModel, setNewModel] = useState({ id: '', name: '', provider: '', description: '' });
+  const [newModel, setNewModel] = useState({ id: '', name: '', provider: '', description: '', cost: 'Medium', inputCost: '0', outputCost: '0', maxTokens: '4096' });
   const [allModels, setAllModels] = useState([]);
+  const [editingModel, setEditingModel] = useState(null);
+  const [showAllModels, setShowAllModels] = useState(false);
 
   // Browser Settings
   const [homePage, setHomePage] = useState('https://www.google.com');
@@ -536,38 +538,89 @@ const SettingsScreen = ({
           <Text style={[styles.cardTitle, { color: textColor }]}>Model Management</Text>
         </View>
         <Text style={[styles.cardDescription, { color: secondaryTextColor }]}>
-          Add custom models or remove existing ones.
+          Browse, add, edit, or remove models for {activeProvider?.name || 'this provider'}.
         </Text>
+
+        {/* Toggle all models view */}
+        <TouchableOpacity
+          style={[styles.button, styles.secondaryButton, { borderColor, marginBottom: 10 }]}
+          onPress={() => setShowAllModels(!showAllModels)}
+        >
+          <MaterialIcons name={showAllModels ? 'expand-less' : 'view-list'} size={18} color="#007AFF" />
+          <Text style={[styles.buttonTextSecondary, { color: '#007AFF' }]}>
+            {showAllModels ? 'Hide Models' : `View All Models (${allModels.filter(m => m.providerId === activeProviderId).length})`}
+          </Text>
+        </TouchableOpacity>
+
+        {/* All Models List grouped by provider */}
+        {showAllModels && (
+          <View style={styles.modelList}>
+            {allModels.filter(m => m.providerId === activeProviderId).map((model, index) => {
+              const costColors = { 'Free': '#4CAF50', 'Free*': '#4CAF50', 'Low': '#2196F3', 'Medium': '#FF9800', 'High': '#F44336', 'Custom': '#9C27B0' };
+              return (
+                <View key={model.id || index} style={[styles.modelItem, { backgroundColor: inputBackground }]}>
+                  <View style={styles.modelItemInfo}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.modelItemName, { color: textColor }]}>{model.name}</Text>
+                      <View style={{ backgroundColor: (costColors[model.cost] || '#666') + '20', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                        <Text style={{ color: costColors[model.cost] || '#666', fontSize: 10, fontWeight: '600' }}>{model.cost || 'N/A'}</Text>
+                      </View>
+                      {model.isCustom && (
+                        <View style={[styles.freeBadge, { backgroundColor: '#FF9800' }]}>
+                          <Text style={styles.freeBadgeText}>CUSTOM</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.modelItemId, { color: secondaryTextColor }]}>{model.id}</Text>
+                    <Text style={{ color: secondaryTextColor, fontSize: 11, marginTop: 2 }}>
+                      In: ${model.inputCost || 0}/1K | Out: ${model.outputCost || 0}/1K | Max: {model.maxTokens || 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingModel(model);
+                        setNewModel({
+                          id: model.id,
+                          name: model.name,
+                          provider: model.provider || '',
+                          description: model.description || '',
+                          cost: model.cost || 'Medium',
+                          inputCost: String(model.inputCost || 0),
+                          outputCost: String(model.outputCost || 0),
+                          maxTokens: String(model.maxTokens || 4096),
+                        });
+                        setShowAddModel(true);
+                      }}
+                      style={styles.modelDeleteButton}
+                    >
+                      <MaterialIcons name="edit" size={18} color="#007AFF" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteModel(model.id)}
+                      style={styles.modelDeleteButton}
+                    >
+                      <MaterialIcons name="delete" size={18} color="#F44336" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {/* Add Model Button */}
         <TouchableOpacity
-          style={[styles.button, styles.secondaryButton, { borderColor, marginBottom: 10 }]}
-          onPress={() => setShowAddModel(true)}
+          style={[styles.button, styles.primaryButton, { marginTop: 6 }]}
+          onPress={() => {
+            setEditingModel(null);
+            setNewModel({ id: '', name: '', provider: '', description: '', cost: 'Medium', inputCost: '0', outputCost: '0', maxTokens: '4096' });
+            setShowAddModel(true);
+          }}
         >
-          <MaterialIcons name="add" size={18} color="#007AFF" />
-          <Text style={[styles.buttonTextSecondary, { color: '#007AFF' }]}>Add Custom Model</Text>
+          <MaterialIcons name="add" size={18} color="#FFFFFF" />
+          <Text style={styles.buttonText}>Add Model</Text>
         </TouchableOpacity>
-
-        {/* Model List (show custom models only) */}
-        {allModels.filter(m => m.isCustom && m.providerId === activeProviderId).length > 0 && (
-          <View style={styles.modelList}>
-            <Text style={[styles.modelListTitle, { color: secondaryTextColor }]}>Custom Models:</Text>
-            {allModels.filter(m => m.isCustom && m.providerId === activeProviderId).map((model, index) => (
-              <View key={model.id || index} style={[styles.modelItem, { backgroundColor: inputBackground }]}>
-                <View style={styles.modelItemInfo}>
-                  <Text style={[styles.modelItemName, { color: textColor }]}>{model.name}</Text>
-                  <Text style={[styles.modelItemId, { color: secondaryTextColor }]}>{model.id}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => handleDeleteModel(model.id)}
-                  style={styles.modelDeleteButton}
-                >
-                  <MaterialIcons name="delete" size={20} color="#F44336" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
       </View>
 
       {/* Add Custom Provider Modal */}
@@ -663,13 +716,14 @@ const SettingsScreen = ({
         </View>
       )}
 
-      {/* Add Model Modal */}
+      {/* Add/Edit Model Modal */}
       {showAddModel && (
         <View style={[styles.addModelOverlay]}>
+          <ScrollView contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', flexGrow: 1, padding: 20 }}>
           <View style={[styles.addModelCard, { backgroundColor: cardBackground }]}>
             <View style={styles.addModelHeader}>
-              <Text style={[styles.addModelTitle, { color: textColor }]}>Add Custom Model</Text>
-              <TouchableOpacity onPress={() => setShowAddModel(false)}>
+              <Text style={[styles.addModelTitle, { color: textColor }]}>{editingModel ? 'Edit Model' : 'Add Model'}</Text>
+              <TouchableOpacity onPress={() => { setShowAddModel(false); setEditingModel(null); }}>
                 <MaterialIcons name="close" size={24} color={textColor} />
               </TouchableOpacity>
             </View>
@@ -681,6 +735,7 @@ const SettingsScreen = ({
               onChangeText={(text) => setNewModel({...newModel, id: text})}
               placeholder="e.g., gpt-5-turbo"
               placeholderTextColor={secondaryTextColor}
+              editable={!editingModel}
             />
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Display Name *</Text>
@@ -701,22 +756,73 @@ const SettingsScreen = ({
               placeholderTextColor={secondaryTextColor}
             />
 
+            {/* Cost Tier */}
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Cost Tier</Text>
+            <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+              {['Free', 'Free*', 'Low', 'Medium', 'High'].map(tier => (
+                <TouchableOpacity
+                  key={tier}
+                  onPress={() => setNewModel({...newModel, cost: tier})}
+                  style={{
+                    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6,
+                    backgroundColor: newModel.cost === tier ? '#007AFF' : inputBackground,
+                  }}
+                >
+                  <Text style={{ color: newModel.cost === tier ? '#FFF' : textColor, fontSize: 13, fontWeight: '500' }}>{tier}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Input Cost */}
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Input Cost ($/1K tokens)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.inputCost}
+              onChangeText={(text) => setNewModel({...newModel, inputCost: text})}
+              placeholder="0.003"
+              placeholderTextColor={secondaryTextColor}
+              keyboardType="decimal-pad"
+            />
+
+            {/* Output Cost */}
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Output Cost ($/1K tokens)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.outputCost}
+              onChangeText={(text) => setNewModel({...newModel, outputCost: text})}
+              placeholder="0.015"
+              placeholderTextColor={secondaryTextColor}
+              keyboardType="decimal-pad"
+            />
+
+            {/* Max Tokens */}
+            <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Max Output Tokens</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              value={newModel.maxTokens}
+              onChangeText={(text) => setNewModel({...newModel, maxTokens: text})}
+              placeholder="8192"
+              placeholderTextColor={secondaryTextColor}
+              keyboardType="number-pad"
+            />
+
             <View style={styles.addModelButtons}>
               <TouchableOpacity
                 style={[styles.button, styles.secondaryButton, { borderColor, flex: 1 }]}
-                onPress={() => setShowAddModel(false)}
+                onPress={() => { setShowAddModel(false); setEditingModel(null); }}
               >
                 <Text style={[styles.buttonTextSecondary, { color: textColor }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.primaryButton, { flex: 1 }]}
-                onPress={handleAddModel}
+                onPress={editingModel ? handleEditModel : handleAddModel}
               >
-                <MaterialIcons name="add" size={18} color="#FFFFFF" />
-                <Text style={styles.buttonText}>Add</Text>
+                <MaterialIcons name={editingModel ? 'save' : 'add'} size={18} color="#FFFFFF" />
+                <Text style={styles.buttonText}>{editingModel ? 'Save' : 'Add'}</Text>
               </TouchableOpacity>
             </View>
           </View>
+          </ScrollView>
         </View>
       )}
     </View>
@@ -733,19 +839,50 @@ const SettingsScreen = ({
       name: newModel.name,
       provider: newModel.provider || 'Custom',
       description: newModel.description || '',
-      cost: 'Custom',
-      inputCost: 0,
-      outputCost: 0,
-      maxTokens: 4096,
+      cost: newModel.cost || 'Medium',
+      inputCost: parseFloat(newModel.inputCost) || 0,
+      outputCost: parseFloat(newModel.outputCost) || 0,
+      maxTokens: parseInt(newModel.maxTokens) || 4096,
     });
 
     if (success) {
       Alert.alert('Success', 'Model added successfully');
       setShowAddModel(false);
-      setNewModel({ id: '', name: '', provider: '', description: '' });
+      setEditingModel(null);
+      setNewModel({ id: '', name: '', provider: '', description: '', cost: 'Medium', inputCost: '0', outputCost: '0', maxTokens: '4096' });
       loadSettings();
     } else {
       Alert.alert('Error', 'Failed to add model');
+    }
+  };
+
+  const handleEditModel = async () => {
+    if (!newModel.id || !newModel.name) {
+      Alert.alert('Error', 'Model ID and Name are required');
+      return;
+    }
+
+    // Remove old and add updated
+    await AIProviderManager.removeModel(activeProviderId, editingModel.id);
+    const success = await AIProviderManager.addModel(activeProviderId, {
+      id: newModel.id,
+      name: newModel.name,
+      provider: newModel.provider || editingModel.provider || 'Custom',
+      description: newModel.description || '',
+      cost: newModel.cost || 'Medium',
+      inputCost: parseFloat(newModel.inputCost) || 0,
+      outputCost: parseFloat(newModel.outputCost) || 0,
+      maxTokens: parseInt(newModel.maxTokens) || 4096,
+    });
+
+    if (success) {
+      Alert.alert('Success', 'Model updated successfully');
+      setShowAddModel(false);
+      setEditingModel(null);
+      setNewModel({ id: '', name: '', provider: '', description: '', cost: 'Medium', inputCost: '0', outputCost: '0', maxTokens: '4096' });
+      loadSettings();
+    } else {
+      Alert.alert('Error', 'Failed to update model');
     }
   };
 

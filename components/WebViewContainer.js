@@ -2,29 +2,47 @@ import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { StyleSheet, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const NEW_TAB_HTML = `<!DOCTYPE html>
+const NEW_TAB_HTML_TEMPLATE = (isDark) => {
+  const bg = isDark ? '#0A0A0F' : '#F2F2F7';
+  const cardBg = isDark ? '#1C1C2E' : '#FFFFFF';
+  const cardBorder = isDark ? '#2A2A3A' : '#E5E5EA';
+  const textColor = isDark ? '#F5F5F7' : '#1C1C1E';
+  const subColor = '#8E8E93';
+  const toolNameColor = isDark ? '#A1A1AA' : '#6B6B6E';
+  const inputBg = isDark ? '#1C1C2E' : '#FFFFFF';
+  const inputBorder = isDark ? '#2A2A3A' : '#D1D1D6';
+  const inputColor = isDark ? '#F5F5F7' : '#1C1C1E';
+  const sectionTitleColor = isDark ? '#5856D6' : '#5856D6';
+  const shortcutBg = isDark ? '#1C1C2E' : '#FFFFFF';
+  const shortcutBorder = isDark ? '#2A2A3A' : '#E5E5EA';
+  const shortcutNameColor = isDark ? '#8E8E93' : '#6B6B6E';
+  const toolHoverBg = isDark ? '#22222F' : '#F0F0F5';
+  const logoShadow = isDark ? 'rgba(0,122,255,0.25)' : 'rgba(0,122,255,0.15)';
+
+  return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0A0A0F;color:#F5F5F7;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
-.logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;margin:32px auto 16px;box-shadow:0 8px 32px rgba(0,122,255,0.25)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:${bg};color:${textColor};min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+.logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#007AFF,#5856D6);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;margin:32px auto 16px;box-shadow:0 8px 32px ${logoShadow}}
 h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
-.sub{font-size:13px;color:#8E8E93;margin-bottom:28px;text-align:center}
+.sub{font-size:13px;color:${subColor};margin-bottom:28px;text-align:center}
 .search{width:100%;max-width:500px;position:relative;margin-bottom:32px}
-.search input{width:100%;padding:14px 16px 14px 44px;background:#1C1C2E;border:1px solid #2A2A3A;border-radius:12px;color:#F5F5F7;font-size:16px;outline:none;transition:border-color .2s}
+.search input{width:100%;padding:14px 16px 14px 44px;background:${inputBg};border:1px solid ${inputBorder};border-radius:12px;color:${inputColor};font-size:16px;outline:none;transition:border-color .2s}
 .search input:focus{border-color:#007AFF}
-.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#8E8E93}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:${subColor}}
 .tools{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
-.tool{background:#1C1C2E;border:1px solid #2A2A3A;border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s}
-.tool:active{transform:scale(.96);background:#22222F}
+.tool{background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s}
+.tool:active{transform:scale(.96);background:${toolHoverBg}}
 .tool-icon{width:40px;height:40px;border-radius:12px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.tool-name{font-size:12px;font-weight:600;color:#A1A1AA}
-.section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#5856D6;margin-bottom:12px;width:100%;max-width:500px;text-align:left}
-.shortcuts{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tool-name{font-size:12px;font-weight:600;color:${toolNameColor}}
+.section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:${sectionTitleColor};margin-bottom:12px;width:100%;max-width:500px;text-align:left}
+.shortcuts{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .shortcut{text-align:center;cursor:pointer;padding:8px}
 .shortcut:active{opacity:.7}
-.shortcut-icon{width:44px;height:44px;border-radius:12px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#1C1C2E;border:1px solid #2A2A3A}
-.shortcut-name{font-size:11px;color:#8E8E93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shortcut-icon{width:44px;height:44px;border-radius:12px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:22px;background:${shortcutBg};border:1px solid ${shortcutBorder}}
+.shortcut-icon.small{width:36px;height:36px;font-size:16px}
+.shortcut-name{font-size:11px;color:${shortcutNameColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style></head><body>
 <div class="logo">N</div>
 <h1>NIABrowser</h1>
@@ -39,7 +57,7 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
 <div class="tool" onclick="postMsg('devtools')"><div class="tool-icon" style="background:rgba(52,199,89,.12);color:#34C759">&#x1F6E0;</div><div class="tool-name">DevTools</div></div>
 <div class="tool" onclick="postMsg('api')"><div class="tool-icon" style="background:rgba(255,149,0,.12);color:#FF9500">&#x26A1;</div><div class="tool-name">API Client</div></div>
 <div class="tool" onclick="postMsg('settings')"><div class="tool-icon" style="background:rgba(88,86,214,.12);color:#5856D6">&#x2699;</div><div class="tool-name">Settings</div></div>
-<div class="tool" onclick="postMsg('about')"><div class="tool-icon" style="background:rgba(142,142,147,.12);color:#8E8E93">&#x2139;</div><div class="tool-name">About</div></div>
+<div class="tool" onclick="go('https://niabrowser.vibzcode.com/demo/')"><div class="tool-icon" style="background:rgba(76,175,80,.12);color:#4CAF50">&#x1F680;</div><div class="tool-name">Demo</div></div>
 </div>
 <div class="section-title">Quick Access</div>
 <div class="shortcuts">
@@ -47,6 +65,7 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
 <div class="shortcut" onclick="go('https://github.com')"><div class="shortcut-icon">&#x1F4BB;</div><div class="shortcut-name">GitHub</div></div>
 <div class="shortcut" onclick="go('https://stackoverflow.com')"><div class="shortcut-icon">&#x1F4DA;</div><div class="shortcut-name">Stack</div></div>
 <div class="shortcut" onclick="go('https://developer.mozilla.org')"><div class="shortcut-icon">&#x1F4D6;</div><div class="shortcut-name">MDN</div></div>
+<div class="shortcut" onclick="postMsg('about')"><div class="shortcut-icon small">&#x2139;</div><div class="shortcut-name">About</div></div>
 </div>
 <script>
   var searchInput = document.getElementById('searchInput');
@@ -78,6 +97,7 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
     }
   }
 </script></body></html>`;
+};
 
 const WebViewContainer = forwardRef(({
   url,
@@ -455,7 +475,7 @@ console.log("###: coookis header", requestCookies)
   return (
    <WebView
       ref={webViewRef}
-      source={isNewTab ? { html: NEW_TAB_HTML } : { uri: url }}
+      source={isNewTab ? { html: NEW_TAB_HTML_TEMPLATE(isDarkMode) } : { uri: url }}
       style={styles.webview}
       injectedJavaScript={injectedJavaScript}
       onMessage={handleMessage}

@@ -708,6 +708,10 @@ const goHomeOld = useCallback(async () => {
           webViewRef={webViewRefs.current[activeTabIndex]}
           pageCacheData={pageCacheData}
           initialContext={aiInitialContext}
+          tabs={tabs}
+          activeTabIndex={activeTabIndex}
+          onSwitchTab={(index) => setActiveTabIndex(index)}
+          webViewRefs={webViewRefs}
         />
       </Modal>
 

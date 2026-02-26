@@ -14,7 +14,7 @@ const AICodeDebugger = ({
   consoleLogs,
   isDarkMode,
   webViewRef,
-  selectedModel = 'anthropic/claude-3.5-sonnet'
+  selectedModel = 'openai/gpt-4.1-mini'
 }) => {
   const [errors, setErrors] = useState([]);
   const [isFinding, setIsFinding] = useState(false);
