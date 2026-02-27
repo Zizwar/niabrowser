@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Modal, Alert, BackHandler, Platform, StatusBar } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -34,6 +35,10 @@ const BottomSheet = ({
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showUserAgentModal, setShowUserAgentModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
+
+  let insets = { bottom: 0 };
+  try { insets = useSafeAreaInsets(); } catch {}
+  const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 16) : insets.bottom;
 
   const backgroundColor = isDarkMode ? '#1C1C1E' : '#FFFFFF';
   const textColor = isDarkMode ? '#FFFFFF' : '#000000';
@@ -266,7 +271,7 @@ const BottomSheet = ({
     <View style={styles.overlay}>
       <TouchableOpacity style={styles.overlayBackground} activeOpacity={1} onPress={onClose} />
 
-      <View style={[styles.container, { backgroundColor }]}>
+      <View style={[styles.container, { backgroundColor, paddingBottom: bottomInset }]}>
         {/* Header with title and close button */}
         <View style={[styles.header, { borderBottomColor: borderColor }]}>
           <Text style={[styles.headerTitle, { color: textColor }]}>Menu</Text>

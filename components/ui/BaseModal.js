@@ -67,7 +67,7 @@ const BaseModal = ({
       statusBarTranslucent={Platform.OS === 'android'}
     >
       {fullScreen ? (
-        <View style={[styles.fullScreenContainer, { backgroundColor, paddingTop: safeAreaPadding }]}>
+        <View style={[styles.fullScreenContainer, { backgroundColor, paddingTop: safeAreaPadding, paddingBottom: insets.bottom }]}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor="transparent"
@@ -103,7 +103,7 @@ const BaseModal = ({
             activeOpacity={1}
             onPress={onClose}
           />
-          <View style={[styles.modalContainer, { backgroundColor }]}>
+          <View style={[styles.modalContainer, { backgroundColor, paddingBottom: insets.bottom }]}>
             {showHeader && (
               <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: borderColor }, headerStyle]}>
                 <Text style={[styles.headerTitle, { color: textColor }]} numberOfLines={1}>

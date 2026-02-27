@@ -623,20 +623,19 @@ const SettingsScreen = ({
         </TouchableOpacity>
       </View>
 
-      {/* Add Custom Provider Modal */}
+      {/* Add Custom Provider - Inline Form */}
       {showAddProvider && (
-        <View style={[styles.addModelOverlay]}>
-          <View style={[styles.addModelCard, { backgroundColor: cardBackground }]}>
+        <View style={[styles.inlineFormCard, { backgroundColor: inputBackground, borderColor }]}>
             <View style={styles.addModelHeader}>
               <Text style={[styles.addModelTitle, { color: textColor }]}>Add Custom Provider</Text>
               <TouchableOpacity onPress={() => setShowAddProvider(false)}>
-                <MaterialIcons name="close" size={24} color={textColor} />
+                <MaterialIcons name="close" size={22} color={secondaryTextColor} />
               </TouchableOpacity>
             </View>
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Provider Name *</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newProvider.name}
               onChangeText={(text) => setNewProvider({...newProvider, name: text})}
               placeholder="e.g., Groq, Together AI"
@@ -645,7 +644,7 @@ const SettingsScreen = ({
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Base URL * (OpenAI-compatible)</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newProvider.baseUrl}
               onChangeText={(text) => setNewProvider({...newProvider, baseUrl: text})}
               placeholder="https://api.example.com/v1"
@@ -656,7 +655,7 @@ const SettingsScreen = ({
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Documentation URL</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newProvider.docsUrl}
               onChangeText={(text) => setNewProvider({...newProvider, docsUrl: text})}
               placeholder="https://docs.example.com"
@@ -667,7 +666,7 @@ const SettingsScreen = ({
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Description</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newProvider.description}
               onChangeText={(text) => setNewProvider({...newProvider, description: text})}
               placeholder="Short description..."
@@ -712,25 +711,22 @@ const SettingsScreen = ({
                 <Text style={styles.buttonText}>Create</Text>
               </TouchableOpacity>
             </View>
-          </View>
         </View>
       )}
 
-      {/* Add/Edit Model Modal */}
+      {/* Add/Edit Model - Inline Form */}
       {showAddModel && (
-        <View style={[styles.addModelOverlay]}>
-          <ScrollView contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', flexGrow: 1, padding: 20 }}>
-          <View style={[styles.addModelCard, { backgroundColor: cardBackground }]}>
+        <View style={[styles.inlineFormCard, { backgroundColor: inputBackground, borderColor }]}>
             <View style={styles.addModelHeader}>
               <Text style={[styles.addModelTitle, { color: textColor }]}>{editingModel ? 'Edit Model' : 'Add Model'}</Text>
               <TouchableOpacity onPress={() => { setShowAddModel(false); setEditingModel(null); }}>
-                <MaterialIcons name="close" size={24} color={textColor} />
+                <MaterialIcons name="close" size={22} color={secondaryTextColor} />
               </TouchableOpacity>
             </View>
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Model ID *</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newModel.id}
               onChangeText={(text) => setNewModel({...newModel, id: text})}
               placeholder="e.g., gpt-5-turbo"
@@ -740,7 +736,7 @@ const SettingsScreen = ({
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Display Name *</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newModel.name}
               onChangeText={(text) => setNewModel({...newModel, name: text})}
               placeholder="e.g., GPT-5 Turbo"
@@ -749,7 +745,7 @@ const SettingsScreen = ({
 
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Description</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newModel.description}
               onChangeText={(text) => setNewModel({...newModel, description: text})}
               placeholder="Short description..."
@@ -765,7 +761,7 @@ const SettingsScreen = ({
                   onPress={() => setNewModel({...newModel, cost: tier})}
                   style={{
                     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6,
-                    backgroundColor: newModel.cost === tier ? '#007AFF' : inputBackground,
+                    backgroundColor: newModel.cost === tier ? '#007AFF' : cardBackground,
                   }}
                 >
                   <Text style={{ color: newModel.cost === tier ? '#FFF' : textColor, fontSize: 13, fontWeight: '500' }}>{tier}</Text>
@@ -776,7 +772,7 @@ const SettingsScreen = ({
             {/* Input Cost */}
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Input Cost ($/1K tokens)</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newModel.inputCost}
               onChangeText={(text) => setNewModel({...newModel, inputCost: text})}
               placeholder="0.003"
@@ -787,7 +783,7 @@ const SettingsScreen = ({
             {/* Output Cost */}
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Output Cost ($/1K tokens)</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newModel.outputCost}
               onChangeText={(text) => setNewModel({...newModel, outputCost: text})}
               placeholder="0.015"
@@ -798,7 +794,7 @@ const SettingsScreen = ({
             {/* Max Tokens */}
             <Text style={[styles.inputLabel, { color: secondaryTextColor }]}>Max Output Tokens</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: inputBackground, color: textColor }]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textColor }]}
               value={newModel.maxTokens}
               onChangeText={(text) => setNewModel({...newModel, maxTokens: text})}
               placeholder="8192"
@@ -821,8 +817,6 @@ const SettingsScreen = ({
                 <Text style={styles.buttonText}>{editingModel ? 'Save' : 'Add'}</Text>
               </TouchableOpacity>
             </View>
-          </View>
-          </ScrollView>
         </View>
       )}
     </View>
@@ -1588,28 +1582,11 @@ const styles = StyleSheet.create({
   modelDeleteButton: {
     padding: 4,
   },
-  addModelOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    zIndex: 100,
-  },
-  addModelCard: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 10,
+  inlineFormCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
   },
   addModelHeader: {
     flexDirection: 'row',

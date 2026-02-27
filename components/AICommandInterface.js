@@ -103,6 +103,9 @@ const AICommandInterface = ({
   const [totalTokens, setTotalTokens] = useState(0);
   const [showTargetSelector, setShowTargetSelector] = useState(false);
 
+  // Per-site attachment storage: { [tabId]: attachments }
+  const tabAttachmentsRef = useRef({});
+
   // Keyboard handling - lift only the input bar on Android
   const keyboardHeight = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -227,10 +230,16 @@ const AICommandInterface = ({
 
   const saveSettings = async (newAttachments, newCache) => {
     try {
+      const attch = newAttachments || attachments;
       await AsyncStorage.setItem(AI_SETTINGS_KEY, JSON.stringify({
         enableCache: newCache !== undefined ? newCache : enableCache,
-        attachments: newAttachments || attachments,
+        attachments: attch,
       }));
+      // Keep per-tab attachment state in sync
+      const currentTabId = tabs[activeTabIndex]?.id;
+      if (currentTabId) {
+        tabAttachmentsRef.current[currentTabId] = { ...attch };
+      }
     } catch (e) {
       console.error('Failed to save AI settings:', e);
     }
@@ -686,7 +695,7 @@ IMPORTANT RULES:
     }
 
     return (
-      <View style={[styles.contextPanel, { backgroundColor: cardBackground, borderColor }]}>
+      <ScrollView style={[styles.contextPanel, { backgroundColor: cardBackground, borderColor }]} contentContainerStyle={{ paddingBottom: 20 }}>
         <View style={styles.contextPanelHeader}>
           <Text style={[styles.contextPanelTitle, { color: textColor }]}>Context Attachments</Text>
           <View style={styles.tokenBadge}>
@@ -774,7 +783,7 @@ IMPORTANT RULES:
         >
           <Text style={styles.closeContextBtnText}>Done</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     );
   };
 
@@ -1016,6 +1025,18 @@ IMPORTANT RULES:
                 index === activeTabIndex && { backgroundColor: '#007AFF15' },
               ]}
               onPress={() => {
+                // Save current tab's attachments
+                const currentTabId = tabs[activeTabIndex]?.id;
+                if (currentTabId) {
+                  tabAttachmentsRef.current[currentTabId] = { ...attachments };
+                }
+                // Restore target tab's attachments (or defaults)
+                const targetTabId = tabs[index]?.id;
+                if (targetTabId && tabAttachmentsRef.current[targetTabId]) {
+                  const restored = tabAttachmentsRef.current[targetTabId];
+                  setAttachments(restored);
+                  saveSettings(restored);
+                }
                 if (onSwitchTab) onSwitchTab(index);
                 setShowTargetSelector(false);
               }}

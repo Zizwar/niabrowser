@@ -145,7 +145,7 @@ export const useTabs = (webViewRefs) => {
           processedUrl = url.href;
         } else {
           console.warn('Invalid URL object:', url);
-          processedUrl = 'https://www.google.com';
+          processedUrl = null;
         }
       }
       

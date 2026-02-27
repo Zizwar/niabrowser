@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image, Dimensions } from 'react-native';
 import { Icon } from 'react-native-elements';
 
 const TabBar = ({ tabs, activeTabIndex, onTabPress, onCloseTab, onAddTab, isDarkMode, isLoading }) => {
@@ -13,9 +13,26 @@ const TabBar = ({ tabs, activeTabIndex, onTabPress, onCloseTab, onAddTab, isDark
     }
   };
 
+  // Dynamic tab sizing: larger when few tabs, smaller when many
+  const screenWidth = Dimensions.get('window').width;
+  const addButtonWidth = 40;
+  const availableWidth = screenWidth - addButtonWidth - 8; // 8 for container padding
+  const tabCount = tabs.length;
+
+  // Calculate tab width: fill available space when few tabs, scroll when many
+  let tabWidth;
+  if (tabCount <= 2) {
+    tabWidth = Math.min(availableWidth / tabCount - 4, 220); // large tabs
+  } else if (tabCount <= 4) {
+    tabWidth = Math.min(availableWidth / tabCount - 4, 160); // medium tabs
+  } else {
+    tabWidth = 120; // compact, scrollable
+  }
+  tabWidth = Math.max(tabWidth, 80); // minimum width
+
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1C1C1E' : '#F5F5F5' }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
         {isLoading ? (
           <ActivityIndicator size="small" color={isDarkMode ? '#fff' : '#000'} />
         ) : (
@@ -30,6 +47,7 @@ const TabBar = ({ tabs, activeTabIndex, onTabPress, onCloseTab, onAddTab, isDark
                   styles.tab,
                   isActive && styles.activeTab,
                   {
+                    width: tabWidth,
                     backgroundColor: isActive
                       ? '#007AFF'
                       : (isDarkMode ? '#2C2C2E' : '#FFFFFF')
@@ -89,8 +107,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginHorizontal: 2,
     borderRadius: 8,
-    maxWidth: 160,
-    minWidth: 80,
     overflow: 'hidden',
     height: 34,
   },

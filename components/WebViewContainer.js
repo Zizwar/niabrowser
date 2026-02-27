@@ -37,7 +37,7 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
 .tool-icon{width:40px;height:40px;border-radius:12px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px}
 .tool-name{font-size:12px;font-weight:600;color:${toolNameColor}}
 .section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:${sectionTitleColor};margin-bottom:12px;width:100%;max-width:500px;text-align:left}
-.shortcuts{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.shortcuts{width:100%;max-width:500px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .shortcut{text-align:center;cursor:pointer;padding:8px}
 .shortcut:active{opacity:.7}
 .shortcut-icon{width:44px;height:44px;border-radius:12px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:22px;background:${shortcutBg};border:1px solid ${shortcutBorder}}
@@ -65,7 +65,6 @@ h1{font-size:22px;font-weight:700;margin-bottom:4px;text-align:center}
 <div class="shortcut" onclick="go('https://github.com')"><div class="shortcut-icon">&#x1F4BB;</div><div class="shortcut-name">GitHub</div></div>
 <div class="shortcut" onclick="go('https://stackoverflow.com')"><div class="shortcut-icon">&#x1F4DA;</div><div class="shortcut-name">Stack</div></div>
 <div class="shortcut" onclick="go('https://developer.mozilla.org')"><div class="shortcut-icon">&#x1F4D6;</div><div class="shortcut-name">MDN</div></div>
-<div class="shortcut" onclick="postMsg('about')"><div class="shortcut-icon small">&#x2139;</div><div class="shortcut-name">About</div></div>
 </div>
 <script>
   var searchInput = document.getElementById('searchInput');

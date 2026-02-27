@@ -408,7 +408,7 @@ const goHomeOld = useCallback(async () => {
   }
 
    return (
-    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF', paddingTop: statusBarPadding }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF', paddingTop: statusBarPadding, paddingBottom: insets.bottom }]}>
       {isFullscreen ? (
         <StatusBar hidden={true} />
       ) : (
