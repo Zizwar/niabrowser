@@ -51,7 +51,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "owner": "zizwar",
+    "owner": "2600ma",
     "plugins": [
       "expo-web-browser",
       "expo-secure-store",
@@ -61,7 +61,7 @@
     "githubUrl": "https://github.com/zizwar/niabrowser",
     "extra": {
       "eas": {
-        "projectId": "f3de0a65-ce2b-4752-9b82-4ed5e4e4dabe"
+        "projectId": "5f8e7bd7-c112-4503-bf65-43d855ca5d9d"
       }
     }
   }
