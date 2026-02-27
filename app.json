@@ -20,7 +20,7 @@
     "scheme": "niabrowser",
     "android": {
       "package": "com.vibzcode.niabrowser",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F5F5F0"
