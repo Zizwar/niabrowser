@@ -121,7 +121,9 @@ export const useTabs = (webViewRefs) => {
 
   const saveTabs = async (tabsToSave, activeIndex) => {
     try {
-      const tabsData = tabsToSave.map((tab, index) => ({
+      // Filter out private tabs so they don't persist
+      const nonPrivateTabs = tabsToSave.filter(tab => !tab.isPrivate);
+      const tabsData = nonPrivateTabs.map((tab, index) => ({
         url: tab.url,
         title: tab.title,
         id: tab.id,

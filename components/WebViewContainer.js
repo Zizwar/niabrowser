@@ -109,7 +109,8 @@ const WebViewContainer = forwardRef(({
   onLoadEnd,
   addNewTab,
   userAgent: customUserAgent,
-  isSafeMode
+  isSafeMode,
+  isPrivate
 }, ref) => {
 
 
@@ -491,11 +492,12 @@ console.log("###: coookis header", requestCookies)
       scalesPageToFit={true}
       mixedContentMode="compatibility"
       allowsBackForwardNavigationGestures={true}
-      sharedCookiesEnabled={true}
-      thirdPartyCookiesEnabled={true}
+      incognito={!!isPrivate}
+      sharedCookiesEnabled={!isPrivate}
+      thirdPartyCookiesEnabled={!isPrivate}
       allowsInlineMediaPlayback={true}
       mediaPlaybackRequiresUserAction={false}
-      cacheEnabled={true}
+      cacheEnabled={!isPrivate}
     />
   );
 });

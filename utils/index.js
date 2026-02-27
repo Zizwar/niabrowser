@@ -1,10 +1,11 @@
 import { Share, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const createNewTab = (url, title = 'New Tab') => ({
+export const createNewTab = (url, title = 'New Tab', isPrivate = false) => ({
   id: Date.now(),
   url: url || 'about:blank',
   title,
+  isPrivate,
   networkLogs: [],
   consoleOutput: [],
   storage: { cookies: '', localStorage: '' },

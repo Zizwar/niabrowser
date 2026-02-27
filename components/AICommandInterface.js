@@ -1158,6 +1158,7 @@ IMPORTANT RULES:
             </TouchableOpacity>
           </View>
           {Platform.OS === 'android' && <Animated.View style={{ height: keyboardHeight }} />}
+          <View style={{ height: insets.bottom }} />
         </>
       )}
     </ContainerView>

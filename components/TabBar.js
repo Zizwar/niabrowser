@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image, Dimensions } from 'react-native';
 import { Icon } from 'react-native-elements';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const TabBar = ({ tabs, activeTabIndex, onTabPress, onCloseTab, onAddTab, isDarkMode, isLoading }) => {
   // Get favicon URL from a website URL
@@ -49,19 +50,24 @@ const TabBar = ({ tabs, activeTabIndex, onTabPress, onCloseTab, onAddTab, isDark
                   {
                     width: tabWidth,
                     backgroundColor: isActive
-                      ? '#007AFF'
-                      : (isDarkMode ? '#2C2C2E' : '#FFFFFF')
+                      ? (tab.isPrivate ? '#5856D6' : '#007AFF')
+                      : tab.isPrivate
+                        ? (isDarkMode ? '#2A2040' : '#EDE7F6')
+                        : (isDarkMode ? '#2C2C2E' : '#FFFFFF')
                   }
                 ]}
                 onPress={() => onTabPress(index)}
               >
-                {faviconUrl && (
+                {tab.isPrivate ? (
+                  <MaterialIcons name="visibility-off" size={14} color={isActive ? '#FFFFFF' : '#5856D6'} style={{ marginRight: 6 }} />
+                ) : faviconUrl ? (
                   <Image
+                    key={faviconUrl}
                     source={{ uri: faviconUrl }}
                     style={styles.favicon}
                     defaultSource={require('../assets/icon.png')}
                   />
-                )}
+                ) : null}
                 <Text
                   style={[
                     styles.tabText,

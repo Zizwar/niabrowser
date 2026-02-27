@@ -31,6 +31,7 @@ const BottomSheet = ({
   isFullscreen,
   onGetSourcePress,
   onToggleErudaPress,
+  onPrivateTab,
 }) => {
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showUserAgentModal, setShowUserAgentModal] = useState(false);
@@ -217,6 +218,7 @@ const BottomSheet = ({
     { icon: 'bug-report', title: 'Eruda Console', onPress: () => { onToggleErudaPress?.(); onClose(); } },
     { icon: 'computer', title: 'Desktop Mode', onPress: toggleDesktopMode, value: isDesktopMode },
     { icon: 'security', title: 'Safe Mode', onPress: toggleSafeMode, value: isSafeMode },
+    { icon: 'visibility-off', title: 'Private Tab', onPress: () => { onPrivateTab?.(); onClose(); } },
     { icon: 'person', title: 'User Agent', onPress: () => setShowUserAgentModal(true) },
     { icon: 'history', title: 'History & Favorites', onPress: openHistory },
     { icon: 'share', title: 'Share Page', onPress: () => shareUrl(currentUrl) },

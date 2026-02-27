@@ -29,7 +29,7 @@ import { Icon } from 'react-native-elements';
 import { useWebViewRefs, useHistory, useTabs, useScripts, useSettings, useFavorites } from './hooks';
 import { AppProvider, useAppContext } from './state/context';
 
-import { shareUrl, clearData, shouldRunOnUrl, injectJavaScript, createGreasemonkeyEnvironment } from './utils';
+import { shareUrl, clearData, shouldRunOnUrl, injectJavaScript, createGreasemonkeyEnvironment, createNewTab } from './utils';
 
 const AppContent = () => {
   const { 
@@ -272,8 +272,11 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       canGoBack: navState.canGoBack,
       canGoForward: navState.canGoForward
     });
-    addToHistory(navState.url, title);
-  }, [updateTabInfo, addToHistory]);
+    // Skip history for private tabs
+    if (!tabs[tabIndex]?.isPrivate) {
+      addToHistory(navState.url, title);
+    }
+  }, [updateTabInfo, addToHistory, tabs]);
 
   const updateTabUrl = useCallback((index, newUrl) => {
     updateTabInfo(index, { url: newUrl });
@@ -283,6 +286,15 @@ const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
       webViewRef.loadUrl(newUrl);
     }
   }, [updateTabInfo, webViewRefs]);
+
+  const handlePrivateTab = useCallback(() => {
+    const privateTab = createNewTab(null, 'Private Tab', true);
+    setTabs(prevTabs => {
+      const newTabs = [...prevTabs, privateTab];
+      setTimeout(() => setActiveTabIndex(newTabs.length - 1), 0);
+      return newTabs;
+    });
+  }, [setTabs, setActiveTabIndex]);
 
   const goHome = useCallback(() => {
     updateTabUrl(activeTabIndex, customHomePage);
@@ -482,6 +494,7 @@ const goHomeOld = useCallback(async () => {
               addNewTab={addNewTab}
               isSafeMode={isSafeMode}
               userAgent={currentUserAgent}
+              isPrivate={tab.isPrivate}
             />
           </View>
         ))}
@@ -533,6 +546,7 @@ const goHomeOld = useCallback(async () => {
         isFullscreen={isFullscreen}
         onGetSourcePress={getSourceHtml}
         onToggleErudaPress={toggleEruda}
+        onPrivateTab={handlePrivateTab}
       />
       {tabs[activeTabIndex] && (
         <>
