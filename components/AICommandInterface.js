@@ -695,7 +695,7 @@ IMPORTANT RULES:
     }
 
     return (
-      <ScrollView style={[styles.contextPanel, { backgroundColor: cardBackground, borderColor }]} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView style={[styles.contextPanel, { backgroundColor: cardBackground, borderColor }]} contentContainerStyle={{ paddingBottom: 20 + insets.bottom }}>
         <View style={styles.contextPanelHeader}>
           <Text style={[styles.contextPanelTitle, { color: textColor }]}>Context Attachments</Text>
           <View style={styles.tokenBadge}>

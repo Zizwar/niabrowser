@@ -216,20 +216,18 @@ Privacy Policy: https://niabrowser.vibzcode.com/privacy.html
 ### Step 9: Upload AAB
 1. Go to **Production** > **Create new release**
 2. Upload the `.aab` file (build with `eas build --platform android`)
-3. Release name: `1.1.0 (3)`
+3. Release name: `1.1.1 (7)`
 4. Release notes:
 ```
-What's new in v1.1.0:
-- AI Chat with multiple providers (Google Gemini free, OpenRouter, OpenAI)
-- Smart Script Manager with AI generation and editing
-- Full DevTools suite (Console, Network, Storage, Performance)
-- API Client for testing HTTP endpoints
-- Custom AI provider support
-- Developer config panel for prompt customization
-- New tab page with quick developer tools access
-- Userscript import (Greasemonkey/Tampermonkey compatible)
-- Export/import all data
-- Dark and light themes
+What's new in v1.1.1:
+
+- Private Browsing Mode — Browse without saving history or cookies
+- AI Target Selector — Switch between open tabs while chatting with AI
+- Per-site context memory — Each tab keeps its own attachments
+- 6 new AI models: GPT-5 Mini, GPT-5.1 Codex Mini, Grok 4, Grok 4.1, Grok Code, Arcee Coder
+- Dynamic tab bar — Tabs resize for better readability
+- Model management — Browse, edit, and delete models with cost info
+- Fixed Android navigation bar overlap across all screens
 ```
 
 ### Step 10: Review & Publish
