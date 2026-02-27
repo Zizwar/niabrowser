@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, Image, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
-import appJson from '../app.json';
+import packageJson from '../package.json';
 import BaseModal from './ui/BaseModal';
 
 const GuideContent = ({ isDarkMode, onNavigate }) => {
@@ -110,7 +110,7 @@ const AboutModal = ({ visible, onClose, isDarkMode, onNavigate }) => {
           <Image source={require('../assets/icon.png')} style={styles.logo} />
           <Text style={[styles.appName, { color: textColor }]}>NIABrowser</Text>
           <Text style={[styles.version, { color: secondaryTextColor }]}>
-            Version {appJson.expo?.version || '1.1.0'}
+            Version {packageJson.version}
           </Text>
         </View>
 
