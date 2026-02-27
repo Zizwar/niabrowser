@@ -1,37 +1,37 @@
-# Release Notes - NIABrowser v1.1.0
+# Release Notes - NIABrowser v1.1.1
 
 ## Short (Play Store - max 500 chars)
 ```
-What's new in v1.1.0:
-- AI Chat: Talk to AI about any page with Google Gemini (free!), OpenRouter, or OpenAI
-- Script Manager: AI generates and edits scripts from plain English
-- Full DevTools: Console, Network, Storage, Performance monitoring
-- API Client: Test HTTP endpoints with saved collections
-- Custom providers: Add your own OpenAI-compatible AI services
-- New tab dashboard with quick access to all developer tools
-- Userscript import (Greasemonkey/Tampermonkey)
-- Data export/import
+What's new in v1.1.1:
+
+- AI Target Selector — Switch between open tabs while chatting with AI
+- Per-site context memory — Each tab keeps its own attachments
+- 6 new AI models: GPT-5 Mini, GPT-5.1 Codex Mini, Grok 4, Grok 4.1, Grok Code, Arcee Coder
+- Dynamic tab bar — Tabs resize for better readability
+- Model management — Browse, edit, and delete models with cost info
+- Improved Android navigation bar support across all screens
+- Refreshed new tab page with demo access
 ```
 
 ## Short (App Store - max 4000 chars)
 ```
-NIABrowser v1.1.0 brings AI-powered development tools to your mobile browser:
+NIABrowser v1.1.1 — Smarter AI, Better UX
 
 NEW:
-- Multi-provider AI Chat (Google Gemini free, OpenRouter 100+ models, OpenAI)
-- AI Script Generator and AI Edit for script automation
-- Full DevTools suite with console, network, storage, and performance
-- Built-in API client with collections
-- Custom AI provider support
-- Developer config panel for prompt customization
-- Interactive new tab page
-- Greasemonkey/Tampermonkey userscript import
+- AI Target Selector: Switch between your open tabs directly from the AI chat — ask AI about any page without leaving the conversation
+- Per-Site Context Memory: Each tab remembers its own attachment selections (cookies, network, console). Switching tabs preserves your choices
+- 6 New AI Models: GPT-5 Mini, GPT-5.1 Codex Mini, Arcee Coder Large, Grok 4 Fast, Grok 4.1 Fast, Grok Code Fast
+- Model Management: Full model browser in Settings with cost tiers, input/output pricing, max tokens. Edit or remove any model
+- Dynamic Tab Bar: Tabs auto-resize based on count — full-width when few, compact and scrollable when many
 
 IMPROVED:
-- Enhanced console capture (table, group, trace, and more)
-- Model selector with provider grouping and search
-- Better keyboard handling in AI chat
-- Script toggle reliability fix
+- New tab page refreshed with Demo button and cleaner quick access layout
+- Settings model/provider forms render inline — no more floating overlays
+- AI context panel now scrollable — Done button always visible
+- App always uses your selected model (removed hardcoded fallbacks)
 
-This is a major update transforming NIABrowser into a complete mobile development environment.
+FIXED:
+- Android system navigation bar no longer overlaps bottom UI
+- New tabs open to blank page instead of Google.com
+- About screen version now reads correctly from package.json
 ```
