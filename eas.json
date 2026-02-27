@@ -19,7 +19,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./credentials/niabrowser_service.json",
+        "serviceAccountKeyPath": "./credentials/niabrowser-play-upload-660e707c14ef.json",
         "track": "production"
       }
     }
