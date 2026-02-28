@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://niabrowser.vibzcode.com">Website</a> •
-  <a href="https://github.com/zizwar/niabrowser/releases">Download</a> •
+  <a href="https://play.google.com/store/apps/details?id=com.vibzcode.niabrowser">Download</a> •
   <a href="https://niabrowser.vibzcode.com/privacy">Privacy</a> •
   <a href="https://niabrowser.vibzcode.com/terms">Terms</a>
 </p>
